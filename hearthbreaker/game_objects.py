@@ -540,6 +540,10 @@ class Character(Bindable, metaclass=abc.ABCMeta):
 
         :param Effect effect: The effect to apply to this :class:`Character
         """
+        if type(effect) not in self.player.effect_count:
+            self.player.effect_count[type(effect)] = 0
+
+        self.player.effect_count[type(effect)] += 1
         effect.set_target(self)
         effect.apply()
         self.effects.append(effect)
@@ -866,7 +870,6 @@ class Minion(Character):
         self.battlecry = battlecry
         self.deathrattle = deathrattle
         self.base_deathrattle = deathrattle
-        self.silenced = False
         self.exhausted = True
         self.removed = False
         if effects:
@@ -953,7 +956,8 @@ class Minion(Character):
         self.windfury = False
         self.frozen = False
         self.frozen_this_turn = False
-        for effect in self.effects:
+        for effect in reversed(self.effects):
+            self.player.effect_count[type(effect)] -= 1
             effect.unapply()
         self.effects = []
         self.taunt = False
@@ -965,7 +969,6 @@ class Minion(Character):
         self.battlecry = None
         self.deathrattle = None
         self.can_be_targeted_by_spells = True
-        self.silenced = True
         self.trigger("silenced")
         if "copied" in self.events:
             del self.events["copied"]
@@ -1099,7 +1102,6 @@ class Minion(Character):
         new_minion.divine_shield = self.divine_shield
         new_minion.charge = self.charge
         new_minion.can_be_targeted_by_spells = self.can_be_targeted_by_spells
-        new_minion.silenced = self.silenced
         new_minion.spell_damage = self.spell_damage
         new_minion.temp_attack = self.temp_attack
         new_minion.immune = self.immune
@@ -1356,6 +1358,7 @@ class Player(Bindable):
         self.heal_does_damage = False
         self.mana_filters = []
         self.overload = 0
+        self.effect_count = dict()
         self.opponent = None
         self.cards_played = 0
 
@@ -1373,6 +1376,7 @@ class Player(Bindable):
         copied_player.hand = [type(card)() for card in self.hand]
         copied_player.game = new_game
         copied_player.secrets = [type(secret)() for secret in self.secrets]
+        copied_player.effect_count = dict()
         for minion in copied_player.minions:
             for effect in minion._effects_to_add:
                 minion.add_effect(effect)
