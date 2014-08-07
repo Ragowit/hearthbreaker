@@ -1423,6 +1423,7 @@ class Player(Bindable):
 class Game(Bindable):
     def __init__(self, decks, agents, random_func=random.randint):
         super().__init__()
+        self.turn = 0
         self.delayed_minions = set()
         self.random = random_func
         first_player = random_func(0, 1)
@@ -1487,6 +1488,7 @@ class Game(Bindable):
         self._end_turn()
 
     def _start_turn(self):
+        self.turn += 1
         if self.current_player == self.players[0]:
             self.current_player = self.players[1]
             self.other_player = self.players[0]
