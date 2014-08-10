@@ -166,6 +166,8 @@ from hearthbreaker.cards.minions.neutral import (
     SludgeBelcher,
     BaronRivendare,
     DancingSwords,
+    Deathlord,
+    SpectralKnight
 )
 
 from hearthbreaker.cards.minions.druid import (
@@ -246,7 +248,8 @@ from hearthbreaker.cards.minions.warlock import (
     SummoningPortal,
     BloodImp,
     LordJaraxxus,
-    VoidTerror
+    VoidTerror,
+    Voidcaller,
 )
 
 from hearthbreaker.cards.minions.warrior import (

@@ -1,7 +1,8 @@
 from hearthbreaker.cards.battlecries import draw_card, silence, deal_one_damage, \
     gain_one_health_for_each_card_in_hand, deal_two_damage, heal_two, \
     heal_three, give_enemy_crystal, darkscale_healer, priestess_of_elune, \
-    destroy_target, two_temp_attack, nightblade, ssc, deathwing, return_to_hand, opponent_draw_two
+    destroy_target, two_temp_attack, nightblade, ssc, deathwing, return_to_hand, opponent_draw_two, \
+    put_friendly_minion_on_board_from_enemy_deck
 from hearthbreaker.effects import StatsAura, IncreaseBattlecryMinionCost, DoubleDeathrattle
 from hearthbreaker.game_objects import Minion, MinionCard, SecretCard, Card
 from hearthbreaker.constants import CARD_RARITY, CHARACTER_CLASS, MINION_TYPE
@@ -892,12 +893,14 @@ class BloodKnight(MinionCard):
     def create_minion(self, player):
         def collect_divine_shields(minion):
             shields_stolen = 0
-            for target in hearthbreaker.targeting.find_minion_battlecry_target(player.game, lambda m: m.divine_shield):
-                shields_stolen += 1
-                target.divine_shield = False
-            for i in range(0, shields_stolen):
-                minion.increase_health(3)
-                minion.change_attack(3)
+            targets = hearthbreaker.targeting.find_minion_battlecry_target(player.game, lambda m: m.divine_shield)
+            if targets is not None:
+                for target in targets:
+                    shields_stolen += 1
+                    target.divine_shield = False
+                for i in range(0, shields_stolen):
+                    minion.increase_health(3)
+                    minion.change_attack(3)
         return Minion(3, 3, battlecry=collect_divine_shields)
 
 
@@ -1070,17 +1073,13 @@ class SylvanasWindrunner(MinionCard):
 
     def create_minion(self, player):
         def assume_direct_control(m):
-            enemy = []
-            enemy.append(player.game.current_player)
-            enemy.append(player.game.other_player)
-            enemy.remove(m.player)
-            enemy_player = enemy.pop()
-            targets = copy.copy(enemy_player.minions)
+
+            targets = copy.copy(m.player.opponent.minions)
             if len(targets) > 0:
                 target = targets[player.game.random(0, len(targets) - 1)]
-                new_minion = target.copy(player)
+                new_minion = target.copy(m.player)
                 target.remove_from_board()
-                new_minion.add_to_board(len(player.minions))
+                new_minion.add_to_board(len(m.player.minions))
 
         return Minion(5, 5, deathrattle=assume_direct_control)
 
@@ -1631,11 +1630,12 @@ class IllidanStormrage(MinionCard):
 
                 def create_minion(self, player):
                     return Minion(2, 1)
-            flame = FlameOfAzzinoth()
-            flame.summon(minion.player, minion.player.game, minion.index + 1)
+            if card is not self:
+                flame = FlameOfAzzinoth()
+                flame.summon(minion.player, minion.player.game, minion.index + 1)
 
         minion = Minion(7, 5)
-        player.bind("card_played", summon_flame)
+        player.bind("card_used", summon_flame)
         minion.bind_once("silenced", lambda: player.unbind("card_played", summon_flame))
         return minion
 
@@ -2208,7 +2208,7 @@ class GelbinMekkatorque(MinionCard):
                         for i in range(0, 3):
                             player.draw()
                     minion = Minion(0, 1)
-                    player.bind("turn_started", death_draw)
+                    player.bind_once("turn_started", death_draw)
                     minion.bind_once("silenced", lambda: player.unbind("turn_started", death_draw))
                     return minion
 
@@ -2249,8 +2249,9 @@ class GelbinMekkatorque(MinionCard):
                         for m in hearthbreaker.targeting.find_spell_target(
                                 player.game, lambda x: x.health != x.calculate_max_health()):
                             targets.append(m)
-                        repairee = targets[player.game.random(0, len(targets) - 1)]
-                        repairee.heal(6, self)
+                        if len(targets) > 0:
+                            repairee = targets[player.game.random(0, len(targets) - 1)]
+                            repairee.heal(6, self)
                     minion = Minion(0, 3)
                     player.bind("turn_ended", repair)
                     minion.bind_once("silenced", lambda: player.unbind("turn_ended", repair))
@@ -2406,8 +2407,8 @@ class Loatheb(MinionCard):
 
             mana_filter = ManaFilter()
             minion.game.other_player.mana_filters.append(mana_filter)
-            minion.game.other_player.bind("turn_ended",
-                                          lambda: minion.game.current_player.mana_filters.remove(mana_filter))
+            minion.game.other_player.bind_once("turn_ended",
+                                               lambda: minion.game.current_player.mana_filters.remove(mana_filter))
 
         return Minion(5, 5, battlecry=increase_card_cost)
 
@@ -2461,3 +2462,19 @@ class DancingSwords(MinionCard):
 
     def create_minion(self, player):
         return Minion(4, 4, deathrattle=opponent_draw_two)
+
+
+class Deathlord(MinionCard):
+    def __init__(self):
+        super().__init__("Deathlord", 3, CHARACTER_CLASS.ALL, CARD_RARITY.RARE)
+
+    def create_minion(self, player):
+        return Minion(2, 8, taunt=True, deathrattle=put_friendly_minion_on_board_from_enemy_deck)
+
+
+class SpectralKnight(MinionCard):
+    def __init__(self):
+        super().__init__("Spectral Knight", 5, CHARACTER_CLASS.ALL, CARD_RARITY.COMMON)
+
+    def create_minion(self, player):
+        return Minion(4, 6, spell_targetable=False)

@@ -503,3 +503,79 @@ class TestMinionCopying(unittest.TestCase):
         game.play_single_turn()
         self.assertEqual(0, len(game.other_player.minions))
         self.assertEqual(9, len(game.current_player.hand))
+
+    def test_Deathlord(self):
+        game = generate_game_for(Deathlord, [HauntedCreeper, OasisSnapjaw, Frostbolt, WaterElemental, Pyroblast],
+                                 MinionPlayingAgent, DoNothingBot)
+
+        for turn in range(0, 5):
+            game.play_single_turn()
+
+        self.assertEqual(1, len(game.current_player.minions))
+        self.assertEqual(0, len(game.other_player.minions))
+
+        game.current_player.minions[0].die(None)
+        game.check_delayed()
+
+        self.assertEqual(0, len(game.current_player.minions))
+        self.assertEqual(1, len(game.other_player.minions))
+
+        self.assertEqual("Water Elemental", game.other_player.minions[0].card.name)
+
+        game = game.copy()
+
+        for turn in range(0, 2):
+            game.play_single_turn()
+
+        self.assertEqual(1, len(game.current_player.minions))
+        self.assertEqual(1, len(game.other_player.minions))
+
+        game.current_player.minions[0].die(None)
+        game.check_delayed()
+
+        self.assertEqual(0, len(game.current_player.minions))
+        self.assertEqual(2, len(game.other_player.minions))
+
+        self.assertEqual("Oasis Snapjaw", game.other_player.minions[1].card.name)
+
+        for turn in range(0, 2):
+            game.play_single_turn()
+
+        self.assertEqual(1, len(game.current_player.minions))
+        self.assertEqual(2, len(game.other_player.minions))
+
+        game.current_player.minions[0].die(None)
+        game.check_delayed()
+
+        self.assertEqual(0, len(game.current_player.minions))
+        self.assertEqual(3, len(game.other_player.minions))
+
+        self.assertEqual("Water Elemental", game.other_player.minions[2].card.name)
+
+    def test_Reincarnate(self):
+        game = generate_game_for([SylvanasWindrunner, Reincarnate], FacelessManipulator,
+                                 MinionPlayingAgent, MinionPlayingAgent)
+
+        for turn in range(0, 13):
+            game.play_single_turn()
+
+        # Sylvanas will die to the reincarnate, steal the Ogre, then be reborn.
+        self.assertEqual(3, len(game.other_player.minions))
+        self.assertEqual(0, len(game.current_player.minions))
+        self.assertEqual("Faceless Manipulator", game.other_player.minions[0].card.name)
+        self.assertEqual("Sylvanas Windrunner", game.other_player.minions[1].card.name)
+        self.assertEqual("Sylvanas Windrunner", game.other_player.minions[2].card.name)
+
+    def test_Voidcaller(self):
+        game = generate_game_for(Assassinate, [Voidcaller, FlameImp, ArgentSquire, BoulderfistOgre, StonetuskBoar],
+                                 SpellTestingAgent, MinionPlayingAgent)
+
+        for turn in range(0, 8):
+            game.play_single_turn()
+
+        self.assertEqual(1, len(game.current_player.minions))
+        self.assertEqual("Voidcaller", game.current_player.minions[0].card.name)
+        game = game.copy()
+        game.play_single_turn()
+        self.assertEqual(1, len(game.other_player.minions))
+        self.assertEqual("Flame Imp", game.other_player.minions[0].card.name)

@@ -82,7 +82,8 @@ class FarSight(Card):
         filter = None
         player.bind("card_drawn", reduce_cost)
         player.draw()
-        player.mana_filters.append(filter)
+        if filter is not None:
+            player.mana_filters.append(filter)
 
 
 class FeralSpirit(Card):
@@ -220,3 +221,16 @@ class Windfury(Card):
         super().use(player, game)
 
         self.target.windfury = True
+
+
+class Reincarnate(Card):
+
+    def __init__(self):
+        super().__init__("Reincarnate", 2, CHARACTER_CLASS.SHAMAN, CARD_RARITY.COMMON,
+                         hearthbreaker.targeting.find_minion_spell_target)
+
+    def use(self, player, game):
+        super().use(player, game)
+        self.target.die(self)
+        game.check_delayed()
+        self.target.card.summon(self.target.player, game, len(self.target.player.minions))

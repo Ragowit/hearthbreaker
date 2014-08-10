@@ -2435,3 +2435,94 @@ class TestCommon(unittest.TestCase):
         game.play_single_turn()
         self.assertEqual(0, len(game.other_player.minions))
         self.assertEqual(9, len(game.current_player.hand))
+
+    def test_Deathlord(self):
+        game = generate_game_for(Deathlord, [HauntedCreeper, OasisSnapjaw, Frostbolt, WaterElemental, Pyroblast],
+                                 MinionPlayingAgent, DoNothingBot)
+
+        for turn in range(0, 5):
+            game.play_single_turn()
+
+        self.assertEqual(1, len(game.current_player.minions))
+        self.assertEqual(0, len(game.other_player.minions))
+
+        game.current_player.minions[0].die(None)
+        game.check_delayed()
+
+        self.assertEqual(0, len(game.current_player.minions))
+        self.assertEqual(1, len(game.other_player.minions))
+
+        self.assertEqual("Water Elemental", game.other_player.minions[0].card.name)
+
+        for turn in range(0, 2):
+            game.play_single_turn()
+
+        self.assertEqual(1, len(game.current_player.minions))
+        self.assertEqual(1, len(game.other_player.minions))
+
+        game.current_player.minions[0].die(None)
+        game.check_delayed()
+
+        self.assertEqual(0, len(game.current_player.minions))
+        self.assertEqual(2, len(game.other_player.minions))
+
+        self.assertEqual("Oasis Snapjaw", game.other_player.minions[1].card.name)
+
+        for turn in range(0, 2):
+            game.play_single_turn()
+
+        self.assertEqual(1, len(game.current_player.minions))
+        self.assertEqual(2, len(game.other_player.minions))
+
+        game.current_player.minions[0].die(None)
+        game.check_delayed()
+
+        self.assertEqual(0, len(game.current_player.minions))
+        self.assertEqual(3, len(game.other_player.minions))
+
+        self.assertEqual("Water Elemental", game.other_player.minions[2].card.name)
+
+        used_count = 0
+
+        for u in game.other_player.deck.used:
+            if u:
+                used_count += 1
+
+        self.assertEqual(11, used_count)
+
+    def test_SpectralKnight(self):
+        game = generate_game_for(SpectralKnight, Fireball, MinionPlayingAgent, SpellTestingAgent)
+        for turn in range(0, 9):
+            game.play_single_turn()
+
+        self.assertEqual(1, len(game.current_player.minions))
+
+        def check_no_knight(targets):
+            self.assertNotIn(game.other_player.minions[0], targets)
+            return targets[0]
+
+        def check_knight(targets):
+            self.assertIn(game.other_player.minions[0], targets)
+            return targets[0]
+
+        game.other_player.agent.choose_target = check_no_knight
+
+        game.play_single_turn()
+        game.play_single_turn()
+
+        game.other_player.agent.choose_target = check_knight
+        game.current_player.minions[0].silence()
+        game.play_single_turn()
+
+    def test_Reincarnate(self):
+        game = generate_game_for([BoulderfistOgre, Reincarnate], SylvanasWindrunner,
+                                 MinionPlayingAgent, MinionPlayingAgent)
+
+        for turn in range(0, 13):
+            game.play_single_turn()
+
+        # Sylvanas will die to the reincarnate, steal the Ogre, then be reborn.
+        self.assertEqual(2, len(game.other_player.minions))
+        self.assertEqual(0, len(game.current_player.minions))
+        self.assertEqual("Boulderfist Ogre", game.other_player.minions[0].card.name)
+        self.assertEqual("Sylvanas Windrunner", game.other_player.minions[1].card.name)
