@@ -39,11 +39,12 @@ class HearthState:
         #         MagmaRager, MagmaRager, SilverbackPatriarch, SilverbackPatriarch, ChillwindYeti, ChillwindYeti,
         #         OasisSnapjaw, OasisSnapjaw, SenjinShieldmasta, SenjinShieldmasta, BootyBayBodyguard, BootyBayBodyguard,
         #         FenCreeper, FenCreeper, BoulderfistOgre, BoulderfistOgre, WarGolem, WarGolem]
-        deck1 = RiverCrocolisk
+        #deck1 = RiverCrocolisk
         #deck1 = [Innervate, Innervate, WildGrowth, WildGrowth, Wrath, Wrath]
-        #deck1 = Soulfire
+        deck1 = [Soulfire, Soulfire]
         #deck1 = [Soulfire, Soulfire, MortalCoil, MortalCoil]
         deck2 = RiverCrocolisk
+        random.seed(1857)
         game = generate_game_for(deck1, deck2, DoNothingBot, DoNothingBot)
         game._start_turn()
         self.game = game
@@ -240,7 +241,6 @@ def UCT(rootstate, seconds, verbose = False):
     """ Conduct a UCT search for seconds starting from rootstate.
         Return the best move from the rootstate.
         Assumes 2 alternating players (player 1 starts), with game results in the range [0.0, 1.0]."""
-
     rootnode = Node(state = rootstate)
 
     future = time.time() + seconds
@@ -255,9 +255,9 @@ def UCT(rootstate, seconds, verbose = False):
 
         # Expand
         if node.untriedMoves != []: # if we can expand (i.e. state/node is non-terminal)
-            m = random.choice(node.untriedMoves) 
+            m = random.choice(node.untriedMoves)
             state.DoMove(m)
-            node = node.AddChild(m,state) # add child and descend tree
+            node = node.AddChild(m, state) # add child and descend tree
 
         # Rollout - this can often be made orders of magnitude quicker using a state.GetRandomMove() function
         while state.GetMoves() != []: # while state is non-terminal
