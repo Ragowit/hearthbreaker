@@ -1,7 +1,7 @@
 import random
 import unittest
 
-from hearthbreaker.agents.basic_agents import DoNothingBot
+from hearthbreaker.agents.basic_agents import DoNothingBot, PredictableBot
 from tests.agents.testing_agents import SpellTestingAgent, MinionPlayingAgent, PredictableAgentWithoutHeroPower
 from tests.testing_utils import generate_game_for
 from hearthbreaker.cards import *
@@ -579,3 +579,148 @@ class TestMinionCopying(unittest.TestCase):
         game.play_single_turn()
         self.assertEqual(1, len(game.other_player.minions))
         self.assertEqual("Flame Imp", game.other_player.minions[0].card.name)
+
+    def test_SorcerersApprentice(self):
+        game = generate_game_for([SorcerersApprentice, ArcaneMissiles, SorcerersApprentice, Frostbolt, Frostbolt,
+                                  Frostbolt], StonetuskBoar, SpellTestingAgent, DoNothingBot)
+
+        game.play_single_turn()
+        game.play_single_turn()
+        game.play_single_turn()
+
+        self.assertEqual(1, len(game.current_player.minions))
+        self.assertEqual(3, game.current_player.minions[0].calculate_attack())
+        self.assertEqual(2, game.current_player.minions[0].health)
+        self.assertEqual("Sorcerer's Apprentice", game.current_player.minions[0].card.name)
+
+        # Arcane missiles should also have been played, since it is now free
+        self.assertEqual(27, game.other_player.hero.health)
+
+        game = game.copy()
+        # Make sure the other frostbolts have been properly reduced
+        self.assertEqual(1, game.current_player.hand[1].mana_cost(game.current_player))
+        self.assertEqual(1, game.current_player.hand[2].mana_cost(game.current_player))
+
+        game.play_single_turn()
+        game.play_single_turn()
+
+        # Both Sorcer's Apprentices are killed by friendly Frostbolts.
+        self.assertEqual(0, len(game.current_player.minions))
+
+        # Make sure that the cards in hand are no longer reduced
+        self.assertEqual(2, game.current_player.hand[0].mana_cost(game.current_player))
+
+    def test_Loatheb(self):
+        game = generate_game_for(Loatheb, [Assassinate, BoulderfistOgre], MinionPlayingAgent, SpellTestingAgent)
+
+        for turn in range(0, 9):
+            game.play_single_turn()
+
+        game = game.copy()
+
+        self.assertEqual(10, game.other_player.hand[0].mana_cost(game.other_player))
+        self.assertEqual(6, game.other_player.hand[1].mana_cost(game.other_player))
+
+        game.play_single_turn()
+
+        self.assertEqual(5, game.current_player.hand[0].mana_cost(game.current_player))
+        self.assertEqual(6, game.current_player.hand[1].mana_cost(game.current_player))
+
+    def test_KirinTorMage(self):
+        game = generate_game_for([KirinTorMage, BoulderfistOgre, Spellbender],
+                                 StonetuskBoar, SpellTestingAgent, DoNothingBot)
+        for turn in range(0, 4):
+            game.play_single_turn()
+
+        def check_secret_cost():
+            new_game = game.copy()
+            self.assertEqual(1, len(new_game.current_player.minions))
+            self.assertEqual("Kirin Tor Mage", new_game.current_player.minions[0].card.name)
+            self.assertEqual(0, new_game.current_player.hand[1].mana_cost(game.current_player))
+            self.assertEqual("Spellbender", new_game.current_player.hand[1].name)
+
+        game.other_player.bind_once("turn_ended", check_secret_cost)
+        game.play_single_turn()
+
+    def test_WaterElemental(self):
+        game = generate_game_for(WaterElemental, StonetuskBoar, PredictableBot, DoNothingBot)
+
+        for turn in range(0, 11):
+            game.play_single_turn()
+
+        self.assertEqual(25, game.other_player.hero.health)
+        self.assertFalse(game.other_player.hero.frozen_this_turn)
+        self.assertFalse(game.other_player.hero.frozen)
+        self.assertEqual(1, len(game.current_player.minions))
+        self.assertEqual(3, game.current_player.minions[0].calculate_attack())
+        self.assertEqual(6, game.current_player.minions[0].health)
+        self.assertEqual("Water Elemental", game.current_player.minions[0].card.name)
+
+        game = game.copy()
+
+        game.play_single_turn()
+        game.play_single_turn()
+
+        self.assertEqual(22, game.other_player.hero.health)
+
+        # Always false after the end of a turn
+        self.assertFalse(game.other_player.hero.frozen_this_turn)
+        self.assertTrue(game.other_player.hero.frozen)
+
+        # Now make sure that attacking the Water Elemental directly will freeze a character
+        random.seed(1857)
+        game = generate_game_for(WaterElemental, IronbarkProtector, MinionPlayingAgent, PredictableBot)
+        for turn in range(0, 7):
+            game.play_single_turn()
+
+        game = game.copy()
+        game.play_single_turn()
+
+        self.assertEqual(1, len(game.other_player.minions))
+        self.assertEqual(5, game.other_player.minions[0].health)
+        # The player won't have taken damage because of armor, and so shouldn't be frozen
+        self.assertEqual(30, game.current_player.hero.health)
+        self.assertFalse(game.current_player.hero.frozen)
+
+        game.play_single_turn()
+        game.play_single_turn()
+
+        self.assertEqual(28, game.current_player.hero.health)
+        self.assertTrue(game.current_player.hero.frozen)
+
+    def test_BlessingOfWisdom(self):
+        game = generate_game_for([OasisSnapjaw, BlessingOfWisdom, CoreHound], [FacelessManipulator, CoreHound],
+                                 MinionPlayingAgent, PredictableAgentWithoutHeroPower)
+
+        for turn in range(0, 12):
+            game.play_single_turn()
+
+        # The blessing of wisdom should be attached to the Oasis Snapjaw, which the Faceless has copied.
+        # The copied snapjaw should still draw cards for the first player
+
+        self.assertEqual(1, len(game.current_player.minions))
+        self.assertEqual("Oasis Snapjaw", game.current_player.minions[0].card.name)
+
+        self.assertEqual(8, len(game.other_player.hand))
+
+    def test_TirionFordring(self):
+        game = generate_game_for(TirionFordring, StonetuskBoar, MinionPlayingAgent, DoNothingBot)
+
+        # Tirion Fordring should be played
+        for turn in range(0, 15):
+            game.play_single_turn()
+
+        self.assertEqual(1, len(game.players[0].minions))
+        self.assertEqual(6, game.players[0].minions[0].calculate_attack())
+        self.assertEqual(6, game.players[0].minions[0].health)
+        self.assertEqual("Tirion Fordring", game.players[0].minions[0].card.name)
+        self.assertEqual(None, game.players[0].hero.weapon)
+
+        game = game.copy()
+
+        # Let Tirion Fordring die, and a weapon should be equiped
+        tirion = game.players[0].minions[0]
+        tirion.die(None)
+        tirion.activate_delayed()
+        self.assertEqual(5, game.players[0].hero.weapon.base_attack)
+        self.assertEqual(3, game.players[0].hero.weapon.durability)
