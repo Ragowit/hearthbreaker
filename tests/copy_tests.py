@@ -724,3 +724,124 @@ class TestMinionCopying(unittest.TestCase):
         tirion.activate_delayed()
         self.assertEqual(5, game.players[0].hero.weapon.base_attack)
         self.assertEqual(3, game.players[0].hero.weapon.durability)
+
+    def test_Undertaker(self):
+        game = generate_game_for([Undertaker, GoldshireFootman, HarvestGolem, AnubarAmbusher], HauntedCreeper,
+                                 MinionPlayingAgent, MinionPlayingAgent)
+
+        for turn in range(0, 3):
+            game.play_single_turn()
+
+        self.assertEqual(2, len(game.current_player.minions))
+        self.assertEqual("Goldshire Footman", game.current_player.minions[0].card.name)
+        self.assertEqual("Undertaker", game.current_player.minions[1].card.name)
+        self.assertEqual(1, game.current_player.minions[1].calculate_attack())
+        self.assertEqual(2, game.current_player.minions[1].calculate_max_health())
+
+        new_game = game.copy()
+
+        new_game.play_single_turn()
+
+        self.assertEqual(1, new_game.other_player.minions[1].calculate_attack())
+        self.assertEqual(2, new_game.other_player.minions[1].calculate_max_health())
+
+        new_game.play_single_turn()
+
+        self.assertEqual(3, len(new_game.current_player.minions))
+        self.assertEqual("Harvest Golem", new_game.current_player.minions[0].card.name)
+        self.assertEqual("Goldshire Footman", new_game.current_player.minions[1].card.name)
+        self.assertEqual("Undertaker", new_game.current_player.minions[2].card.name)
+        self.assertEqual(2, new_game.current_player.minions[2].calculate_attack())
+        self.assertEqual(3, new_game.current_player.minions[2].calculate_max_health())
+
+        self.assertEqual("Undertaker", game.current_player.minions[1].card.name)
+        self.assertEqual(1, game.current_player.minions[1].calculate_attack())
+        self.assertEqual(2, game.current_player.minions[1].calculate_max_health())
+
+        new_game.current_player.minions[2].silence()
+
+        new_game.play_single_turn()
+        new_game.play_single_turn()
+
+        self.assertEqual(1, new_game.current_player.minions[3].calculate_attack())
+        self.assertEqual(2, new_game.current_player.minions[3].calculate_max_health())
+
+        game.play_single_turn()
+        game.play_single_turn()
+
+        self.assertEqual("Undertaker", game.current_player.minions[2].card.name)
+        self.assertEqual(2, game.current_player.minions[2].calculate_attack())
+        self.assertEqual(3, game.current_player.minions[2].calculate_max_health())
+
+    def test_ZombieChow(self):
+        game = generate_game_for([ZombieChow, ZombieChow, ZombieChow, AuchenaiSoulpriest], StonetuskBoar,
+                                 MinionPlayingAgent, DoNothingBot)
+
+        game.play_single_turn()
+
+        game = game.copy()
+
+        game.other_player.hero.health = 10
+        self.assertEqual(1, len(game.current_player.minions))
+        self.assertEqual("Zombie Chow", game.current_player.minions[0].card.name)
+        game.current_player.minions[0].die(None)
+        game.check_delayed()
+        self.assertEqual(15, game.other_player.hero.health)
+
+    def test_DarkCultist(self):
+        game = generate_game_for([StonetuskBoar, DarkCultist], StonetuskBoar, SpellTestingAgent, DoNothingBot)
+
+        for turn in range(0, 5):
+            game.play_single_turn()
+
+        self.assertEqual(2, len(game.current_player.minions))
+        self.assertEqual("Dark Cultist", game.current_player.minions[0].card.name)
+        self.assertEqual("Stonetusk Boar", game.current_player.minions[1].card.name)
+        self.assertEqual(1, game.current_player.minions[1].health)
+        game = game.copy()
+        game.current_player.minions[0].die(None)
+        game.check_delayed()
+        self.assertEqual(4, game.current_player.minions[0].health)
+
+    def test_Feugen(self):
+        game = generate_game_for([Stalagg, Feugen], Assassinate, MinionPlayingAgent, SpellTestingAgent)
+
+        for turn in range(0, 10):
+            game.play_single_turn()
+
+        # Stalagg should have been played and assassinated, leaving no minions behind
+
+        self.assertEqual(0, len(game.other_player.minions))
+        game = game.copy()
+
+        game.play_single_turn()
+        game.play_single_turn()
+
+        # Feugen is assassinated, which should summon Thaddius
+        self.assertEqual(1, len(game.other_player.minions))
+        self.assertEqual("Thaddius", game.other_player.minions[0].card.name)
+
+    def test_Stalagg(self):
+        game = generate_game_for([Feugen, Stalagg], StonetuskBoar, MinionPlayingAgent, DoNothingBot)
+
+        for turn in range(0, 9):
+            game.play_single_turn()
+
+        # Feugen should have been played we will silence and kill him, which should still summon Thaddius so long as
+        # Stalagg isn't also silenced
+
+        self.assertEqual(1, len(game.current_player.minions))
+        game.current_player.minions[0].silence()
+        game.current_player.minions[0].die(None)
+        game.check_delayed()
+        self.assertEqual(0, len(game.current_player.minions))
+
+        game.play_single_turn()
+        game.play_single_turn()
+
+        # Stalagg is played,  We will kill him, which should summon Thaddius
+        self.assertEqual(1, len(game.current_player.minions))
+        game = game.copy()
+        game.current_player.minions[0].die(None)
+        game.check_delayed()
+        self.assertEqual("Thaddius", game.current_player.minions[0].card.name)

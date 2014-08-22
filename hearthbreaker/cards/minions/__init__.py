@@ -167,7 +167,13 @@ from hearthbreaker.cards.minions.neutral import (
     BaronRivendare,
     DancingSwords,
     Deathlord,
-    SpectralKnight
+    SpectralKnight,
+    Undertaker,
+    WailingSoul,
+    ZombieChow,
+    Feugen,
+    Stalagg,
+    MadScientist,
 )
 
 from hearthbreaker.cards.minions.druid import (
@@ -213,7 +219,8 @@ from hearthbreaker.cards.minions.priest import (
     Lightwell,
     NorthshireCleric,
     ProphetVelen,
-    TempleEnforcer
+    TempleEnforcer,
+    DarkCultist,
 )
 
 from hearthbreaker.cards.minions.rogue import (
