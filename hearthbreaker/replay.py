@@ -6,81 +6,12 @@ import hearthbreaker.constants
 import hearthbreaker.game_objects
 import hearthbreaker.cards
 import hearthbreaker.game_objects
+import hearthbreaker.proxies
 
 
 class ReplayException(Exception):
     def __init__(self, message):
         super().__init__(message)
-
-
-class ProxyCharacter:
-    def __init__(self, character_ref, game=None):
-        if type(character_ref) is str:
-            self.character_ref = character_ref
-        elif type(character_ref) is hearthbreaker.game_objects.Hero:
-            if character_ref == game.players[0].hero:
-                self.character_ref = "p1"
-            else:
-                self.character_ref = "p2"
-        elif type(character_ref) is hearthbreaker.game_objects.Minion:
-            if character_ref.player == game.players[0].hero:
-                self.character_ref = "p1:" + str(character_ref.index)
-            else:
-                self.character_ref = "p2:" + str(character_ref.index)
-
-    def resolve(self, game):
-        ref = self.character_ref.split(':')
-        if ref[0] == "p1":
-            char = game.players[0].hero
-        else:
-            char = game.players[1].hero
-        if len(ref) > 1:
-            if ref[0] == "p1":
-                char = game.players[0].minions[int(ref[1])]
-            else:
-                char = game.players[1].minions[int(ref[1])]
-
-        return char
-
-    def __str__(self):
-        return self.character_ref
-
-    def to_output(self):
-        return str(self)
-
-
-class ProxyCard:
-    def __init__(self, card_reference, game=None):
-        self.card_ref = -1
-        if isinstance(card_reference, str):
-            self.card_ref = card_reference
-        else:
-            index = 0
-            for card in game.current_player.hand:
-                if card is card_reference:
-                    self.card_ref = index
-                    break
-                index += 1
-
-        if self.card_ref is -1:
-            raise ReplayException("Could not find card in hand")
-
-        self.targetable = False
-
-    def set_option(self, option):
-        self.card_ref = ":" + str(option)
-
-    def resolve(self, game):
-        ref = self.card_ref.split(':')
-        if len(ref) > 1:
-            game.current_player.agent.next_option = int(ref[1])
-        return game.current_player.hand[int(ref[0])]
-
-    def __str__(self):
-        return str(self.card_ref)
-
-    def to_output(self):
-        return str(self)
 
 
 class ReplayAction:
@@ -92,7 +23,7 @@ class SpellAction(ReplayAction):
     def __init__(self, card, target=None, game=None):
         self.card = card
         if target is not None:
-            self.target = ProxyCharacter(target, game)
+            self.target = hearthbreaker.proxies.ProxyCharacter(target)
         else:
             self.target = None
 
@@ -113,7 +44,7 @@ class MinionAction(ReplayAction):
         self.card = card
         self.index = index
         if target is not None:
-            self.target = ProxyCharacter(target, game)
+            self.target = hearthbreaker.proxies.ProxyCharacter(target)
         else:
             self.target = None
 
@@ -133,8 +64,8 @@ class MinionAction(ReplayAction):
 
 class AttackAction(ReplayAction):
     def __init__(self, character, target, game=None):
-        self.character = ProxyCharacter(character, game)
-        self.target = ProxyCharacter(target, game)
+        self.character = hearthbreaker.proxies.ProxyCharacter(character)
+        self.target = hearthbreaker.proxies.ProxyCharacter(target)
 
     def to_output_string(self):
         return 'attack({0},{1})'.format(self.character.to_output(), self.target.to_output())
@@ -149,7 +80,7 @@ class PowerAction(ReplayAction):
     def __init__(self, target=None, game=None):
         self.target = target
         if target is not None:
-            self.target = ProxyCharacter(target, game)
+            self.target = hearthbreaker.proxies.ProxyCharacter(target)
         else:
             self.target = None
         self.game = game
@@ -233,9 +164,9 @@ class Replay:
                     self.actions.append(SpellAction(self.last_card, game=self.game))
                     self.last_card = None
 
-    def record_card_played(self, card):
+    def record_card_played(self, card, index):
         self._save_played_card()
-        self.last_card = ProxyCard(card, self.game)
+        self.last_card = hearthbreaker.proxies.ProxyCard(index, self.game)
         self.last_card.targetable = card.targetable
         self.card_class = type(card)
 
@@ -251,7 +182,7 @@ class Replay:
         self.actions.append(PowerAction(game=self.game))
 
     def record_power_target(self, target):
-        self.actions[len(self.actions) - 1].target = ProxyCharacter(target, self.game)
+        self.actions[len(self.actions) - 1].target = hearthbreaker.proxies.ProxyCharacter(target)
 
     def record_kept_index(self, cards, card_index):
         k_arr = []
@@ -315,7 +246,7 @@ class Replay:
                     target = args[1]
                 else:
                     target = None
-                self.actions.append(SpellAction(ProxyCard(card), target))
+                self.actions.append(SpellAction(hearthbreaker.proxies.ProxyCard(card), target))
 
             elif action == 'summon':
                 card = args[0]
@@ -327,7 +258,7 @@ class Replay:
                 else:
                     target = None
 
-                self.actions.append(MinionAction(ProxyCard(card), index, target))
+                self.actions.append(MinionAction(hearthbreaker.proxies.ProxyCard(card), index, target))
             elif action == 'attack':
                 self.actions.append(AttackAction(args[0], args[1]))
             elif action == 'power':

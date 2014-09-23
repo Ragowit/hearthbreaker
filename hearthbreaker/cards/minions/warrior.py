@@ -1,3 +1,4 @@
+from hearthbreaker.effects.minion import Buff, Charge
 import hearthbreaker.targeting
 from hearthbreaker.constants import CHARACTER_CLASS, CARD_RARITY
 from hearthbreaker.game_objects import MinionCard, Minion, WeaponCard, Weapon
@@ -27,13 +28,15 @@ class Armorsmith(MinionCard):
         super().__init__("Armorsmith", 2, CHARACTER_CLASS.WARRIOR, CARD_RARITY.RARE)
 
     def create_minion(self, player):
-        def gain_one_armor(minion):
+        def gain_one_armor(minion, attacker):
             if minion.player is player:
                 player.hero.increase_armor(1)
 
         minion = Minion(1, 4)
-        player.game.bind("minion_damaged", gain_one_armor)
-        minion.bind_once("silenced", lambda: player.game.unbind("minion_damaged", gain_one_armor))
+        player.bind("minion_damaged", gain_one_armor)
+        player.opponent.bind("minion_damaged", gain_one_armor)
+        minion.bind_once("silenced", lambda: player.unbind("minion_damaged", gain_one_armor))
+        minion.bind_once("silenced", lambda: player.opponent.unbind("minion_damaged", gain_one_armor))
         return minion
 
 
@@ -56,12 +59,7 @@ class FrothingBerserker(MinionCard):
         super().__init__("Frothing Berserker", 3, CHARACTER_CLASS.WARRIOR, CARD_RARITY.RARE)
 
     def create_minion(self, player):
-        def gain_one_attack(m):
-            minion.change_attack(1)
-
-        minion = Minion(2, 4)
-        player.game.bind("minion_damaged", gain_one_attack)
-        minion.bind_once("silenced", lambda: player.game.unbind("minion_damaged", gain_one_attack))
+        minion = Minion(2, 4, effects=[Buff("damaged", "minion", "self", 1, 0, "both", True)])
         return minion
 
 
@@ -102,7 +100,7 @@ class WarsongCommander(MinionCard):
     def create_minion(self, player):
         def give_charge(m):
             if m is not minion and m.calculate_attack() <= 3:
-                m.charge = True
+                m.add_effect(Charge())
                 m.exhausted = False
 
         def silence():

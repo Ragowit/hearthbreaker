@@ -1,6 +1,8 @@
 import copy
 import random
 import abc
+import hearthbreaker.effects.minion
+import hearthbreaker.effects.player
 
 import hearthbreaker.powers
 import hearthbreaker.targeting
@@ -185,27 +187,6 @@ class Bindable:
                 del (self.events[event])
 
 
-class Effect (metaclass=abc.ABCMeta):
-
-    def __init__(self):
-        self.target = None
-
-    def set_target(self, target):
-        self.target = target
-
-    @abc.abstractmethod
-    def apply(self):
-        pass
-
-    @abc.abstractmethod
-    def unapply(self):
-        pass
-
-    @abc.abstractmethod
-    def __str__(self):
-        pass
-
-
 class Character(Bindable, metaclass=abc.ABCMeta):
     """
     A Character in Hearthstone is something that can attack, i.e. a :class:`Hero` or :class:`Minion`.
@@ -260,6 +241,10 @@ class Character(Bindable, metaclass=abc.ABCMeta):
         self.effects = []
         #: An integer describing when this character was created.  The lower, the earlier it was created
         self.born = -1
+        #: An integer describing how much the attack of this minion has been adjusted
+        self.attack_delta = 0
+        #: An integer describing how much the health of this minion has been adjusted
+        self.health_delta = 0
 
     def attack(self):
         """
@@ -324,14 +309,14 @@ class Character(Bindable, metaclass=abc.ABCMeta):
         bonuses for this turn
         """
 
-        return self.base_attack + self.temp_attack
+        return self.base_attack + + self.attack_delta + self.temp_attack
 
     def calculate_max_health(self):
         """
         Calculates the maximum amount of health this :class:`Character` has, including the base health, and any aura
         effects
         """
-        return self.base_health
+        return self.base_health + self.health_delta
 
     def delayed_trigger(self, event, *args):
         """
@@ -386,13 +371,13 @@ class Character(Bindable, metaclass=abc.ABCMeta):
                 self.trigger("damaged_by_spell", amount, attacker)
             self.delayed_trigger("damaged", amount, attacker)
             if isinstance(self, Minion):
-                self.game.trigger("minion_damaged", self)
+                self.player.trigger("minion_damaged", self, attacker)
             elif isinstance(self, Hero):
                 # The response of a secret to damage must happen immediately
                 self.trigger("hero_damaged", amount, attacker)
             self.health -= amount
             if issubclass(type(attacker), Character):
-                attacker.trigger("did_damage", amount, self)
+                attacker.trigger("did_damage", self, amount)
             self.trigger("health_changed")
             if not self.enraged and self.health != self.calculate_max_health():
                 self.enraged = True
@@ -407,15 +392,7 @@ class Character(Bindable, metaclass=abc.ABCMeta):
 
         :param int amount: The amount to change the attack by
         """
-        def apply_silence(minion, player=None):
-            def silence():
-                minion.base_attack -= amount
-            minion.bind_once('silenced', silence)
-            minion.bind("copied", apply_silence)
-
-        self.trigger("attack_changed", amount)
-        self.base_attack += amount
-        apply_silence(self)
+        self.attack_delta += amount
 
     def change_temp_attack(self, amount):
         """
@@ -434,18 +411,11 @@ class Character(Bindable, metaclass=abc.ABCMeta):
 
         :param int amount: the amount to increase health by
         """
-        def apply_silence(minion, player=None):
-            def silence():
-                minion.base_health -= amount
-                if minion.calculate_max_health() < minion.health:
-                    minion.health = minion.calculate_max_health()
-            minion.bind_once('silenced', silence)
-            minion.bind("copied", apply_silence)
+
         self.trigger("health_increased", amount)
-        self.base_health += amount
+        self.health_delta += amount
         self.health += amount
         self.trigger("health_changed")
-        apply_silence(self)
 
     def decrease_health(self, amount):
         """
@@ -455,18 +425,8 @@ class Character(Bindable, metaclass=abc.ABCMeta):
 
         :param int amount: the amount to decrease health by
         """
-        def apply_silence(minion, player=None):
-            def silence():
-                if minion.calculate_max_health() == minion.health:
-                    minion.base_health += amount
-                    minion.health += amount
-                else:
-                    minion.base_health += amount
-            minion.bind_once('silenced', silence)
-            minion.bind("copied", apply_silence)
-
         self.trigger("health_decreased", amount)
-        self.base_health -= amount
+        self.health_delta -= amount
         if self.health > self.calculate_max_health():
             self.health = self.calculate_max_health()
 
@@ -474,7 +434,17 @@ class Character(Bindable, metaclass=abc.ABCMeta):
             self.enraged = False
             self.trigger("unenraged")
         self.trigger("health_changed")
-        apply_silence(self)
+
+    def set_health_to(self, new_health):
+        """
+        Sets the amount of total health this :class:`Character` has.  This will adjust its actual health if necessary
+        :param new_health: An integer specifying what this character's new health should be
+        """
+        diff = new_health - (self.base_health + self.health_delta)
+        if diff > 0:
+            self.increase_health(diff)
+        elif diff < 0:
+            self.decrease_health(-diff)
 
     def freeze(self):
         """
@@ -538,7 +508,7 @@ class Character(Bindable, metaclass=abc.ABCMeta):
         Applies the the given effect to the :class:`Character`.  The effect will be unapplied in the case of silence,
         and will be applied to any copies that are made.
 
-        :param Effect effect: The effect to apply to this :class:`Character
+        :param MinionEffect effect: The effect to apply to this :class:`Character
         """
         if type(effect) not in self.player.effect_count:
             self.player.effect_count[type(effect)] = 0
@@ -546,7 +516,8 @@ class Character(Bindable, metaclass=abc.ABCMeta):
         self.player.effect_count[type(effect)] += 1
         effect.set_target(self)
         effect.apply()
-        self.effects.append(effect)
+        if not isinstance(effect, hearthbreaker.effects.minion.TranientEffect):
+            self.effects.append(effect)
 
 
 def _is_spell_targetable(target):
@@ -840,6 +811,7 @@ class SecretCard(Card, metaclass=abc.ABCMeta):
     def reveal(self):
         self.player.trigger("secret_revealed", self)
         self.player.secrets.remove(self)
+        self.deactivate(self.player)
 
     @abc.abstractmethod
     def _reveal(self, *args):
@@ -870,18 +842,26 @@ class Minion(Character):
         self.battlecry = battlecry
         self.deathrattle = deathrattle
         self.base_deathrattle = deathrattle
+        self.aura_attack = 0
+        self.aura_health = 0
         self.exhausted = True
         self.removed = False
         if effects:
             self._effects_to_add = effects
         else:
             self._effects_to_add = []
+
         self.bind("did_damage", self.__on_did_damage)
 
     def __on_did_damage(self, amount, target):
         self.stealth = False
 
     def add_to_board(self, index):
+        for player in self.game.players:
+            for minion in player.minions:
+                for aura in player.auras:
+                    if aura.filter(minion):
+                        aura.unapply(minion)
         self.game.minion_counter += 1
         self.player.minions.insert(index, self)
         self.born = self.game.minion_counter
@@ -892,9 +872,14 @@ class Minion(Character):
             count += 1
         self.index = index
         self.active = True
-        self.health += self.calculate_max_health() - self.base_health
+        self.health += self.calculate_max_health() - self.base_health - self.health_delta
         for effect in self._effects_to_add:
             self.add_effect(effect)
+        for player in self.game.players:
+            for minion in player.minions:
+                for aura in player.auras:
+                    if aura.filter(minion):
+                        aura.apply(minion)
         self.trigger("added_to_board", self, index)
 
     def calculate_attack(self):
@@ -902,28 +887,31 @@ class Minion(Character):
         Calculates the amount of attack this :class:`Minion` has, including the base attack, any temporary attack
         bonuses for this turn and any aura effects
         """
-        aura_attack = 0
-        for aura in self.player.auras:
-            if aura.filter(self):
-                aura_attack += aura.attack
-        return super().calculate_attack() + aura_attack
+        return super().calculate_attack() + self.aura_attack
 
     def calculate_max_health(self):
         """
         Calculates the maximum amount of health this :class:`Character` has, including the base health, and any aura
         effects
         """
-        aura_health = 0
-        for aura in self.player.auras:
-            if aura.filter(self):
-                aura_health += aura.health
-        return self.base_health + aura_health
+
+        return super().calculate_max_health() + self.aura_health
 
     def remove_from_board(self):
+        for player in self.game.players:
+            for minion in player.minions:
+                for aura in player.auras:
+                    if aura.filter(minion):
+                        aura.unapply(minion)
         for minion in self.player.minions:
             if minion.index > self.index:
                 minion.index -= 1
         self.game.remove_minion(self, self.player)
+        for player in self.game.players:
+            for minion in player.minions:
+                for aura in player.auras:
+                    if aura.filter(minion):
+                        aura.apply(minion)
         self.removed = True
 
     def replace(self, new_minion):
@@ -939,10 +927,20 @@ class Minion(Character):
         self.removed = True
         self.game.minion_counter += 1
         new_minion.born = self.game.minion_counter
+        for player in self.game.players:
+            for minion in player.minions:
+                for aura in player.auras:
+                    if aura.filter(minion):
+                        aura.unapply(minion)
         self.player.minions[self.index] = new_minion
         for effect in new_minion._effects_to_add:
             new_minion.add_effect(effect)
         new_minion.health += new_minion.calculate_max_health() - new_minion.base_health
+        for player in self.game.players:
+            for minion in player.minions:
+                for aura in player.auras:
+                    if aura.filter(minion):
+                        aura.apply(minion)
 
     def attack(self):
         super().attack()
@@ -953,26 +951,43 @@ class Minion(Character):
         affected this character (immune, attack & health increases, frozen, windfury)
         """
         self.temp_attack = 0
+        self.attack_delta = 0
+        if self.health_delta > 0:
+            self.health_delta = 0
+            if self.health > self.calculate_max_health():
+                self.health = self.calculate_max_health()
+        elif self.health_delta < 0:
+            if self.health == self.calculate_max_health():
+                self.health_delta = 0
+                self.health = self.calculate_max_health()
         self.immune = False
         self.windfury = False
+        self.taunt = False
+        self.charge = False
+        self.stealth = False
+        self.can_be_targeted_by_spells = True
         self.frozen = False
         self.frozen_this_turn = False
+        for player in self.game.players:
+            for minion in player.minions:
+                for aura in player.auras:
+                    if aura.filter(minion):
+                        aura.unapply(minion)
         for effect in reversed(self.effects):
             self.player.effect_count[type(effect)] -= 1
             effect.unapply()
         self.effects = []
-        self.taunt = False
-        self.stealth = False
-        self.charge = False
         self.player.spell_damage -= self.spell_damage
         self.spell_damage = 0
         self.divine_shield = False
         self.battlecry = None
         self.deathrattle = None
-        self.can_be_targeted_by_spells = True
+        for player in self.game.players:
+            for minion in player.minions:
+                for aura in player.auras:
+                    if aura.filter(minion):
+                        aura.apply(minion)
         self.trigger("silenced")
-        if "copied" in self.events:
-            del self.events["copied"]
 
     def damage(self, amount, attacker):
         if self.divine_shield:
@@ -991,14 +1006,15 @@ class Minion(Character):
             deathrattle = self.deathrattle
 
             def delayed_death(c):
-                self.silence()
+
                 if deathrattle is not None:
                     deathrattle(self)
+                self.player.trigger("minion_died", self, by)
+                self.silence()
                 self.player.graveyard.add(self.card.name)
             self.bind_once("died", delayed_death)
             super().die(by)
-
-            self.player.trigger("minion_died", self, by)
+            self.player.dead_this_turn.append(self)
             self.remove_from_board()
 
     def can_attack(self):
@@ -1013,97 +1029,17 @@ class Minion(Character):
     def __str__(self):  # pragma: no cover
         return "({0}) ({1}) {2} at index {3}".format(self.calculate_attack(), self.health, self.card.name, self.index)
 
-    def add_aura(self, attack, health, affected_players, filter_func=lambda m: True):
-        """
-        Adds an aura effect to some minions on the board minions.  This aura can increase the attack or health of
-        the minions, or both.  The effect can be limited to only certain minions with the use of a filter
-        function, and by specifying which player(s) the aura affects.
-
-        This aura is automatically unapplied in case of silence, and applied to any copies of this minion
-
-        :param int attack: The amount to increase minions' attack by
-        :param int health: The amount to increase minion's health AND max health by
-        :param list[hearthbreaker.game_objects.Player] affected_players: A list of players whose minions should be
-                                                                         affected by this aura
-        :param function filter_func: A function that selects which minions to apply this effect to. Takes
-                                     one paramter: the minion to test and returns true if the minion should be
-                                     affected, and false otherwise.
-        """
-
-        complete_filter_func = lambda m: m is not self and filter_func(m)
-
-        class Aura:
-            def __init__(self):
-                self.attack = attack
-                self.health = health
-                self.filter = complete_filter_func
-        aura = Aura()
-        for player in affected_players:
-            player.auras.append(aura)
-            if health > 0:
-                for minion in filter(complete_filter_func, player.minions):
-                    minion.health += health
-                    minion.trigger("health_changed")
-
-        def silenced():
-            for player in affected_players:
-                player.auras.remove(aura)
-                if health > 0:
-                    for filtered_minion in filter(complete_filter_func, player.minions):
-                        if filtered_minion.health > filtered_minion.calculate_max_health():
-                            filtered_minion.health = filtered_minion.calculate_max_health()
-                            filtered_minion.trigger("health_changed")
-
-        self.bind_once("silenced", silenced)
-
-    def add_adjacency_aura(self, attack, health, player):
-        """
-        Adds an aura to this minion that only affects adjacent minions.  This aura can affect the attack or health of
-        adjacent minions or both.
-
-        This aura is automatically unapplied in case of silence, and applied to any copied minions.
-
-        :param int attack: The amount to increase the attack power of the adjacent minions
-        :param int health: The amount to increase the health of the adjacent minions
-        :param hearthbreaker.game_objects.Player player: The player who the adjacent minions belong to.
-        """
-        me = self
-
-        class Aura:
-            def __init__(self):
-                self.attack = attack
-                self.health = health
-                self.filter = lambda mini: mini.index is me.index - 1 or mini.index is me.index + 1
-        aura = Aura()
-        player.auras.append(aura)
-        if health > 0:
-            for minion in filter(aura.filter, player.minions):
-                minion.health += health
-                minion.trigger("health_changed")
-
-        def silenced():
-            player.auras.remove(aura)
-            if health > 0:
-                for filtered_minion in filter(aura.filter, player.minions):
-                    if filtered_minion.health > filtered_minion.calculate_max_health():
-                        filtered_minion.health = filtered_minion.calculate_max_health()
-                        filtered_minion.trigger("health_changed")
-
-        def copied(new_minion, new_owner):
-            new_minion.add_adjacency_aura(attack, health, new_owner)
-
-        self.bind_once("silenced", silenced)
-        self.bind("copied", copied)
-
     def copy(self, new_owner, new_game=None):
         new_minion = Minion(self.base_attack, self.base_health, self.battlecry, self.base_deathrattle)
         new_minion.health = self.health
+        new_minion.attack_delta = self.attack_delta
+        new_minion.health_delta = self.health_delta
         new_minion.events = dict()
         new_minion.bind("did_damage", self.__on_did_damage)
-        new_minion.stealth = self.stealth
-        new_minion.taunt = self.taunt
         new_minion.divine_shield = self.divine_shield
+        new_minion.taunt = self.taunt
         new_minion.charge = self.charge
+        new_minion.stealth = self.stealth
         new_minion.can_be_targeted_by_spells = self.can_be_targeted_by_spells
         new_minion.spell_damage = self.spell_damage
         new_minion.temp_attack = self.temp_attack
@@ -1121,8 +1057,24 @@ class Minion(Character):
             new_minion.game = new_owner.game
         new_minion.effects = []
         new_minion._effects_to_add = [copy.copy(effect) for effect in self.effects]
-        self.trigger("copied", new_minion, new_owner)
         return new_minion
+
+    @staticmethod
+    def __from_json__(md, player, game):
+        minion = Minion(md['attack'], md['max_health'])
+        minion.health = md['health']
+        minion.windfury = md['windfury']
+        minion.divine_shield = md['divine_shield']
+        minion.exhausted = md['exhausted']
+        minion.active = not md['already_attacked']
+        minion.card = card_lookup(md["name"])
+        minion.game = game
+        minion.player = player
+        for effect in md['effects']:
+            new_effect = hearthbreaker.effects.minion.MinionEffect.from_json(game, **effect)
+            minion._effects_to_add.append(new_effect)
+
+        return minion
 
     def bounce(self):
         if len(self.player.hand) < 10:
@@ -1132,6 +1084,46 @@ class Minion(Character):
         else:
             self.die(None)
             self.game.check_delayed()
+
+    def __to_json__(self):
+        if self.frozen_this_turn and self.player is self.player.game.current_player:
+            frozen_for = 3
+        elif self.frozen_this_turn:
+            frozen_for = 2
+        elif self.frozen:
+            frozen_for = 1
+        else:
+            frozen_for = 0
+        effects = copy.copy(self.effects)
+        if self.charge:
+            effects.append(hearthbreaker.effects.minion.Charge())
+        if self.taunt:
+            effects.append(hearthbreaker.effects.minion.Taunt())
+        if not self.can_be_targeted_by_spells:
+            effects.append(hearthbreaker.effects.minion.NoSpellTarget())
+        if self.stealth:
+            effects.append(hearthbreaker.effects.minion.Stealth())
+        if self.deathrattle:
+            effects.append(hearthbreaker.effects.minion.OriginalDeathrattle())
+        if self.attack_delta != 0:
+            effects.append(hearthbreaker.effects.minion.ChangeAttack(self.attack_delta))
+        if self.health_delta != 0:
+            effects.append(hearthbreaker.effects.minion.ChangeHealth(self.health_delta))
+        r_val = {
+            'name': self.card.name,
+            'sequence_id': self.born,
+            'position': self.index,
+            'health': self.health,
+            'max_health': self.base_health,
+            'attack': self.base_attack,
+            "windfury": self.windfury,
+            "divine_shield": self.divine_shield,
+            "exhausted": self.exhausted,
+            "already_attacked": not self.active,
+            'frozen_for': frozen_for,
+            'effects': effects,
+        }
+        return r_val
 
 
 class WeaponCard(Card, metaclass=abc.ABCMeta):
@@ -1207,20 +1199,24 @@ class Weapon(Bindable):
     attacks is handled by :class:`Hero`, but it can be modified through the use of events.
     """
 
-    def __init__(self, attack_power, durability, battlecry=None):
+    def __init__(self, attack_power, durability, battlecry=None, deathrattle=None):
         """
-        Creates a new weapon with the given attack power and durability.  A battlecry can also optionally be set.
+        Creates a new weapon with the given attack power and durability.  A battlecry and deathrattle can also
+        optionally be set.
         :param int attack_power: The amount of attack this weapon gives the hero
         :param int durability: The number of times this weapon can be used to attack before being discarded
-        :param function battlecry: Called when this weapon is first placed
+        :param function battlecry: Called when this weapon is equipped
+        :param function deathrattle: Called when the weapon is destroyed
         """
         super().__init__()
         # : The amount of attack this weapon gives the hero
         self.base_attack = attack_power
         # : The number of times this weapon can be used to attack before being discarded
         self.durability = durability
-        #: Called when this weapon is first placed
+        #: Called when this weapon is equipped
         self.battlecry = battlecry
+        #: Called when the weapon is destroyed
+        self.deathrattle = deathrattle
         #: The :class:`Player` associated with this weapon
         self.player = None
         #: The :class:`WeaponCard` that created this weapon
@@ -1230,10 +1226,14 @@ class Weapon(Bindable):
         new_weapon = copy.copy(self)
         new_weapon.events = copy.copy(self.events)
         new_weapon.player = new_owner
-        self.trigger("copied", new_weapon, new_owner)
+        return new_weapon
 
     def destroy(self):
         self.trigger("destroyed")
+        # Deathrattle is triggered no matter how the weapon is destroyed, see
+        # http://www.hearthhead.com/card=1805/deaths-bite#comments:id=1983510
+        if self.deathrattle is not None:
+            self.deathrattle(self)
         self.player.hero.weapon = None
         if self.player.game.current_player is self.player:
             self.player.hero.change_temp_attack(-self.base_attack)
@@ -1247,6 +1247,22 @@ class Weapon(Bindable):
         if self.player.game.current_player is self.player:
             self.player.hero.change_temp_attack(self.base_attack)
         self.player.hero.trigger("weapon_equipped")
+
+    def __to_json__(self):
+        return {
+            'name': self.card.name,
+            'attack': self.base_attack,
+            'durability': self.durability,
+        }
+
+    @staticmethod
+    def __from_json__(wd):
+        weapon_card = card_lookup(wd['name'])
+        weapon = weapon_card.create_weapon(None)
+        weapon.base_attack = wd['attack']
+        weapon.durability = wd['durability']
+        weapon.card = weapon_card
+        return weapon
 
 
 class Deck:
@@ -1290,6 +1306,32 @@ class Deck:
                 return
         raise GameException("Tried to put back a card that didn't come from this deck")
 
+    def __to_json__(self):
+        card_list = []
+        for index in range(0, 30):
+            card_list.append({
+                'name': self.cards[index].name,
+                'used': self.used[index]
+            })
+        return card_list
+
+    @classmethod
+    def __from__to_json__(cls, dd, character_class):
+        cards = []
+        used = []
+        left = 0
+        for entry in dd:
+            cards.append(card_lookup(entry["name"]))
+            used.append(entry["used"])
+            if entry["used"]:
+                left += 1
+        deck = Deck.__new__(Deck)
+        deck.cards = cards
+        deck.used = used
+        deck.left = left
+        deck.character_class = character_class
+        return deck
+
 
 class Hero(Character):
     def __init__(self, character_class, player):
@@ -1303,9 +1345,9 @@ class Hero(Character):
 
     def copy(self, new_owner, new_game):
         new_hero = copy.copy(self)
-        new_hero.events = copy.copy(self.events)
+        new_hero.events = dict()
         if self.weapon:
-            new_hero.weapon = self.weapon.copy(new_owner, new_game)
+            new_hero.weapon = self.weapon.copy(new_owner)
         new_hero.player = new_owner
         new_hero.power = copy.copy(self.power)
         new_hero.power.hero = new_hero
@@ -1339,6 +1381,46 @@ class Hero(Character):
         self.trigger("found_power_target", target)
         return target
 
+    def __to_json__(self):
+        if self.frozen_this_turn and self.player is self.player.game.current_player:
+            frozen_for = 3
+        elif self.frozen_this_turn:
+            frozen_for = 2
+        elif self.frozen:
+            frozen_for = 1
+        else:
+            frozen_for = 0
+        return {
+            'character': hearthbreaker.constants.CHARACTER_CLASS.to_str(self.character_class),
+            'weapon': self.weapon,
+            'health': self.health,
+            'armor': self.armor,
+            'attack': self.base_attack,
+            'immune': self.immune,
+            'frozen_for': frozen_for,
+            'windfury': self.windfury,
+            'used_windfury': self.used_windfury,
+            'already_attacked': not self.active
+        }
+
+    @classmethod
+    def __from_json__(cls, hd):
+        hero = Hero(hearthbreaker.constants.CHARACTER_CLASS.from_str(hd["character"]), None)
+        if hd["frozen_for"] == 3 or hd["frozen_for"] == 2:
+            hero.frozen_this_turn = True
+        elif hd["frozen_for"] > 0:
+            hero.frozen = True
+        hero.health = hd["health"]
+        hero.base_attack = hd["attack"]
+        hero.armor = hd["armor"]
+        hero.immune = hd["immune"]
+        hero.windfury = hd["windfury"]
+        hero.used_windfury = hd["used_windfury"]
+        hero.active = not hd["already_attacked"]
+        if hd['weapon']:
+            hero.weapon = Weapon.__from_json__(hd["weapon"])
+        return hero
+
 
 class Player(Bindable):
     def __init__(self, name, deck, agent, game, random_func=random.randint):
@@ -1357,7 +1439,7 @@ class Player(Bindable):
         self.fatigue = 0
         self.agent = agent
         self.game = game
-        self.card_filters = []
+        self.effects = []
         self.secrets = []
         self.spell_multiplier = 1
         self.heal_multiplier = 1
@@ -1367,6 +1449,7 @@ class Player(Bindable):
         self.effect_count = dict()
         self.opponent = None
         self.cards_played = 0
+        self.dead_this_turn = []
 
     def __str__(self):  # pragma: no cover
         return "Player: " + self.name
@@ -1376,21 +1459,18 @@ class Player(Bindable):
         copied_player.events = dict()
         copied_player.auras = []
         copied_player.mana_filters = []
-        copied_player.card_filters = []
-        for card_filter in self.card_filters:
-            copied_player.add_card_filter(card_filter.amount, card_filter.filter, card_filter.until,
-                                          card_filter.only_first)
+        copied_player.effects = []
+
         copied_player.hero = self.hero.copy(copied_player, new_game)
         copied_player.deck = self.deck.copy()
         copied_player.graveyard = copy.copy(self.graveyard)
         copied_player.minions = [minion.copy(copied_player, new_game) for minion in self.minions]
         copied_player.hand = [type(card)() for card in self.hand]
         copied_player.game = new_game
+        for effect in self.effects:
+            copied_player.add_effect(effect)
         copied_player.secrets = [type(secret)() for secret in self.secrets]
         copied_player.effect_count = dict()
-        for minion in copied_player.minions:
-            for effect in minion._effects_to_add:
-                minion.add_effect(effect)
         return copied_player
 
     def draw(self):
@@ -1431,66 +1511,50 @@ class Player(Bindable):
             self.hand.remove(target)
             self.trigger("card_discarded", target)
 
-    def add_card_filter(self, amount, card_filter="card", until="turn_started", only_first=False):
-        """
-        Adds a mana filter to the cards that this player has.  Unlike the
-        :class:`ManaFilter effect <hearthbreaker.effects.ManaFilter`, this filter is not tied to any minion, but
-        instead will remain until an event occurs or, if `only_first` is True a card which matches the filter is played,
-        whichever comes first.
-
-        :param int amount: The amount to decrease the mana cost of effected cards
-        :param string card_filter: The type of cards to affect.  Possible values are "minion", "spell", "secret" and
-                                   "card"
-        :param string until: The event to remove this mana filter.  Suggestions are "turn_started" for the start of the
-                             next turn and "turn_ended" for the end of the current turn.  The filter will be removed
-                             regardless of the `only_first` parameter.
-        :param boolean only_first: True if this card filter should be removed the first time a player plays a card which
-                                   matches the filter
-        """
-        class CardEffect:
-            def __init__(self):
-                self.amount = amount
-                self.filter = card_filter
-                self.until = until
-                self.only_first = only_first
-
-        if card_filter == "minion":
-            my_filter = lambda c: isinstance(c, MinionCard)
-        elif card_filter == "spell":
-            my_filter = lambda c: c.is_spell()
-        elif card_filter == "secret":
-            my_filter = lambda c: isinstance(c, SecretCard)
-        else:
-            my_filter = lambda c: True
-
-        class Filter:
-            def __init__(self):
-                self.amount = amount
-                self.min = 0
-                self.filter = my_filter
-
-        card_effect = CardEffect()
-        mana_filter = Filter()
-        self.card_filters.append(card_effect)
-        self.mana_filters.append(mana_filter)
-
-        def remove():
-            self.card_filters.remove(card_effect)
-            self.mana_filters.remove(mana_filter)
-            if only_first:
-                self.unbind("card_played", card_played)
-
-        def card_played(card):
-            if my_filter(card):
-                remove()
-                self.unbind(until, remove)
-
-        self.bind_once(until, remove)
-        if only_first:
-            self.bind("card_played", card_played)
+    def add_effect(self, effect):
+        self.effects.append(effect)
+        effect.apply(self)
 
     def choose_target(self, targets):
         return self.agent.choose_target(targets)
+
+    def __to_json__(self):
+        return {
+            'hero': self.hero,
+            'deck': self.deck,
+            'graveyard': [card for card in self.graveyard],
+            'hand': [card.name for card in self.hand],
+            'secrets': [secret.name for secret in self.secrets],
+            'effects': [effect.__to_json__() for effect in self.effects],
+            'minions': self.minions,
+            'mana': self.mana,
+            'max_mana': self.max_mana,
+        }
+
+    @classmethod
+    def __from_json__(cls, pd, game, agent):
+        hero = Hero.__from_json__(pd["hero"])
+        deck = Deck.__from__to_json__(pd["deck"], hero.character_class)
+        player = Player("whatever", deck, agent, game, game.random)
+        player.hero = hero
+        hero.player = player
+        if hero.weapon:
+            hero.weapon.player = player
+        player.mana = pd["mana"]
+        player.max_mana = pd["max_mana"]
+        player.hand = [card_lookup(name) for name in pd["hand"]]
+        player.graveyard = set()
+        for card_name in pd["graveyard"]:
+            player.graveyard.add(card_name)
+        player.secrets = [card_lookup(name) for name in pd["secrets"]]
+        i = 0
+        player.minions = []
+        for md in pd["minions"]:
+            minion = Minion.__from_json__(md, player, game)
+            minion.index = i
+            player.minions.append(minion)
+            i += 1
+        return player
 
 
 class Game(Bindable):
@@ -1578,6 +1642,7 @@ class Game(Bindable):
         self.current_player.mana = self.current_player.max_mana - self.current_player.overload
         self.current_player.overload = 0
         self.current_player.cards_played = 0
+        self.current_player.dead_this_turn = []
         self.current_player.trigger("turn_started")
         if self.current_player.hero.weapon is not None:
             self.current_player.hero.change_temp_attack(self.current_player.hero.weapon.base_attack)
@@ -1631,6 +1696,12 @@ class Game(Bindable):
         copied_game.current_player.opponent = copied_game.other_player
         copied_game.other_player.opponent = copied_game.current_player
 
+        for player in copied_game.players:
+            for minion in player.minions:
+                for effect in minion._effects_to_add:
+                    minion.add_effect(effect)
+                minion._effects_to_add = []
+
         for secret in copied_game.other_player.secrets:
             secret.activate(copied_game.other_player)
         return copied_game
@@ -1640,12 +1711,13 @@ class Game(Bindable):
             raise GameException("The game has ended")
         if not card.can_use(self.current_player, self):
             raise GameException("That card cannot be used")
-        self.current_player.trigger("card_played", card)
+        card_index = self.current_player.hand.index(card)
+        self.current_player.hand.pop(card_index)
+        self.current_player.trigger("card_played", card, card_index)
         self.current_player.mana -= card.mana_cost(self.current_player)
         if card.overload != 0:
             self.current_player.trigger("overloaded")
 
-        self.current_player.hand.remove(card)
         if card.is_spell():
             self.current_player.trigger("spell_cast", card)
 
@@ -1657,4 +1729,52 @@ class Game(Bindable):
 
     def remove_minion(self, minion, player):
         player.minions.remove(minion)
-        self.trigger("minion_removed", minion, player)
+        player.trigger("minion_removed", minion)
+
+    def __to_json__(self):
+        if self.current_player == self.players[0]:
+            active_player = 1
+        else:
+            active_player = 2
+        return {
+            'players': self.players,
+            'active_player': active_player,
+            'current_sequence_id': self.minion_counter,
+        }
+
+    @staticmethod
+    def __from_json__(d, agents):
+        new_game = Game.__new__(Game)
+        new_game.minion_counter = d["current_sequence_id"]
+        new_game.delayed_minions = set()
+        new_game.game_ended = False
+        new_game.random = random.randint
+        new_game.events = {}
+        new_game.players = [Player.__from_json__(pd, new_game, None) for pd in d["players"]]
+        if d["active_player"] == 1:
+            new_game.current_player = new_game.players[0]
+            new_game.other_player = new_game.players[1]
+            new_game.current_player.opponent = new_game.players[1]
+            new_game.other_player.opponent = new_game.players[0]
+        else:
+            new_game.current_player = new_game.players[1]
+            new_game.other_player = new_game.players[0]
+            new_game.current_player.opponent = new_game.players[0]
+            new_game.other_player.opponent = new_game.players[1]
+
+        index = 0
+        for player in new_game.players:
+            player.agent = agents[index]
+            player.effects = [hearthbreaker.effects.player.PlayerEffect.from_json(player, **effect)
+                              for effect in d['players'][index]['effects']]
+            for effect in player.effects:
+                effect.apply(player)
+
+            for minion in player.minions:
+                for effect in minion._effects_to_add:
+                    minion.add_effect(effect)
+                minion._effects_to_add = []
+                if minion.health != minion.calculate_max_health():
+                    minion.enraged = True
+            index += 1
+        return new_game

@@ -1,8 +1,11 @@
+import copy
 import random
 import unittest
 
 from hearthbreaker.agents.basic_agents import DoNothingBot, PredictableBot
-from tests.agents.testing_agents import SpellTestingAgent, MinionPlayingAgent, PredictableAgentWithoutHeroPower
+from hearthbreaker.constants import MINION_TYPE
+from tests.agents.testing_agents import SpellTestingAgent, MinionPlayingAgent, PredictableAgentWithoutHeroPower, \
+    EnemyMinionSpellTestingAgent
 from tests.testing_utils import generate_game_for
 from hearthbreaker.cards import *
 
@@ -578,7 +581,7 @@ class TestMinionCopying(unittest.TestCase):
         game = game.copy()
         game.play_single_turn()
         self.assertEqual(1, len(game.other_player.minions))
-        self.assertEqual("Flame Imp", game.other_player.minions[0].card.name)
+        self.assertEqual(MINION_TYPE.DEMON, game.other_player.minions[0].card.minion_type)
 
     def test_SorcerersApprentice(self):
         game = generate_game_for([SorcerersApprentice, ArcaneMissiles, SorcerersApprentice, Frostbolt, Frostbolt,
@@ -845,3 +848,375 @@ class TestMinionCopying(unittest.TestCase):
         game.current_player.minions[0].die(None)
         game.check_delayed()
         self.assertEqual("Thaddius", game.current_player.minions[0].card.name)
+
+    def test_DeathsBite(self):
+        game = generate_game_for([IronfurGrizzly, DeathsBite], Deathlord,
+                                 PredictableAgentWithoutHeroPower, MinionPlayingAgent)
+
+        for turn in range(0, 7):
+            game.play_single_turn()
+
+        self.assertEqual(1, len(game.current_player.minions))
+        self.assertIsNotNone(game.current_player.hero.weapon)
+        self.assertEqual(1, game.other_player.minions[0].health)
+
+        game = game.copy()
+
+        game.play_single_turn()
+        game.play_single_turn()
+
+        # The Death's Bite attacks the new Deathlord, triggering the weapon's deathrattle
+        # This finishes off the other Deathlord and the first friendly Grizzly
+        self.assertEqual(1, len(game.other_player.minions))
+        self.assertEqual(3, game.other_player.minions[0].health)
+        self.assertEqual(2, len(game.current_player.minions))
+        self.assertEqual(2, game.current_player.minions[0].health)
+        self.assertEqual(3, game.current_player.minions[1].health)
+
+    def test_EchoingOoze(self):
+        new_game = None
+
+        class OozeAgent(SpellTestingAgent):
+            def __init__(self):
+                super().__init__()
+                self.turn = 0
+
+            def do_turn(self, player):
+                nonlocal new_game
+                self.turn += 1
+                if self.turn == 2:
+                    super().do_turn(player)
+                    new_game = player.game.copy()
+
+        game = generate_game_for(EchoingOoze, StoneskinGargoyle, OozeAgent, DoNothingBot)
+
+        for turn in range(0, 3):
+            game.play_single_turn()
+
+        # new_game is still in the middle of a turn, as it was copied in the middle of a turn.  We have to
+        # manually end it.
+        new_game._end_turn()
+        self.assertEqual(2, len(new_game.current_player.minions))
+        self.assertEqual(1, new_game.current_player.minions[0].calculate_attack())
+        self.assertEqual(2, new_game.current_player.minions[0].calculate_max_health())
+        self.assertEqual(1, new_game.current_player.minions[1].calculate_attack())
+        self.assertEqual(2, new_game.current_player.minions[1].calculate_max_health())
+
+    def test_ShadeOfNaxxramas(self):
+        game = generate_game_for(ShadeOfNaxxramas, StonetuskBoar, MinionPlayingAgent, DoNothingBot)
+
+        for turn in range(0, 5):
+            game.play_single_turn()
+
+        self.assertEqual(1, len(game.current_player.minions))
+        self.assertEqual(2, game.current_player.minions[0].calculate_attack())
+        self.assertEqual(2, game.current_player.minions[0].calculate_max_health())
+
+        for turn in range(0, 2):
+            game.play_single_turn()
+
+        self.assertEqual(2, len(game.current_player.minions))
+        self.assertEqual(2, game.current_player.minions[0].calculate_attack())
+        self.assertEqual(2, game.current_player.minions[0].calculate_max_health())
+        self.assertEqual(3, game.current_player.minions[1].calculate_attack())
+        self.assertEqual(3, game.current_player.minions[1].calculate_max_health())
+
+        game = game.copy()
+        game.current_player.minions[0].silence()
+        game = game.copy()
+
+        for turn in range(0, 2):
+            game.play_single_turn()
+
+        self.assertEqual(3, len(game.current_player.minions))
+        self.assertEqual(2, game.current_player.minions[0].calculate_attack())
+        self.assertEqual(2, game.current_player.minions[0].calculate_max_health())
+        self.assertEqual(2, game.current_player.minions[1].calculate_attack())
+        self.assertEqual(2, game.current_player.minions[1].calculate_max_health())
+        self.assertEqual(4, game.current_player.minions[2].calculate_attack())
+        self.assertEqual(4, game.current_player.minions[2].calculate_max_health())
+
+    def test_KelThuzad(self):
+        game = generate_game_for([StonetuskBoar, IronfurGrizzly, MagmaRager, KelThuzad], [WarGolem, Flamestrike],
+                                 MinionPlayingAgent, SpellTestingAgent)
+
+        for turn in range(0, 15):
+            game.play_single_turn()
+
+        self.assertEqual(4, len(game.current_player.minions))
+
+        game = game.copy()
+
+        game.play_single_turn()
+
+        # All but Kel'Thuzad should have died and then come back to life
+
+        self.assertEqual(4, len(game.other_player.minions))
+        self.assertEqual(4, game.other_player.minions[0].health)
+
+    def test_KelThuzad_with_silence(self):
+        game = generate_game_for([StonetuskBoar, IronfurGrizzly, MagmaRager, KelThuzad], [WarGolem, Flamestrike],
+                                 MinionPlayingAgent, MinionPlayingAgent)
+
+        for turn in range(0, 15):
+            game.play_single_turn()
+
+        self.assertEqual(4, len(game.current_player.minions))
+        game = game.copy()
+        game.current_player.minions[0].silence()
+        game = game.copy()
+
+        game.play_single_turn()
+
+        # The minions should not be brought back
+
+        self.assertEqual(1, len(game.other_player.minions))
+        self.assertEqual(4, game.other_player.minions[0].health)
+
+    def test_KelThuzad_on_friendly_turn(self):
+        game = generate_game_for([StonetuskBoar, IronfurGrizzly, MagmaRager, KelThuzad, Hellfire], StonetuskBoar,
+                                 MinionPlayingAgent, DoNothingBot)
+
+        for turn in range(0, 16):
+            game.play_single_turn()
+
+        self.assertEqual(4, len(game.other_player.minions))
+
+        game = game.copy()
+
+        game.play_single_turn()
+
+        # All but Kel'Thuzad should have died and then come back to life, but not the Boars
+
+        self.assertEqual(4, len(game.current_player.minions))
+        self.assertEqual(5, game.current_player.minions[0].health)
+        self.assertEqual(0, len(game.other_player.minions))
+
+    def test_Preparation(self):
+        new_game = None
+
+        class PrepAgent(PredictableBot):
+            def __init__(self):
+                super().__init__()
+                self.turn = 0
+
+            def do_turn(self, player):
+                nonlocal new_game
+                done_something = True
+                player.game.play_card(player.hand[0])
+                new_game = player.game.copy()
+                while done_something:
+                    done_something = False
+                    for card in copy.copy(new_game.current_player.hand):
+                        if card.can_use(new_game.current_player, new_game):
+                            new_game.play_card(card)
+                            done_something = True
+
+        game = generate_game_for([Preparation, BloodfenRaptor, Headcrack], StoneskinGargoyle, PrepAgent, DoNothingBot)
+
+        # Preparation should be played. Bloodfen shouldn't be played, since that isn't a spell, but Headcrack should.
+        game.play_single_turn()
+        self.assertEqual(28, new_game.players[1].hero.health)
+        self.assertEqual(0, len(new_game.players[0].minions))
+
+    def test_Conceal(self):
+        new_game = None
+
+        class ConcealAgent(SpellTestingAgent):
+            def __init__(self):
+                super().__init__()
+                self.turn = 0
+
+            def do_turn(self, player):
+                nonlocal new_game
+                self.turn += 1
+                super().do_turn(player)
+                if self.turn == 2:
+                    new_game = player.game.copy()
+
+        game = generate_game_for([StonetuskBoar, Conceal, MogushanWarden], StonetuskBoar, ConcealAgent, DoNothingBot)
+
+        for turn in range(0, 3):
+            game.play_single_turn()
+
+        # Stonetusk and Conceal should have been played
+        self.assertEqual(1, len(new_game.players[0].minions))
+        self.assertTrue(new_game.players[0].minions[0].stealth)
+
+        new_game.play_single_turn()
+        # Conceal should fade off
+        new_game.play_single_turn()
+        self.assertEqual(1, len(new_game.players[0].minions))
+        self.assertFalse(new_game.players[0].minions[0].stealth)
+
+    def test_Headcrack(self):
+        new_game = None
+
+        class HCAgent(SpellTestingAgent):
+            def __init__(self):
+                super().__init__()
+                self.turn = 0
+
+            def do_turn(self, player):
+                nonlocal new_game
+                self.turn += 1
+                super().do_turn(player)
+                if self.turn == 6:
+                    new_game = player.game.copy()
+        game = generate_game_for(Headcrack, StonetuskBoar, HCAgent, DoNothingBot)
+
+        for turn in range(0, 4):
+            game.play_single_turn()
+
+        self.assertEqual(30, game.players[1].hero.health)
+        self.assertEqual(5, len(game.players[0].hand))
+
+        # Headcrack should be played, without combo
+        game.play_single_turn()
+        self.assertEqual(28, game.players[1].hero.health)
+        self.assertEqual(5, len(game.players[0].hand))
+
+        for turn in range(0, 5):
+            game.play_single_turn()
+
+        self.assertEqual(24, game.players[1].hero.health)
+        self.assertEqual(5, len(game.players[0].hand))
+
+        # Headcrack should be played, with combo
+        game.play_single_turn()
+        new_game._end_turn()
+        self.assertEqual(20, new_game.players[1].hero.health)
+        self.assertEqual(5, len(new_game.players[0].hand))
+        self.assertEqual("Headcrack", new_game.players[0].hand[0].name)
+
+    def test_QuestingAdventurer(self):
+        game = generate_game_for(QuestingAdventurer, StonetuskBoar, MinionPlayingAgent, DoNothingBot)
+        for turn in range(0, 5):
+            game.play_single_turn()
+
+        game = game.copy()
+
+        game.play_single_turn()
+        game.play_single_turn()
+
+        self.assertEqual(2, len(game.players[0].minions))
+        self.assertEqual(2, game.players[0].minions[0].calculate_attack())
+        self.assertEqual(2, game.players[0].minions[0].health)
+        self.assertEqual(3, game.players[0].minions[1].calculate_attack())
+        self.assertEqual(3, game.players[0].minions[1].health)
+        game.players[0].minions[0].silence()
+        game = game.copy()
+        game.play_single_turn()
+        game.play_single_turn()
+
+        self.assertEqual(3, len(game.players[0].minions))
+        self.assertEqual(2, game.players[0].minions[0].calculate_attack())
+        self.assertEqual(2, game.players[0].minions[0].health)
+        self.assertEqual(2, game.players[0].minions[1].calculate_attack())
+        self.assertEqual(2, game.players[0].minions[1].health)
+        self.assertEqual(4, game.players[0].minions[2].calculate_attack())
+        self.assertEqual(4, game.players[0].minions[2].health)
+
+    def test_FreezingTrap(self):
+        game = generate_game_for(FreezingTrap, BluegillWarrior, SpellTestingAgent, PredictableAgentWithoutHeroPower)
+
+        for turn in range(0, 4):
+            game.play_single_turn()
+        game = game.copy()
+        self.assertEqual(0, len(game.players[1].minions))
+        self.assertEqual(4, len(game.players[0].hand))
+        self.assertEqual(7, len(game.players[1].hand))
+        self.assertEqual(4, game.players[1].hand[6].mana_cost(game.players[1]))
+        self.assertEqual(0, len(game.players[0].secrets))
+        self.assertEqual(30, game.players[0].hero.health)
+        game.play_single_turn()
+        self.assertEqual(4, len(game.players[0].hand))
+        game.play_single_turn()
+        game = game.copy()
+        self.assertEqual(0, len(game.current_player.minions))
+        self.assertEqual(30, game.players[0].hero.health)
+        self.assertEqual(8, len(game.players[1].hand))
+        self.assertEqual(4, game.players[1].hand[5].mana_cost(game.players[1]))
+        self.assertEqual(4, game.players[1].hand[7].mana_cost(game.players[1]))
+
+    def test_Shadowstep(self):
+        game = generate_game_for([StonetuskBoar, Shadowstep], StonetuskBoar, PredictableAgentWithoutHeroPower,
+                                 DoNothingBot)
+
+        # The Boar should be played, Shadowstep will follow targeting the Boar
+        game.play_single_turn()
+        game = game.copy()
+        self.assertEqual(3, len(game.players[0].hand))
+        self.assertEqual(0, len(game.players[0].minions))
+        self.assertEqual(0, game.players[0].hand[2].mana_cost(game.players[0]))
+
+    def test_UnboundElemental(self):
+        game = generate_game_for([UnboundElemental, DustDevil, DustDevil], StonetuskBoar, MinionPlayingAgent,
+                                 DoNothingBot)
+
+        for turn in range(0, 6):
+            game.play_single_turn()
+
+        self.assertEqual(1, len(game.players[0].minions))
+        self.assertEqual("Unbound Elemental", game.players[0].minions[0].card.name)
+        self.assertEqual(2, game.players[0].minions[0].calculate_attack())
+        self.assertEqual(4, game.players[0].minions[0].calculate_max_health())
+
+        game = game.copy()
+
+        # One Dust Devil should be played, giving the Unbound Elemental +1/+1
+        game.play_single_turn()
+        self.assertEqual(2, len(game.players[0].minions))
+        self.assertEqual(3, game.players[0].minions[-1].calculate_attack())
+        self.assertEqual(5, game.players[0].minions[-1].calculate_max_health())
+        # Test the silence
+        game = game.copy()
+        game.players[0].minions[-1].silence()
+        self.assertEqual(2, game.players[0].minions[-1].calculate_attack())
+        self.assertEqual(4, game.players[0].minions[-1].calculate_max_health())
+        # Another Dust Devil, nothing should happen because of silence
+        game.play_single_turn()
+        game.play_single_turn()
+        game = game.copy()
+        self.assertEqual(3, len(game.players[0].minions))
+        self.assertEqual(2, game.players[0].minions[-1].calculate_attack())
+        self.assertEqual(4, game.players[0].minions[-1].calculate_max_health())
+
+    def test_PowerOverwhelming(self):
+        game = generate_game_for(PowerOverwhelming, StonetuskBoar, SpellTestingAgent, DoNothingBot)
+        imp = FlameImp()
+        imp.summon(game.players[0], game, 0)
+        self.assertEqual(1, len(game.players[0].minions))
+
+        def verify_poweroverwhelming():
+            nonlocal game
+            game = game.copy()
+            self.assertEqual(7, game.players[0].minions[0].calculate_attack())
+            self.assertEqual(6, game.players[0].minions[0].health)
+
+        game.players[0].minions[0].bind("health_changed", verify_poweroverwhelming)
+        game.play_single_turn()
+        game._end_turn()
+        self.assertEqual(0, len(game.players[0].minions))
+        self.assertEqual(3, len(game.players[0].hand))
+
+    def test_Corruption(self):
+        game = generate_game_for(Corruption, StonetuskBoar, EnemyMinionSpellTestingAgent, DoNothingBot)
+        imp = FlameImp()
+        imp.summon(game.players[1], game, 0)
+        self.assertEqual(1, len(game.players[1].minions))
+
+        game.play_single_turn()
+        # Casts Corruption on enemy Imp
+        self.assertEqual(1, len(game.players[1].minions))
+        self.assertEqual(3, len(game.players[0].hand))
+
+        game.play_single_turn()
+        # Enemy minion still alive until start of my turn
+        self.assertEqual(1, len(game.players[1].minions))
+        game = game.copy()
+
+        game.play_single_turn()
+        # Corruption resolves at start of my turn, no targets to use remaining cards on
+        self.assertEqual(0, len(game.players[1].minions))
+        self.assertEqual(4, len(game.players[0].hand))

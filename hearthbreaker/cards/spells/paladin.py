@@ -1,5 +1,5 @@
 import copy
-from hearthbreaker.effects import DrawOnAttack
+from hearthbreaker.effects.minion import Draw
 import hearthbreaker.targeting
 from hearthbreaker.constants import CHARACTER_CLASS, CARD_RARITY
 from hearthbreaker.game_objects import Card, Minion, MinionCard, SecretCard
@@ -61,7 +61,11 @@ class BlessingOfWisdom(Card):
 
     def use(self, player, game):
         super().use(player, game)
-        self.target.add_effect(DrawOnAttack(amount=1, first_player=player is game.players[0]))
+        if player is game.players[0]:
+            draw_player = "p1"
+        else:
+            draw_player = "p2"
+        self.target.add_effect(Draw("attack", "minion", draw_player))
 
 
 class Consecration(Card):
@@ -99,7 +103,7 @@ class Equality(Card):
         targets.extend(player.minions)
 
         for minion in targets:
-            minion.decrease_health(minion.base_health - 1)
+            minion.set_health_to(1)
 
     def can_use(self, player, game):
         return super().can_use(player, game) and (len(player.minions) > 0 or len(game.other_player.minions) > 0)
@@ -182,6 +186,24 @@ class LayOnHands(Card):
         player.draw()
 
 
+class Avenge(SecretCard):
+    def __init__(self):
+        super().__init__("Avenge", 1, CHARACTER_CLASS.PALADIN, CARD_RARITY.COMMON)
+
+    def _reveal(self, dead_minion, attacker):
+        if len(self.player.minions) > 0:
+            target = self.player.minions[self.player.game.random(0, len(self.player.minions) - 1)]
+            target.change_attack(3)
+            target.increase_health(2)
+            super().reveal()
+
+    def activate(self, player):
+        player.bind("minion_died", self._reveal)
+
+    def deactivate(self, player):
+        player.unbind("minion_died", self._reveal)
+
+
 class EyeForAnEye(SecretCard):
     def __init__(self):
         super().__init__("Eye for an Eye", 1, CHARACTER_CLASS.PALADIN,
@@ -192,7 +214,7 @@ class EyeForAnEye(SecretCard):
         super().reveal()
 
     def activate(self, player):
-        player.hero.bind_once("hero_damaged", self._reveal)
+        player.hero.bind("hero_damaged", self._reveal)
 
     def deactivate(self, player):
         player.hero.unbind("hero_damaged", self._reveal)
@@ -224,11 +246,9 @@ class NobleSacrifice(SecretCard):
             old_target = player.game.current_player.agent.choose_target
             player.game.current_player.agent.choose_target = choose_defender
             super().reveal()
-        else:
-            self.activate(player)
 
     def activate(self, player):
-        player.game.current_player.bind_once("pre_attack", self._reveal)
+        player.game.current_player.bind("pre_attack", self._reveal)
 
     def deactivate(self, player):
         player.game.current_player.unbind("pre_attack", self._reveal)
@@ -251,7 +271,7 @@ class Redemption(SecretCard):
         super().reveal()
 
     def activate(self, player):
-        player.bind_once("minion_died", self._reveal)
+        player.bind("minion_died", self._reveal)
 
     def deactivate(self, player):
         player.unbind("minion_died", self._reveal)
@@ -264,11 +284,11 @@ class Repentance(SecretCard):
 
     def _reveal(self, minion):
 
-        minion.decrease_health(minion.calculate_max_health() - 1)
+        minion.set_health_to(1)
         super().reveal()
 
     def activate(self, player):
-        player.game.current_player.bind_once("minion_played", self._reveal)
+        player.game.current_player.bind("minion_played", self._reveal)
 
     def deactivate(self, player):
         player.game.current_player.unbind("minion_played", self._reveal)

@@ -3,7 +3,9 @@ from hearthbreaker.cards.battlecries import draw_card, silence, deal_one_damage,
     heal_three, give_enemy_crystal, darkscale_healer, priestess_of_elune, \
     destroy_target, two_temp_attack, nightblade, ssc, deathwing, return_to_hand, opponent_draw_two, \
     put_friendly_minion_on_board_from_enemy_deck
-from hearthbreaker.effects import StatsAura, IncreaseBattlecryMinionCost, DoubleDeathrattle, GrowOnDeathrattleSummon
+from hearthbreaker.effects.minion import StatsAura, IncreaseBattlecryMinionCost, DoubleDeathrattle, Buff, \
+    ResurrectFriendlyMinionsAtEndOfTurn, Kill, Heal, Damage, Draw
+from hearthbreaker.effects.player import PlayerManaFilter, DuplicateMinion
 from hearthbreaker.game_objects import Minion, MinionCard, SecretCard, Card
 from hearthbreaker.constants import CARD_RARITY, CHARACTER_CLASS, MINION_TYPE
 import hearthbreaker.targeting
@@ -121,9 +123,7 @@ class DireWolfAlpha(MinionCard):
         super().__init__("Dire Wolf Alpha", 2, CHARACTER_CLASS.ALL, CARD_RARITY.COMMON, MINION_TYPE.BEAST)
 
     def create_minion(self, player):
-        minion = Minion(2, 2)
-        minion.add_adjacency_aura(1, 0, player)
-        return minion
+        return Minion(2, 2, effects=[StatsAura(1, 0, minion_filter="adjacent")])
 
 
 class WorgenInfiltrator(MinionCard):
@@ -695,20 +695,7 @@ class EmperorCobra(MinionCard):
         super().__init__("Emperor Cobra", 3, CHARACTER_CLASS.ALL, CARD_RARITY.RARE, MINION_TYPE.BEAST)
 
     def create_minion(self, player):
-        def apply_effect(m, p):
-            def poisonous(amount, target):
-                if type(target) is Minion:
-                    target.die(self)
-
-            def silenced():
-                m.unbind("did_damage", poisonous)
-                m.unbind("copied", apply_effect)
-            m.bind("did_damage", poisonous)
-            m.bind_once("silenced", silenced)
-            m.bind("copied", apply_effect)
-        minion = Minion(2, 3)
-        apply_effect(minion, player)
-        return minion
+        return Minion(2, 3, effects=[Kill("did_damage", "minion", "other")])
 
 
 class CrazedAlchemist(MinionCard):
@@ -919,9 +906,7 @@ class RaidLeader(MinionCard):
         super().__init__("Raid Leader", 3, CHARACTER_CLASS.ALL, CARD_RARITY.FREE)
 
     def create_minion(self, player):
-        minion = Minion(2, 2)
-        minion.add_aura(1, 0, [player])
-        return minion
+        return Minion(2, 2, effects=[StatsAura(1, 0)])
 
 
 class DragonlingMechanic(MinionCard):
@@ -983,28 +968,7 @@ class KnifeJuggler(MinionCard):
         super().__init__("Knife Juggler", 2, CHARACTER_CLASS.ALL, CARD_RARITY.RARE)
 
     def create_minion(self, player):
-        def throw_knife(m):
-            if m is minion:
-                return
-            if m.player is player.game.current_player:
-                enemy_player = player.game.other_player
-            else:
-                enemy_player = player.game.current_player
-            targets = copy.copy(enemy_player.minions)
-            targets.append(enemy_player.hero)
-            target = targets[player.game.random(0, len(targets) - 1)]
-            target.damage(1, minion)
-
-        def copy_minion(new_minon, new_player):
-            new_player.bind("after_minion_added", throw_knife)
-            new_minon.bind_once("silenced", lambda: player.unbind("after_minion_added", throw_knife))
-            new_minon.bind("copied", copy_minion)
-
-        minion = Minion(3, 2)
-        player.bind("after_minion_added", throw_knife)
-        minion.bind_once("silenced", lambda: player.unbind("after_minion_added", throw_knife))
-        minion.bind("copied", copy_minion)
-        return minion
+        return Minion(3, 2, effects=[Damage("after_added", 1, minion_filter="minion", target="random_enemy")])
 
 
 class CairneBloodhoof(MinionCard):
@@ -1236,14 +1200,7 @@ class NatPagle(MinionCard):
         super().__init__("Nat Pagle", 2, CHARACTER_CLASS.ALL, CARD_RARITY.LEGENDARY)
 
     def create_minion(self, player):
-        def extra_draw():
-            if player.game.random(0, 1) == 1:
-                player.draw()
-
-        minion = Minion(0, 4)
-        player.bind("turn_started", extra_draw)
-        minion.bind_once("silenced", lambda: player.unbind("turn_started", extra_draw))
-        return minion
+        return Minion(0, 4, effects=[Draw("turn_started", probability=0.5)])
 
 
 class Nozdormu(MinionCard):
@@ -1322,10 +1279,7 @@ class GrimscaleOracle(MinionCard):
         super().__init__("Grimscale Oracle", 1, CHARACTER_CLASS.ALL, CARD_RARITY.COMMON, MINION_TYPE.MURLOC)
 
     def create_minion(self, player):
-        minion = Minion(1, 1)
-        minion.add_aura(1, 0, [player.game.current_player, player.game.other_player],
-                        lambda mini: mini.card.minion_type is MINION_TYPE.MURLOC)
-        return minion
+        return Minion(1, 1, effects=[StatsAura(1, 0, minion_filter="murloc", players="both")])
 
 
 class MurlocWarleader(MinionCard):
@@ -1333,10 +1287,7 @@ class MurlocWarleader(MinionCard):
         super().__init__("Murloc Warleader", 3, CHARACTER_CLASS.ALL, CARD_RARITY.EPIC, MINION_TYPE.MURLOC)
 
     def create_minion(self, player):
-        minion = Minion(3, 3)
-        minion.add_aura(2, 1, [player.game.current_player, player.game.other_player],
-                        lambda mini: mini.card.minion_type is MINION_TYPE.MURLOC)
-        return minion
+        return Minion(3, 3, effects=[StatsAura(2, 1, minion_filter="murloc", players="both")])
 
 
 class BigGameHunter(MinionCard):
@@ -1500,9 +1451,7 @@ class SouthseaCaptain(MinionCard):
         super().__init__("Southsea Captain", 3, CHARACTER_CLASS.ALL, CARD_RARITY.EPIC, MINION_TYPE.PIRATE)
 
     def create_minion(self, player):
-        minion = Minion(3, 3)
-        minion.add_aura(1, 1, [player], lambda mini: mini.card.minion_type is MINION_TYPE.PIRATE)
-        return minion
+        return Minion(3, 3, effects=[StatsAura(1, 1, minion_filter="pirate")])
 
 
 class SouthseaDeckhand(MinionCard):
@@ -1674,14 +1623,7 @@ class QuestingAdventurer(MinionCard):
         super().__init__("Questing Adventurer", 3, CHARACTER_CLASS.ALL, CARD_RARITY.RARE)
 
     def create_minion(self, player):
-        def questing_grow(card):
-            minion.change_attack(1)
-            minion.increase_health(1)
-
-        minion = Minion(2, 2)
-        player.bind("card_played", questing_grow)
-        minion.bind_once("silenced", lambda: player.unbind("card_played", questing_grow))
-        return minion
+        return Minion(2, 2, effects=[Buff("played", "card", "self", attack=1, health=1)])
 
 
 class GurubashiBerserker(MinionCard):
@@ -1792,7 +1734,7 @@ class KingMukla(MinionCard):
 
 class LeeroyJenkins(MinionCard):
     def __init__(self):
-        super().__init__("Leeroy Jenkins", 4, CHARACTER_CLASS.ALL, CARD_RARITY.LEGENDARY)
+        super().__init__("Leeroy Jenkins", 5, CHARACTER_CLASS.ALL, CARD_RARITY.LEGENDARY)
 
     def create_minion(self, player):
         def summon_whelps(m):
@@ -2303,8 +2245,8 @@ class FacelessManipulator(MinionCard):
     def create_minion(self, player):
         def copy_minion(minion):
             if self.target:
-                new_minon = self.target.copy(player)
-                minion.replace(new_minon)
+                new_minion = self.target.copy(player)
+                minion.replace(new_minion)
 
         return Minion(3, 3, battlecry=copy_minion)
 
@@ -2332,20 +2274,7 @@ class Maexxna(MinionCard):
         super().__init__("Maexxna", 6, CHARACTER_CLASS.ALL, CARD_RARITY.LEGENDARY, MINION_TYPE.BEAST)
 
     def create_minion(self, player):
-        def apply_effect(m, p):
-            def poisonous(amount, target):
-                if type(target) is Minion:
-                    target.die(self)
-
-            def silenced():
-                m.unbind("did_damage", poisonous)
-                m.unbind("copied", apply_effect)
-            m.bind("did_damage", poisonous)
-            m.bind_once("silenced", silenced)
-            m.bind("copied", apply_effect)
-        minion = Minion(2, 8)
-        apply_effect(minion, player)
-        return minion
+            return Minion(2, 8, effects=[Kill("did_damage", "minion", "other")])
 
 
 class HauntedCreeper(MinionCard):
@@ -2394,7 +2323,7 @@ class Loatheb(MinionCard):
 
     def create_minion(self, player):
         def increase_card_cost(minion):
-            minion.player.opponent.add_card_filter(-5, "spell", "turn_ended")
+            minion.player.opponent.add_effect(PlayerManaFilter(-5, "spell", "turn_ended"))
 
         return Minion(5, 5, battlecry=increase_card_cost)
 
@@ -2404,18 +2333,7 @@ class StoneskinGargoyle(MinionCard):
         super().__init__("Stoneskin Gargoyle", 3, CHARACTER_CLASS.ALL, CARD_RARITY.COMMON)
 
     def create_minion(self, player):
-        def apply_effect(m, p):
-            def restore_health():
-                # The restoration counts as a heal.  See https://twitter.com/bdbrode/status/491263252434014208
-                # Will damage itself with a soulpriest down:
-                # http://www.hearthhead.com/card=237/auchenai-soulpriest#comments:id=1908263
-                m.heal(p.effective_heal_power(m.calculate_max_health() - m.health), None)
-            p.bind("turn_started", restore_health)
-            m.bind_once("silenced", lambda: p.unbind("turn_started", restore_health))
-            m.bind("copied", apply_effect)
-        minion = Minion(1, 4)
-        apply_effect(minion, player)
-        return minion
+        return Minion(1, 4, effects=[Heal("turn_started", 10000, target="self")])
 
 
 class SludgeBelcher(MinionCard):
@@ -2473,7 +2391,7 @@ class Undertaker(MinionCard):
         super().__init__("Undertaker", 1, CHARACTER_CLASS.ALL, CARD_RARITY.COMMON)
 
     def create_minion(self, player):
-        return Minion(1, 2, effects=[GrowOnDeathrattleSummon(1, 1)])
+        return Minion(1, 2, effects=[Buff("summoned", "deathrattle", "self", 1, 1, "friendly")])
 
 
 class WailingSoul(MinionCard):
@@ -2553,3 +2471,29 @@ class MadScientist(MinionCard):
                     secret.activate(minion.player)
 
         return Minion(2, 2, deathrattle=play_secret)
+
+
+class EchoingOoze(MinionCard):
+    def __init__(self):
+        super().__init__("Echoing Ooze", 2, CHARACTER_CLASS.ALL, CARD_RARITY.EPIC)
+
+    def create_minion(self, player):
+        def duplicate_at_end(minion):
+            player.add_effect(DuplicateMinion(minion, "turn_ended"))
+        return Minion(1, 2, battlecry=duplicate_at_end)
+
+
+class ShadeOfNaxxramas(MinionCard):
+    def __init__(self):
+        super().__init__("Shade of Naxxramas", 3, CHARACTER_CLASS.ALL, CARD_RARITY.EPIC)
+
+    def create_minion(self, player):
+        return Minion(2, 2, stealth=True, effects=[Buff("turn_started", attack=1, health=1, players="friendly")])
+
+
+class KelThuzad(MinionCard):
+    def __init__(self):
+        super().__init__("Kel'Thuzad", 8, CHARACTER_CLASS.ALL, CARD_RARITY.LEGENDARY)
+
+    def create_minion(self, player):
+        return Minion(6, 8, effects=[ResurrectFriendlyMinionsAtEndOfTurn()])
