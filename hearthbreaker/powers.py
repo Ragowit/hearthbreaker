@@ -62,8 +62,8 @@ class MagePower(Power):
         super().__init__(hero)
 
     def use(self):
-        super().use()
         target = self.hero.find_power_target()
+        super().use()
         target.damage(1 * self.hero.player.spell_multiplier, None)
         self.hero.player.game.check_delayed()
 
@@ -73,8 +73,8 @@ class PriestPower(Power):
         super().__init__(hero)
 
     def use(self):
-        super().use()
         target = self.hero.find_power_target()
+        super().use()
         if self.hero.player.heal_does_damage:
             target.damage(2 * self.hero.player.spell_multiplier, None)
         else:
@@ -236,7 +236,7 @@ class ShamanPower(Power):
         if not self.wrath_of_air_totem:
             totems.append(WrathOfAirTotem())
 
-        random_totem = totems[self.hero.player.game.random(0, len(totems) - 1)]
+        random_totem = self.hero.player.game.random_choice(totems)
         random_totem.summon(self.hero.player, self.hero.player.game, len(self.hero.player.minions))
 
 

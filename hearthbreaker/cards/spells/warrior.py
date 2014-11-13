@@ -1,6 +1,10 @@
 import copy
+from hearthbreaker.tags.action import MinimumHealth
+from hearthbreaker.tags.base import Aura, AuraUntil
+from hearthbreaker.tags.event import TurnEnded
+from hearthbreaker.tags.selector import SelfSelector, MinionSelector
 import hearthbreaker.targeting
-import hearthbreaker.effects.minion
+import hearthbreaker.tags.action
 from hearthbreaker.constants import CHARACTER_CLASS, CARD_RARITY
 from hearthbreaker.game_objects import Card, WeaponCard, Weapon
 
@@ -34,9 +38,11 @@ class Brawl(Card):
         minions = copy.copy(player.minions)
         minions.extend(game.other_player.minions)
 
-        while len(minions) > 1:
-            minion = minions.pop(game.random(0, len(minions) - 1))
-            minion.die(self)
+        if len(minions) > 1:
+            survivor = game.random_choice(minions)
+            for minion in minions:
+                if minion is not survivor:
+                    minion.die(self)
 
 
 class Charge(Card):
@@ -48,7 +54,7 @@ class Charge(Card):
         super().use(player, game)
 
         self.target.change_attack(2)
-        self.target.add_effect(hearthbreaker.effects.minion.Charge())
+        self.target.add_aura(Aura(hearthbreaker.tags.action.Charge(), SelfSelector()))
 
 
 class Cleave(Card):
@@ -61,7 +67,8 @@ class Cleave(Card):
         minions = copy.copy(game.other_player.minions)
 
         for i in range(0, 2):
-            minion = minions.pop(game.random(0, len(minions) - 1))
+            minion = game.random_choice(minions)
+            minions.remove(minion)
             minion.damage(player.effective_spell_damage(2), self)
 
     def can_use(self, player, game):
@@ -74,16 +81,7 @@ class CommandingShout(Card):
 
     def use(self, player, game):
         super().use(player, game)
-
-        def create_effect(minion):
-            def keep_above_one():
-                if minion.health < 0:
-                    minion.health = 1
-            minion.bind("health_changed", keep_above_one)
-            minion.bind("silenced", lambda: minion.unbind("health_changed", keep_above_one))
-
-        for minion in player.minions:
-            create_effect(minion)
+        player.add_aura(AuraUntil(MinimumHealth(1), MinionSelector(), TurnEnded()))
 
         player.draw()
 

@@ -1,4 +1,8 @@
-from hearthbreaker.effects.minion import Buff, Charge
+from hearthbreaker.tags.action import Charge, ChangeAttack, IncreaseArmor
+from hearthbreaker.tags.base import Effect
+from hearthbreaker.tags.condition import AttackLessThanOrEqualTo, IsMinion
+from hearthbreaker.tags.event import MinionPlaced, CharacterDamaged
+from hearthbreaker.tags.selector import BothPlayer, SelfSelector, TargetSelector, PlayerSelector
 import hearthbreaker.targeting
 from hearthbreaker.constants import CHARACTER_CLASS, CARD_RARITY
 from hearthbreaker.game_objects import MinionCard, Minion, WeaponCard, Weapon
@@ -28,16 +32,7 @@ class Armorsmith(MinionCard):
         super().__init__("Armorsmith", 2, CHARACTER_CLASS.WARRIOR, CARD_RARITY.RARE)
 
     def create_minion(self, player):
-        def gain_one_armor(minion, attacker):
-            if minion.player is player:
-                player.hero.increase_armor(1)
-
-        minion = Minion(1, 4)
-        player.bind("minion_damaged", gain_one_armor)
-        player.opponent.bind("minion_damaged", gain_one_armor)
-        minion.bind_once("silenced", lambda: player.unbind("minion_damaged", gain_one_armor))
-        minion.bind_once("silenced", lambda: player.opponent.unbind("minion_damaged", gain_one_armor))
-        return minion
+        return Minion(1, 4, effects=[Effect(CharacterDamaged(condition=IsMinion()), IncreaseArmor(), PlayerSelector())])
 
 
 class CruelTaskmaster(MinionCard):
@@ -59,7 +54,8 @@ class FrothingBerserker(MinionCard):
         super().__init__("Frothing Berserker", 3, CHARACTER_CLASS.WARRIOR, CARD_RARITY.RARE)
 
     def create_minion(self, player):
-        minion = Minion(2, 4, effects=[Buff("damaged", "minion", "self", 1, 0, "both", True)])
+        minion = Minion(2, 4, effects=[Effect(CharacterDamaged(player=BothPlayer(),
+                                                               condition=IsMinion()), ChangeAttack(1), SelfSelector())])
         return minion
 
 
@@ -68,21 +64,7 @@ class GrommashHellscream(MinionCard):
         super().__init__("Grommash Hellscream", 8, CHARACTER_CLASS.WARRIOR, CARD_RARITY.LEGENDARY)
 
     def create_minion(self, player):
-        def increase_attack():
-            minion.change_attack(6)
-
-        def decrease_attack():
-            minion.change_attack(-6)
-
-        def silenced():
-            minion.unbind("enraged", increase_attack)
-            minion.unbind("unenraged", decrease_attack)
-
-        minion = Minion(4, 9, charge=True)
-        minion.bind("enraged", increase_attack)
-        minion.bind("unenraged", decrease_attack)
-        minion.bind("silenced", silenced)
-        return minion
+        return Minion(4, 9, charge=True, enrage=[ChangeAttack(6)])
 
 
 class KorkronElite(MinionCard):
@@ -98,15 +80,4 @@ class WarsongCommander(MinionCard):
         super().__init__("Warsong Commander", 3, CHARACTER_CLASS.WARRIOR, CARD_RARITY.FREE)
 
     def create_minion(self, player):
-        def give_charge(m):
-            if m is not minion and m.calculate_attack() <= 3:
-                m.add_effect(Charge())
-                m.exhausted = False
-
-        def silence():
-            player.unbind("minion_placed", give_charge)
-
-        minion = Minion(2, 3)
-        player.bind("minion_placed", give_charge)
-        minion.bind_once("silenced", silence)
-        return minion
+        return Minion(2, 3, effects=[Effect(MinionPlaced(AttackLessThanOrEqualTo(3)), Charge(), TargetSelector())])

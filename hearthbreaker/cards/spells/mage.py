@@ -1,6 +1,6 @@
 import copy
 from hearthbreaker.constants import CHARACTER_CLASS, CARD_RARITY, MINION_TYPE
-from hearthbreaker.game_objects import Card, Minion, MinionCard, SecretCard
+from hearthbreaker.game_objects import Card, Minion, MinionCard, SecretCard, Hero
 import hearthbreaker.targeting
 
 
@@ -13,7 +13,7 @@ class ArcaneMissiles(Card):
         for i in range(0, player.effective_spell_damage(3)):
             targets = copy.copy(game.other_player.minions)
             targets.append(game.other_player.hero)
-            target = targets[game.random(0, len(targets) - 1)]
+            target = game.random_choice(targets)
             target.damage(1, self)
 
 
@@ -209,21 +209,19 @@ class IceBlock(SecretCard):
         super().__init__("Ice Block", 3, CHARACTER_CLASS.MAGE, CARD_RARITY.EPIC)
         self.player = None
 
-    def _reveal(self, amount, attacker):
-        hero = self.player.hero
-        if hero.health - amount <= 0:
-            hero.immune = True
-            hero.health += amount
-            # TODO Check if this spell will also prevent damage to armor.
-            super().reveal()
+    def _reveal(self, character, attacker, amount):
+        if isinstance(character, Hero):
+            if character.health - amount <= 0:
+                character.immune = True
+                character.health += amount
+                # TODO Check if this spell will also prevent damage to armor.
+                super().reveal()
 
     def activate(self, player):
-        player.hero.bind("hero_damaged", self._reveal)
-        self.player = player
+        player.bind("character_damaged", self._reveal)
 
     def deactivate(self, player):
-        player.hero.unbind("hero_damaged", self._reveal)
-        self.player = None
+        player.unbind("character_damaged", self._reveal)
 
 
 class ConeOfCold(Card):

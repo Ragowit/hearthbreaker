@@ -24,13 +24,13 @@ class StackedDeck(Deck):
 
     def draw(self, random_func):
         for card_index in range(0, 30):
-            if not self.used[card_index]:
-                self.used[card_index] = True
+            if not self.cards[card_index].drawn:
+                self.cards[card_index].drawn = True
                 self.left -= 1
                 return self.cards[card_index]
 
 
-def generate_game_for(card1, card2, first_agent_type, second_agent_type):
+def generate_game_for(card1, card2, first_agent_type, second_agent_type, run_pre_game=True):
     if not isinstance(card1, collections.Sequence):
         card_set1 = [card1()]
     else:
@@ -57,5 +57,6 @@ def generate_game_for(card1, card2, first_agent_type, second_agent_type):
     game = Game([deck1, deck2], [first_agent_type(), second_agent_type()])
     game.current_player = game.players[1]
     game.other_player = game.players[0]
-    game.pre_game()
+    if run_pre_game:
+        game.pre_game()
     return game

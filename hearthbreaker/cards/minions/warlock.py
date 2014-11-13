@@ -1,9 +1,12 @@
 from hearthbreaker.constants import CHARACTER_CLASS, CARD_RARITY, MINION_TYPE
-from hearthbreaker.effects.minion import ManaFilter
+from hearthbreaker.tags.action import ChangeHealth, ManaChange, SummonFromHand
+from hearthbreaker.tags.base import Effect, Aura, Deathrattle
+from hearthbreaker.tags.condition import MinionIsType
+from hearthbreaker.tags.event import TurnEnded
+from hearthbreaker.tags.selector import RandomSelector, MinionSelector, MinionCardSelector, PlayerSelector
 from hearthbreaker.game_objects import MinionCard, Minion, WeaponCard, Weapon
 from hearthbreaker.cards.battlecries import deal_one_damage_all_characters, \
-    destroy_own_crystal, discard_one, discard_two, flame_imp, pit_lord, put_minion_on_board_from_hand
-import copy
+    destroy_own_crystal, discard_one, discard_two, flame_imp, pit_lord
 from hearthbreaker.powers import JaraxxusPower
 
 
@@ -68,7 +71,7 @@ class SummoningPortal(MinionCard):
         super().__init__("Summoning Portal", 4, CHARACTER_CLASS.WARLOCK, CARD_RARITY.COMMON)
 
     def create_minion(self, player):
-        return Minion(0, 4, effects=[ManaFilter(2, "minion", 1)])
+        return Minion(0, 4, auras=[Aura(ManaChange(2, 1, MinionCardSelector()), PlayerSelector())])
 
 
 class BloodImp(MinionCard):
@@ -76,18 +79,8 @@ class BloodImp(MinionCard):
         super().__init__("Blood Imp", 1, CHARACTER_CLASS.WARLOCK, CARD_RARITY.COMMON, MINION_TYPE.DEMON)
 
     def create_minion(self, player):
-        def buff_ally_health():
-            targets = copy.copy(player.game.current_player.minions)
-            targets.remove(minion)
-            if len(targets) > 0:
-                target = targets[player.game.random(0, len(targets) - 1)]
-                target.increase_health(1)
-
-        minion = Minion(0, 1)
-        minion.stealth = True
-        player.bind("turn_ended", buff_ally_health)
-        minion.bind_once("silenced", lambda: player.unbind("turn_ended", buff_ally_health))
-        return minion
+        return Minion(0, 1, stealth=True,
+                      effects=[Effect(TurnEnded(), ChangeHealth(1), RandomSelector(MinionSelector()))])
 
 
 class LordJaraxxus(MinionCard):
@@ -149,4 +142,4 @@ class Voidcaller(MinionCard):
         super().__init__("Voidcaller", 4, CHARACTER_CLASS.WARLOCK, CARD_RARITY.COMMON, MINION_TYPE.DEMON)
 
     def create_minion(self, player):
-        return Minion(3, 4, deathrattle=put_minion_on_board_from_hand)
+        return Minion(3, 4, deathrattle=Deathrattle(SummonFromHand(MinionIsType(MINION_TYPE.DEMON)), PlayerSelector()))

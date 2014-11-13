@@ -1,9 +1,9 @@
 import random
 import unittest
 
-from hearthbreaker.agents.basic_agents import PredictableBot, DoNothingBot
-from tests.agents.testing_agents import MinionPlayingAgent, SpellTestingAgent, SelfSpellTestingAgent, \
-    PredictableAgentWithoutHeroPower, OneSpellTestingAgent, EnemyMinionSpellTestingAgent
+from hearthbreaker.agents.basic_agents import PredictableAgent, DoNothingAgent
+from tests.agents.testing_agents import OneCardPlayingAgent, SpellTestingAgent, SelfSpellTestingAgent, \
+    PlayAndAttackAgent, EnemyMinionSpellTestingAgent
 from tests.testing_utils import generate_game_for
 from hearthbreaker.cards import *
 
@@ -13,7 +13,7 @@ class TestCommon(unittest.TestCase):
         random.seed(1857)
 
     def test_NoviceEngineer(self):
-        game = generate_game_for(NoviceEngineer, StonetuskBoar, MinionPlayingAgent, DoNothingBot)
+        game = generate_game_for(NoviceEngineer, StonetuskBoar, OneCardPlayingAgent, DoNothingAgent)
         for turn in range(0, 3):
             game.play_single_turn()
 
@@ -26,7 +26,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(24, game.current_player.deck.left)
 
     def test_KoboldGeomancer(self):
-        game = generate_game_for(KoboldGeomancer, IronbeakOwl, MinionPlayingAgent, MinionPlayingAgent)
+        game = generate_game_for(KoboldGeomancer, IronbeakOwl, OneCardPlayingAgent, OneCardPlayingAgent)
 
         for i in range(0, 3):
             game.play_single_turn()
@@ -48,7 +48,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(0, game.other_player.spell_damage)
 
     def test_ElvenArcher(self):
-        game = generate_game_for(StonetuskBoar, ElvenArcher, MinionPlayingAgent, MinionPlayingAgent)
+        game = generate_game_for(StonetuskBoar, ElvenArcher, OneCardPlayingAgent, OneCardPlayingAgent)
 
         game.play_single_turn()
         self.assertEqual(1, len(game.current_player.minions))
@@ -63,7 +63,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual("Elven Archer", game.current_player.minions[0].card.name)
 
     def test_ArgentSquire(self):
-        game = generate_game_for(ArgentSquire, ElvenArcher, MinionPlayingAgent, MinionPlayingAgent)
+        game = generate_game_for(ArgentSquire, ElvenArcher, OneCardPlayingAgent, OneCardPlayingAgent)
         game.play_single_turn()
         self.assertEqual(1, len(game.current_player.minions))
         self.assertTrue(game.current_player.minions[0].divine_shield)
@@ -73,7 +73,7 @@ class TestCommon(unittest.TestCase):
         self.assertFalse(game.other_player.minions[0].divine_shield)
 
     def test_SilvermoonGuardian(self):
-        game = generate_game_for(SilvermoonGuardian, ElvenArcher, MinionPlayingAgent, MinionPlayingAgent)
+        game = generate_game_for(SilvermoonGuardian, ElvenArcher, OneCardPlayingAgent, OneCardPlayingAgent)
 
         for i in range(0, 7):
             game.play_single_turn()
@@ -86,7 +86,7 @@ class TestCommon(unittest.TestCase):
         self.assertFalse(game.other_player.minions[0].divine_shield)
 
     def test_TwilightDrake(self):
-        game = generate_game_for(TwilightDrake, ElvenArcher, MinionPlayingAgent, DoNothingBot)
+        game = generate_game_for(TwilightDrake, ElvenArcher, OneCardPlayingAgent, DoNothingAgent)
 
         for i in range(0, 7):
             game.play_single_turn()
@@ -99,7 +99,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(7, game.current_player.minions[0].health)
 
     def test_DireWolfAlpha(self):
-        game = generate_game_for(StonetuskBoar, StonetuskBoar, MinionPlayingAgent, DoNothingBot)
+        game = generate_game_for(StonetuskBoar, StonetuskBoar, OneCardPlayingAgent, DoNothingAgent)
 
         for turn in range(0, 5):
             game.play_single_turn()
@@ -114,6 +114,7 @@ class TestCommon(unittest.TestCase):
         # The minions to either side should have their attack increased
         self.assertEqual(4, len(game.current_player.minions))
         self.assertEqual(2, game.current_player.minions[0].calculate_attack())
+        self.assertEqual(2, game.current_player.minions[1].calculate_attack())
         self.assertEqual(2, game.current_player.minions[2].calculate_attack())
         self.assertEqual(1, game.current_player.minions[3].calculate_attack())
 
@@ -168,7 +169,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(1, game.current_player.minions[3].calculate_attack())
 
     def test_DireWolfAlphaWithLightspawn(self):
-        game = generate_game_for([DireWolfAlpha, Lightspawn], StonetuskBoar, MinionPlayingAgent, DoNothingBot)
+        game = generate_game_for([DireWolfAlpha, Lightspawn], StonetuskBoar, OneCardPlayingAgent, DoNothingAgent)
 
         for turn in range(0, 7):
             game.play_single_turn()
@@ -188,7 +189,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(5, game.current_player.minions[0].health)
 
     def test_WorgenInfiltrator(self):
-        game = generate_game_for([WorgenInfiltrator, ElvenArcher], [ArcaneShot], MinionPlayingAgent, SpellTestingAgent)
+        game = generate_game_for([WorgenInfiltrator, ElvenArcher], [ArcaneShot], OneCardPlayingAgent, SpellTestingAgent)
         game.play_single_turn()
         self.assertEqual(1, len(game.current_player.minions))
         self.assertTrue(game.current_player.minions[0].stealth)
@@ -203,7 +204,7 @@ class TestCommon(unittest.TestCase):
         game.play_single_turn()
 
     def test_OgreMagi(self):
-        game = generate_game_for(OgreMagi, IronbeakOwl, MinionPlayingAgent, MinionPlayingAgent)
+        game = generate_game_for(OgreMagi, IronbeakOwl, OneCardPlayingAgent, OneCardPlayingAgent)
 
         for i in range(0, 7):
             game.play_single_turn()
@@ -225,7 +226,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(0, game.other_player.spell_damage)
 
     def test_Archmage(self):
-        game = generate_game_for(Archmage, IronbeakOwl, MinionPlayingAgent, MinionPlayingAgent)
+        game = generate_game_for(Archmage, IronbeakOwl, OneCardPlayingAgent, OneCardPlayingAgent)
 
         for i in range(0, 11):
             game.play_single_turn()
@@ -247,7 +248,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(0, game.other_player.spell_damage)
 
     def test_DalaranMage(self):
-        game = generate_game_for(DalaranMage, IronbeakOwl, MinionPlayingAgent, MinionPlayingAgent)
+        game = generate_game_for(DalaranMage, IronbeakOwl, OneCardPlayingAgent, OneCardPlayingAgent)
 
         for i in range(0, 5):
             game.play_single_turn()
@@ -269,7 +270,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(0, game.other_player.spell_damage)
 
     def test_AzureDrake(self):
-        game = generate_game_for(AzureDrake, IronbeakOwl, MinionPlayingAgent, MinionPlayingAgent)
+        game = generate_game_for(AzureDrake, IronbeakOwl, OneCardPlayingAgent, OneCardPlayingAgent)
 
         for i in range(0, 9):
             game.play_single_turn()
@@ -291,7 +292,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(0, game.other_player.spell_damage)
 
     def test_Malygos(self):
-        game = generate_game_for([Malygos, MindBlast], StonetuskBoar, MinionPlayingAgent, DoNothingBot)
+        game = generate_game_for([Malygos, MindBlast], StonetuskBoar, OneCardPlayingAgent, DoNothingAgent)
 
         for i in range(0, 17):
             game.play_single_turn()
@@ -336,7 +337,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(2, game.other_player.hero.health)
 
     def test_SpellBreaker(self):
-        game = generate_game_for(Spellbreaker, LeperGnome, SpellTestingAgent, MinionPlayingAgent)
+        game = generate_game_for(Spellbreaker, LeperGnome, SpellTestingAgent, OneCardPlayingAgent)
         for turn in range(0, 7):
             game.play_single_turn()
 
@@ -347,7 +348,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(30, game.current_player.hero.health)
 
     def test_BloodmageThalnos(self):
-        game = generate_game_for(BloodmageThalnos, StonetuskBoar, MinionPlayingAgent, PredictableBot)
+        game = generate_game_for(BloodmageThalnos, StonetuskBoar, OneCardPlayingAgent, PredictableAgent)
         for turn in range(0, 3):
             game.play_single_turn()
 
@@ -362,7 +363,7 @@ class TestCommon(unittest.TestCase):
 
     def test_AmaniBerserker(self):
         game = generate_game_for([AmaniBerserker, AbusiveSergeant, AmaniBerserker, EarthenRingFarseer], ExplosiveTrap,
-                                 PredictableAgentWithoutHeroPower, SpellTestingAgent)
+                                 PlayAndAttackAgent, SpellTestingAgent)
         for turn in range(0, 5):
             game.play_single_turn()
 
@@ -384,8 +385,8 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(2, game.current_player.minions[1].calculate_attack())
 
     def test_AmaniBerserkerWithDireWolf(self):
-        game = generate_game_for([DireWolfAlpha, AmaniBerserker], StonetuskBoar, MinionPlayingAgent,
-                                 DoNothingBot)
+        game = generate_game_for([DireWolfAlpha, AmaniBerserker], StonetuskBoar, OneCardPlayingAgent,
+                                 DoNothingAgent)
 
         for turn in range(0, 5):
             game.play_single_turn()
@@ -403,8 +404,8 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(3, game.current_player.minions[1].calculate_attack())
 
     def test_SilverHandKnight(self):
-        game = generate_game_for([OasisSnapjaw, SilverHandKnight, SilverHandKnight], StonetuskBoar, MinionPlayingAgent,
-                                 DoNothingBot)
+        game = generate_game_for([OasisSnapjaw, SilverHandKnight, SilverHandKnight], StonetuskBoar, OneCardPlayingAgent,
+                                 DoNothingAgent)
 
         for turn in range(0, 9):
             game.play_single_turn()
@@ -427,7 +428,7 @@ class TestCommon(unittest.TestCase):
 
     def test_StormwindChampion(self):
         game = generate_game_for([SilverHandKnight, StormwindChampion], [BoulderfistOgre, Equality],
-                                 MinionPlayingAgent, MinionPlayingAgent)
+                                 OneCardPlayingAgent, OneCardPlayingAgent)
         for turn in range(0, 11):
             game.play_single_turn()
 
@@ -464,7 +465,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(1, game.other_player.minions[2].calculate_max_health())
 
     def test_VoodooDoctor(self):
-        game = generate_game_for(VoodooDoctor, StonetuskBoar, SelfSpellTestingAgent, DoNothingBot)
+        game = generate_game_for(VoodooDoctor, StonetuskBoar, SelfSpellTestingAgent, DoNothingAgent)
 
         game.players[0].hero.health = 20
 
@@ -474,7 +475,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(1, len(game.players[0].minions))
 
     def test_EarthenRingFarseer(self):
-        game = generate_game_for(EarthenRingFarseer, StonetuskBoar, SelfSpellTestingAgent, DoNothingBot)
+        game = generate_game_for(EarthenRingFarseer, StonetuskBoar, SelfSpellTestingAgent, DoNothingAgent)
         game.players[0].hero.health = 20
         for turn in range(0, 5):
             game.play_single_turn()
@@ -483,14 +484,14 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(1, len(game.players[0].minions))
 
     def test_Nightblade(self):
-        game = generate_game_for(Nightblade, StonetuskBoar, MinionPlayingAgent, DoNothingBot)
+        game = generate_game_for(Nightblade, StonetuskBoar, OneCardPlayingAgent, DoNothingAgent)
         for turn in range(0, 9):
             game.play_single_turn()
         self.assertEqual(27, game.players[1].hero.health)
         self.assertEqual(1, len(game.players[0].minions))
 
     def test_PriestessOfElune(self):
-        game = generate_game_for(PriestessOfElune, StonetuskBoar, MinionPlayingAgent, DoNothingBot)
+        game = generate_game_for(PriestessOfElune, StonetuskBoar, OneCardPlayingAgent, DoNothingAgent)
         game.players[0].hero.health = 20
         for turn in range(0, 11):
             game.play_single_turn()
@@ -498,7 +499,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(1, len(game.players[0].minions))
 
     def test_ArcaneGolem(self):
-        game = generate_game_for(ArcaneGolem, StonetuskBoar, MinionPlayingAgent, DoNothingBot)
+        game = generate_game_for(ArcaneGolem, StonetuskBoar, OneCardPlayingAgent, DoNothingAgent)
         for turn in range(0, 4):
             game.play_single_turn()
 
@@ -511,7 +512,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(1, len(game.players[0].minions))
 
     def test_DarkscaleHealer(self):
-        game = generate_game_for(DarkscaleHealer, Flamestrike, MinionPlayingAgent, OneSpellTestingAgent)
+        game = generate_game_for(DarkscaleHealer, Flamestrike, OneCardPlayingAgent, OneCardPlayingAgent)
         game.players[0].hero.health = 20
         for turn in range(0, 8):
             game.play_single_turn()
@@ -556,7 +557,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(3, game.players[0].minions[3].health)
 
     def test_ShatteredSunCleric(self):
-        game = generate_game_for(ShatteredSunCleric, StonetuskBoar, SpellTestingAgent, DoNothingBot)
+        game = generate_game_for(ShatteredSunCleric, StonetuskBoar, SpellTestingAgent, DoNothingAgent)
         for turn in range(0, 5):
             game.play_single_turn()
         # 1st ssc
@@ -574,7 +575,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(3, game.players[0].minions[1].health)
 
     def test_TheBlackKnight(self):
-        game = generate_game_for(TheBlackKnight, StonetuskBoar, SpellTestingAgent, DoNothingBot)
+        game = generate_game_for(TheBlackKnight, StonetuskBoar, SpellTestingAgent, DoNothingAgent)
         for turn in range(0, 10):
             game.play_single_turn()
 
@@ -600,7 +601,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual("Sen'jin Shieldmasta", game.players[0].minions[2].card.name)
 
     def test_Deathwing(self):
-        game = generate_game_for(Deathwing, LordOfTheArena, MinionPlayingAgent, MinionPlayingAgent)
+        game = generate_game_for(Deathwing, LordOfTheArena, OneCardPlayingAgent, OneCardPlayingAgent)
         for turn in range(0, 18):
             game.play_single_turn()
 
@@ -617,7 +618,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(9, len(game.players[1].hand))
 
     def test_Alexstrasza(self):
-        game = generate_game_for(Alexstrasza, StonetuskBoar, SelfSpellTestingAgent, DoNothingBot)
+        game = generate_game_for(Alexstrasza, StonetuskBoar, SelfSpellTestingAgent, DoNothingAgent)
         for turn in range(0, 17):
             game.play_single_turn()
 
@@ -627,7 +628,7 @@ class TestCommon(unittest.TestCase):
 
     def test_EmperorCobra(self):
         game = generate_game_for(EmperorCobra, [EmperorCobra, MagmaRager, ChillwindYeti],
-                                 PredictableAgentWithoutHeroPower, PredictableAgentWithoutHeroPower)
+                                 PlayAndAttackAgent, PlayAndAttackAgent)
 
         for turn in range(0, 7):
             game.play_single_turn()
@@ -647,10 +648,19 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(0, len(game.other_player.minions))
         self.assertEqual(2, len(game.current_player.minions))
 
+    def test_EmperorCobra_on_hero(self):
+        game = generate_game_for(EmperorCobra, StonetuskBoar, PlayAndAttackAgent, DoNothingAgent)
+
+        for turn in range(0, 7):
+            game.play_single_turn()
+
+        self.assertEqual(28, game.other_player.hero.health)
+        self.assertFalse(game.other_player.hero.dead)
+
     def test_CrazedAlchemist(self):
         game = generate_game_for([FlametongueTotem, StormwindChampion, MagmaRager],
                                  [CrazedAlchemist, CrazedAlchemist, BoulderfistOgre],
-                                 MinionPlayingAgent, MinionPlayingAgent)
+                                 OneCardPlayingAgent, OneCardPlayingAgent)
 
         for turn in range(0, 4):
             game.play_single_turn()
@@ -689,7 +699,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(2, game.other_player.minions[0].health)
 
     def test_BaronGeddon(self):
-        game = generate_game_for(BaronGeddon, MassDispel, MinionPlayingAgent, SpellTestingAgent)
+        game = generate_game_for(BaronGeddon, MassDispel, OneCardPlayingAgent, SpellTestingAgent)
         for turn in range(0, 13):
             game.play_single_turn()
 
@@ -708,7 +718,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(3, game.players[0].minions[1].health)
 
     def test_AncientBrewmaster(self):
-        game = generate_game_for(AncientBrewmaster, StonetuskBoar, MinionPlayingAgent, DoNothingBot)
+        game = generate_game_for(AncientBrewmaster, StonetuskBoar, OneCardPlayingAgent, DoNothingAgent)
         for turn in range(0, 8):
             game.play_single_turn()
         # Summon first panda, nothing to return
@@ -720,7 +730,7 @@ class TestCommon(unittest.TestCase):
 
     def test_AngryChicken(self):
         game = generate_game_for([AngryChicken, PowerWordShield], [ArcaneExplosion, MassDispel],
-                                 OneSpellTestingAgent, SpellTestingAgent)
+                                 OneCardPlayingAgent, SpellTestingAgent)
         for turn in range(0, 3):
             game.play_single_turn()
 
@@ -745,7 +755,7 @@ class TestCommon(unittest.TestCase):
 
     def test_AngryChickenHeal(self):
         game = generate_game_for([AngryChicken, PowerWordShield], [ArcaneExplosion, CircleOfHealing],
-                                 OneSpellTestingAgent, OneSpellTestingAgent)
+                                 OneCardPlayingAgent, OneCardPlayingAgent)
         for turn in range(0, 3):
             game.play_single_turn()
 
@@ -770,7 +780,7 @@ class TestCommon(unittest.TestCase):
 
     def test_SpitefulSmith(self):
         game = generate_game_for(LightsJustice, [MortalCoil, AcidicSwampOoze, CircleOfHealing],
-                                 PredictableAgentWithoutHeroPower, OneSpellTestingAgent)
+                                 PlayAndAttackAgent, OneCardPlayingAgent)
         smith = SpitefulSmith()
         smith.summon(game.players[0], game, 0)
         for turn in range(0, 2):
@@ -799,14 +809,14 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(13, game.players[1].hero.health)
 
     def test_ExtraSpitefulSmith(self):
-        game = generate_game_for([LightsJustice, CircleOfHealing], MortalCoil, MinionPlayingAgent, OneSpellTestingAgent)
+        game = generate_game_for([LightsJustice, CircleOfHealing], MortalCoil, OneCardPlayingAgent, OneCardPlayingAgent)
         smith = SpitefulSmith()
         smith.summon(game.players[0], game, 0)
         for turn in range(0, 3):
             game.play_single_turn()  # Circle to heal spiteful
 
     def test_BloodKnight(self):
-        game = generate_game_for(BloodKnight, ArgentSquire, MinionPlayingAgent, MinionPlayingAgent)
+        game = generate_game_for(BloodKnight, ArgentSquire, OneCardPlayingAgent, OneCardPlayingAgent)
         squire = ArgentSquire()
         squire.summon(game.players[0], game, 0)
         for turn in range(0, 5):
@@ -821,7 +831,7 @@ class TestCommon(unittest.TestCase):
         self.assertFalse(game.players[1].minions[1].divine_shield)
 
     def test_FrostwolfWarlord(self):
-        game = generate_game_for(FrostwolfWarlord, ArgentSquire, MinionPlayingAgent, MinionPlayingAgent)
+        game = generate_game_for(FrostwolfWarlord, ArgentSquire, OneCardPlayingAgent, OneCardPlayingAgent)
         for turn in range(0, 9):
             game.play_single_turn()
         self.assertEqual(1, len(game.players[0].minions))
@@ -839,7 +849,7 @@ class TestCommon(unittest.TestCase):
 
     def test_SummonBattlecries(self):
         game = generate_game_for([MurlocTidehunter, RazorfenHunter, DragonlingMechanic], StonetuskBoar,
-                                 MinionPlayingAgent, DoNothingBot)
+                                 OneCardPlayingAgent, DoNothingAgent)
         for turn in range(0, 7):
             game.play_single_turn()
         self.assertEqual(6, len(game.players[0].minions))
@@ -856,7 +866,7 @@ class TestCommon(unittest.TestCase):
         self.assertTrue(game.current_player.hero.weapon is None)
 
     def test_AcidicSwampOozeWithNoWeapon(self):
-        game = generate_game_for(AcidicSwampOoze, StonetuskBoar, SpellTestingAgent, DoNothingBot)
+        game = generate_game_for(AcidicSwampOoze, StonetuskBoar, SpellTestingAgent, DoNothingAgent)
         game.play_single_turn()
         game.play_single_turn()
 
@@ -868,7 +878,7 @@ class TestCommon(unittest.TestCase):
 
     def test_KnifeJuggler(self):
         game = generate_game_for([KnifeJuggler, KnifeJuggler, MasterOfDisguise], [StonetuskBoar, GoldshireFootman],
-                                 MinionPlayingAgent, MinionPlayingAgent)
+                                 OneCardPlayingAgent, OneCardPlayingAgent)
 
         for turn in range(0, 5):
             game.play_single_turn()
@@ -888,7 +898,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(2, game.other_player.minions[0].health)
 
     def test_KnifeJugglerWithOwl(self):
-        game = generate_game_for([KnifeJuggler, IronbeakOwl], StonetuskBoar, MinionPlayingAgent, DoNothingBot)
+        game = generate_game_for([KnifeJuggler, IronbeakOwl], StonetuskBoar, OneCardPlayingAgent, DoNothingAgent)
 
         for turn in range(0, 5):
             game.play_single_turn()
@@ -899,7 +909,7 @@ class TestCommon(unittest.TestCase):
 
     def test_KnifeJugglerandMCT(self):
         game = generate_game_for(KnifeJuggler, [ChillwindYeti, MindControlTech],
-                                 MinionPlayingAgent, MinionPlayingAgent)
+                                 OneCardPlayingAgent, OneCardPlayingAgent)
         for turn in range(0, 10):
             game.play_single_turn()
 
@@ -908,14 +918,14 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(29, game.other_player.hero.health)
 
     def test_CairneBloodhoof(self):
-        game = generate_game_for(CairneBloodhoof, SiphonSoul, MinionPlayingAgent, SpellTestingAgent)
+        game = generate_game_for(CairneBloodhoof, SiphonSoul, OneCardPlayingAgent, SpellTestingAgent)
         for turn in range(0, 12):
             game.play_single_turn()
 
         self.assertEqual("Baine Bloodhoof", game.players[0].minions[0].card.name)
 
     def test_TheBeast(self):
-        game = generate_game_for(TheBeast, SiphonSoul, MinionPlayingAgent, SpellTestingAgent)
+        game = generate_game_for(TheBeast, SiphonSoul, OneCardPlayingAgent, SpellTestingAgent)
         for turn in range(0, 12):
             game.play_single_turn()
 
@@ -924,25 +934,27 @@ class TestCommon(unittest.TestCase):
         self.assertEqual("Finkle Einhorn", game.players[1].minions[0].card.name)
 
     def test_HarvestGolem(self):
-        game = generate_game_for(HarvestGolem, ShadowBolt, MinionPlayingAgent, SpellTestingAgent)
+        game = generate_game_for(HarvestGolem, ShadowBolt, OneCardPlayingAgent, SpellTestingAgent)
         for turn in range(0, 6):
             game.play_single_turn()
 
         self.assertEqual("Damaged Golem", game.players[0].minions[0].card.name)
 
     def test_SylvanasWindrunner(self):
-        game = generate_game_for(SylvanasWindrunner, SiphonSoul, MinionPlayingAgent, SpellTestingAgent)
+        game = generate_game_for(SylvanasWindrunner, SiphonSoul, OneCardPlayingAgent, SpellTestingAgent)
         imp = FlameImp()
         imp.summon(game.players[1], game, 0)
-        for turn in range(0, 12):
+        for turn in range(0, 11):
             game.play_single_turn()
+
+        game.play_single_turn()
 
         self.assertEqual(1, len(game.players[0].minions))
         self.assertEqual(0, len(game.players[1].minions))
         self.assertEqual("Flame Imp", game.players[0].minions[0].card.name)
 
     def test_StampedingKodo(self):
-        game = generate_game_for(StampedingKodo, ArgentSquire, MinionPlayingAgent, MinionPlayingAgent)
+        game = generate_game_for(StampedingKodo, ArgentSquire, OneCardPlayingAgent, OneCardPlayingAgent)
         for turn in range(0, 8):
             game.play_single_turn()
 
@@ -955,7 +967,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(3, len(game.players[1].minions))
 
     def test_FrostElemental(self):
-        game = generate_game_for(FrostElemental, ArgentSquire, SelfSpellTestingAgent, DoNothingBot)
+        game = generate_game_for(FrostElemental, ArgentSquire, SelfSpellTestingAgent, DoNothingAgent)
         for turn in range(0, 11):
             game.play_single_turn()
 
@@ -963,7 +975,7 @@ class TestCommon(unittest.TestCase):
 
     def test_LeperGnome(self):
         game = generate_game_for(LeperGnome, [MortalCoil, LeperGnome],
-                                 SpellTestingAgent, PredictableAgentWithoutHeroPower)
+                                 SpellTestingAgent, PlayAndAttackAgent)
         for turn in range(0, 2):
             game.play_single_turn()
 
@@ -982,7 +994,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(2, len(game.players[1].minions))
 
     def test_ManaAddict(self):
-        game = generate_game_for([ManaAddict, ArcaneIntellect], StonetuskBoar, SpellTestingAgent, DoNothingBot)
+        game = generate_game_for([ManaAddict, ArcaneIntellect], StonetuskBoar, SpellTestingAgent, DoNothingAgent)
         for turn in range(0, 4):
             game.play_single_turn()
 
@@ -1002,7 +1014,7 @@ class TestCommon(unittest.TestCase):
 
     def test_RagingWorgen(self):
         game = generate_game_for(RagingWorgen, [ArcaneExplosion, ArcaneExplosion, CircleOfHealing],
-                                 OneSpellTestingAgent, OneSpellTestingAgent)
+                                 OneCardPlayingAgent, OneCardPlayingAgent)
         for turn in range(0, 5):
             game.play_single_turn()
 
@@ -1030,7 +1042,7 @@ class TestCommon(unittest.TestCase):
 
     def test_TaurenWarrior(self):
         game = generate_game_for(TaurenWarrior, [ArcaneExplosion, ArcaneExplosion, CircleOfHealing],
-                                 OneSpellTestingAgent, OneSpellTestingAgent)
+                                 OneCardPlayingAgent, OneCardPlayingAgent)
         for turn in range(0, 5):
             game.play_single_turn()
 
@@ -1055,7 +1067,7 @@ class TestCommon(unittest.TestCase):
 
     def test_RaidLeader(self):
         game = generate_game_for([Wisp, RaidLeader], [ShadowBolt, MortalCoil, MassDispel],
-                                 MinionPlayingAgent, OneSpellTestingAgent)
+                                 OneCardPlayingAgent, OneCardPlayingAgent)
         for turn in range(0, 5):
             game.play_single_turn()
 
@@ -1084,7 +1096,7 @@ class TestCommon(unittest.TestCase):
 
     def test_KnifeJugglerEdgeCase(self):
         game = generate_game_for([TheBeast, PowerOverwhelming], [KnifeJuggler, MindControl],
-                                 OneSpellTestingAgent, MinionPlayingAgent)
+                                 OneCardPlayingAgent, OneCardPlayingAgent)
         for turn in range(0, 13):
             game.play_single_turn()
         # Beast dies to Siphon Soul and summons us a Finkle Einhorn, so Juggler knifes enemy hero
@@ -1093,7 +1105,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(29, game.players[0].hero.health)
 
     def test_VentureCoMercenary(self):
-        game = generate_game_for([VentureCoMercenary, Silence], StonetuskBoar, OneSpellTestingAgent, DoNothingBot)
+        game = generate_game_for([VentureCoMercenary, Silence], StonetuskBoar, OneCardPlayingAgent, DoNothingAgent)
         for turn in range(0, 10):
             game.play_single_turn()
 
@@ -1106,7 +1118,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(0, game.players[0].hand[1].mana_cost(game.players[0]))
 
     def test_Demolisher(self):
-        game = generate_game_for(Demolisher, StonetuskBoar, MinionPlayingAgent, DoNothingBot)
+        game = generate_game_for(Demolisher, StonetuskBoar, OneCardPlayingAgent, DoNothingAgent)
         for turn in range(0, 7):
             game.play_single_turn()
 
@@ -1117,7 +1129,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(28, game.players[1].hero.health)
 
     def test_Doomsayer(self):
-        game = generate_game_for(Doomsayer, StonetuskBoar, MinionPlayingAgent, MinionPlayingAgent)
+        game = generate_game_for(Doomsayer, StonetuskBoar, OneCardPlayingAgent, OneCardPlayingAgent)
         for turn in range(0, 4):
             game.play_single_turn()
 
@@ -1130,7 +1142,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(0, len(game.players[1].minions))
 
     def test_MasterSwordsmith(self):
-        game = generate_game_for(MasterSwordsmith, StonetuskBoar, MinionPlayingAgent, DoNothingBot)
+        game = generate_game_for(MasterSwordsmith, StonetuskBoar, OneCardPlayingAgent, DoNothingAgent)
         for turn in range(0, 4):
             game.play_single_turn()
 
@@ -1144,7 +1156,8 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(2, game.players[0].minions[1].calculate_attack())
 
     def test_InjuredBlademaster(self):
-        game = generate_game_for([InjuredBlademaster, CircleOfHealing], StonetuskBoar, MinionPlayingAgent, DoNothingBot)
+        game = generate_game_for([InjuredBlademaster, CircleOfHealing], StonetuskBoar,
+                                 OneCardPlayingAgent, DoNothingAgent)
         for turn in range(0, 6):
             game.play_single_turn()
 
@@ -1157,7 +1170,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(7, game.players[0].minions[0].health)
 
     def test_Gruul(self):
-        game = generate_game_for(Gruul, StonetuskBoar, MinionPlayingAgent, DoNothingBot)
+        game = generate_game_for(Gruul, StonetuskBoar, OneCardPlayingAgent, DoNothingAgent)
         for turn in range(0, 16):
             game.play_single_turn()
 
@@ -1174,7 +1187,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(10, game.players[0].minions[1].health)
 
     def test_Hogger(self):
-        game = generate_game_for(Hogger, StonetuskBoar, MinionPlayingAgent, DoNothingBot)
+        game = generate_game_for(Hogger, StonetuskBoar, OneCardPlayingAgent, DoNothingAgent)
         for turn in range(0, 11):
             game.play_single_turn()
 
@@ -1185,7 +1198,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(2, game.players[0].minions[1].health)
 
     def test_ImpMaster(self):
-        game = generate_game_for([ImpMaster, MindControl], StonetuskBoar, MinionPlayingAgent, DoNothingBot)
+        game = generate_game_for([ImpMaster, MindControl], StonetuskBoar, OneCardPlayingAgent, DoNothingAgent)
         for turn in range(0, 6):
             game.play_single_turn()
 
@@ -1202,7 +1215,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual("Imp", game.players[0].minions[0].card.name)
 
     def test_NatPagle(self):
-        game = generate_game_for([NatPagle, MindControl], StonetuskBoar, MinionPlayingAgent, DoNothingBot)
+        game = generate_game_for([NatPagle, MindControl], StonetuskBoar, OneCardPlayingAgent, DoNothingAgent)
         for turn in range(0, 4):
             game.play_single_turn()
 
@@ -1219,7 +1232,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(7, len(game.players[0].hand))
 
     def test_RagnarosTheFirelord(self):
-        game = generate_game_for(RagnarosTheFirelord, StonetuskBoar, PredictableAgentWithoutHeroPower, DoNothingBot)
+        game = generate_game_for(RagnarosTheFirelord, StonetuskBoar, PlayAndAttackAgent, DoNothingAgent)
         for turn in range(0, 15):
             game.play_single_turn()
 
@@ -1234,7 +1247,7 @@ class TestCommon(unittest.TestCase):
         # 3 rag balls to the face, but no attacks
 
     def test_AncientWatcher(self):
-        game = generate_game_for(AncientWatcher, StonetuskBoar, PredictableAgentWithoutHeroPower, DoNothingBot)
+        game = generate_game_for(AncientWatcher, StonetuskBoar, PlayAndAttackAgent, DoNothingAgent)
         for turn in range(0, 5):
             game.play_single_turn()
 
@@ -1242,7 +1255,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(30, game.players[1].hero.health)
 
     def test_ColdlightOracle(self):
-        game = generate_game_for(ColdlightOracle, StonetuskBoar, PredictableAgentWithoutHeroPower, DoNothingBot)
+        game = generate_game_for(ColdlightOracle, StonetuskBoar, PlayAndAttackAgent, DoNothingAgent)
         for turn in range(0, 5):
             game.play_single_turn()
 
@@ -1250,7 +1263,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(9, len(game.players[1].hand))
 
     def test_ColdlightSeer(self):
-        game = generate_game_for(ColdlightSeer, StonetuskBoar, PredictableAgentWithoutHeroPower, DoNothingBot)
+        game = generate_game_for(ColdlightSeer, StonetuskBoar, PlayAndAttackAgent, DoNothingAgent)
         for turn in range(0, 7):
             game.play_single_turn()
 
@@ -1262,7 +1275,7 @@ class TestCommon(unittest.TestCase):
 
     def test_GrimscaleOracle(self):
         game = generate_game_for(GrimscaleOracle, [MurlocRaider, ArcaneExplosion],
-                                 MinionPlayingAgent, SpellTestingAgent)
+                                 OneCardPlayingAgent, SpellTestingAgent)
         for turn in range(0, 3):
             game.play_single_turn()
 
@@ -1283,7 +1296,8 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(1, game.players[1].minions[0].health)
 
     def test_MurlocWarleader(self):
-        game = generate_game_for(MurlocWarleader, [MurlocRaider, StonetuskBoar], MinionPlayingAgent, MinionPlayingAgent)
+        game = generate_game_for(MurlocWarleader, [MurlocRaider, StonetuskBoar],
+                                 OneCardPlayingAgent, OneCardPlayingAgent)
         for turn in range(0, 7):
             game.play_single_turn()
 
@@ -1301,7 +1315,8 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(3, game.players[1].minions[2].health)
 
     def test_BigGameHunter(self):
-        game = generate_game_for(BigGameHunter, [StonetuskBoar, EarthElemental], MinionPlayingAgent, MinionPlayingAgent)
+        game = generate_game_for(BigGameHunter, [StonetuskBoar, EarthElemental],
+                                 OneCardPlayingAgent, OneCardPlayingAgent)
         for turn in range(0, 10):
             game.play_single_turn()
 
@@ -1314,7 +1329,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(1, len(game.players[1].minions))
 
     def test_BloodsailCorsair(self):
-        game = generate_game_for(BloodsailCorsair, [LightsJustice, FieryWarAxe], SpellTestingAgent, MinionPlayingAgent)
+        game = generate_game_for(BloodsailCorsair, [LightsJustice, FieryWarAxe], SpellTestingAgent, OneCardPlayingAgent)
         for turn in range(0, 2):
             game.play_single_turn()
 
@@ -1336,7 +1351,7 @@ class TestCommon(unittest.TestCase):
         self.assertIsNone(game.players[1].hero.weapon)
 
     def test_BloodsailRaider(self):
-        game = generate_game_for([BloodsailRaider, LightsJustice], StonetuskBoar, MinionPlayingAgent, DoNothingBot)
+        game = generate_game_for([BloodsailRaider, LightsJustice], StonetuskBoar, OneCardPlayingAgent, DoNothingAgent)
         for turn in range(0, 6):
             game.play_single_turn()
 
@@ -1353,7 +1368,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(3, game.players[0].minions[1].health)
 
     def test_CaptainGreenskin(self):
-        game = generate_game_for([CaptainGreenskin, LightsJustice], StonetuskBoar, MinionPlayingAgent, DoNothingBot)
+        game = generate_game_for([CaptainGreenskin, LightsJustice], StonetuskBoar, OneCardPlayingAgent, DoNothingAgent)
         for turn in range(0, 12):
             game.play_single_turn()
 
@@ -1368,7 +1383,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(5, game.players[0].hero.weapon.durability)
 
     def test_HungryCrab(self):
-        game = generate_game_for(HungryCrab, MurlocRaider, MinionPlayingAgent, MinionPlayingAgent)
+        game = generate_game_for(HungryCrab, MurlocRaider, OneCardPlayingAgent, OneCardPlayingAgent)
         for turn in range(0, 3):
             game.play_single_turn()
 
@@ -1376,7 +1391,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(0, len(game.players[1].minions))
 
     def test_ManaWraith(self):
-        game = generate_game_for([ManaWraith, Silence], StonetuskBoar, OneSpellTestingAgent, DoNothingBot)
+        game = generate_game_for([ManaWraith, Silence], StonetuskBoar, OneCardPlayingAgent, DoNothingAgent)
         for turn in range(0, 4):
             game.play_single_turn()
 
@@ -1391,7 +1406,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(1, game.players[1].hand[0].mana_cost(game.players[0]))
 
     def test_MindControlTech(self):
-        game = generate_game_for(MindControlTech, StonetuskBoar, MinionPlayingAgent, MinionPlayingAgent)
+        game = generate_game_for(MindControlTech, StonetuskBoar, OneCardPlayingAgent, OneCardPlayingAgent)
         for turn in range(0, 8):
             game.play_single_turn()
 
@@ -1404,7 +1419,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(3, len(game.players[1].minions))
 
     def test_MurlocTidecaller(self):
-        game = generate_game_for(MurlocTidecaller, MurlocRaider, MinionPlayingAgent, MinionPlayingAgent)
+        game = generate_game_for(MurlocTidecaller, MurlocRaider, OneCardPlayingAgent, OneCardPlayingAgent)
         for turn in range(0, 2):
             game.play_single_turn()
 
@@ -1427,7 +1442,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(1, game.players[1].minions[0].health)
 
     def test_Onyxia(self):
-        game = generate_game_for(Onyxia, MurlocRaider, MinionPlayingAgent, DoNothingBot)
+        game = generate_game_for(Onyxia, MurlocRaider, OneCardPlayingAgent, DoNothingAgent)
         for turn in range(0, 17):
             game.play_single_turn()
 
@@ -1438,7 +1453,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(1, game.players[0].minions[1].health)
 
     def test_SouthseaCaptain(self):
-        game = generate_game_for(SouthseaCaptain, StonetuskBoar, MinionPlayingAgent, DoNothingBot)
+        game = generate_game_for(SouthseaCaptain, StonetuskBoar, OneCardPlayingAgent, DoNothingAgent)
         for turn in range(0, 7):
             game.play_single_turn()
 
@@ -1450,7 +1465,7 @@ class TestCommon(unittest.TestCase):
 
     def test_SouthseaDeckhand(self):
         game = generate_game_for([SouthseaDeckhand, LightsJustice], StonetuskBoar,
-                                 PredictableAgentWithoutHeroPower, DoNothingBot)
+                                 PlayAndAttackAgent, DoNothingAgent)
         for turn in range(0, 2):
             game.play_single_turn()
 
@@ -1463,7 +1478,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(2, len(game.players[0].minions))
 
     def test_YoungPriestess(self):
-        game = generate_game_for(YoungPriestess, StonetuskBoar, MinionPlayingAgent, DoNothingBot)
+        game = generate_game_for(YoungPriestess, StonetuskBoar, OneCardPlayingAgent, DoNothingAgent)
         for turn in range(0, 2):
             game.play_single_turn()
 
@@ -1477,7 +1492,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(2, game.players[0].minions[1].health)
 
     def test_AcolyteOfPain(self):
-        game = generate_game_for(AcolyteOfPain, [MortalCoil, ShadowWordPain], MinionPlayingAgent, OneSpellTestingAgent)
+        game = generate_game_for(AcolyteOfPain, [MortalCoil, ShadowWordPain], OneCardPlayingAgent, OneCardPlayingAgent)
         for turn in range(0, 5):
             game.play_single_turn()
 
@@ -1497,7 +1512,7 @@ class TestCommon(unittest.TestCase):
 
     def test_CultMaster(self):
         game = generate_game_for([CultMaster, CultMaster, HolyNova], [StonetuskBoar, Assassinate],
-                                 MinionPlayingAgent, OneSpellTestingAgent)
+                                 OneCardPlayingAgent, OneCardPlayingAgent)
         for turn in range(0, 9):
             game.play_single_turn()
 
@@ -1515,7 +1530,7 @@ class TestCommon(unittest.TestCase):
 
     def test_Secretkeeper(self):
         game = generate_game_for([Secretkeeper, ExplosiveTrap], ExplosiveTrap,
-                                 MinionPlayingAgent, OneSpellTestingAgent)
+                                 OneCardPlayingAgent, OneCardPlayingAgent)
         for turn in range(0, 2):
             game.play_single_turn()
 
@@ -1537,7 +1552,7 @@ class TestCommon(unittest.TestCase):
 
     def test_VioletTeacher(self):
         game = generate_game_for([VioletTeacher, CircleOfHealing], CircleOfHealing,
-                                 MinionPlayingAgent, OneSpellTestingAgent)
+                                 OneCardPlayingAgent, OneCardPlayingAgent)
         for turn in range(0, 8):
             game.play_single_turn()
 
@@ -1549,9 +1564,24 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(2, len(game.players[0].minions))
         self.assertEqual(0, len(game.players[1].minions))
 
+    def test_VioletTeacherCounterspell(self):
+        game = generate_game_for([VioletTeacher, Fireball], Counterspell, OneCardPlayingAgent, OneCardPlayingAgent)
+
+        for turn in range(0, 8):
+            game.play_single_turn()
+
+        self.assertEqual(1, len(game.players[0].minions))
+        self.assertEqual(0, len(game.players[1].minions))
+        self.assertEqual(1, len(game.players[1].secrets))
+
+        game.play_single_turn()
+
+        self.assertEqual(2, len(game.players[0].minions))
+        self.assertEqual(0, len(game.players[1].secrets))
+
     def test_GadgetzanAuctioneer(self):
         game = generate_game_for([GadgetzanAuctioneer, CircleOfHealing], CircleOfHealing,
-                                 MinionPlayingAgent, OneSpellTestingAgent)
+                                 OneCardPlayingAgent, OneCardPlayingAgent)
         for turn in range(0, 10):
             game.play_single_turn()
 
@@ -1565,7 +1595,7 @@ class TestCommon(unittest.TestCase):
 
     def test_IllidanStormrage(self):
         game = generate_game_for([IllidanStormrage, CircleOfHealing], CircleOfHealing,
-                                 MinionPlayingAgent, OneSpellTestingAgent)
+                                 OneCardPlayingAgent, OneCardPlayingAgent)
         for turn in range(0, 12):
             game.play_single_turn()
 
@@ -1580,7 +1610,7 @@ class TestCommon(unittest.TestCase):
     def test_Lightwarden(self):
         game = generate_game_for([Lightwarden, MindControl],
                                  [StonetuskBoar, BoulderfistOgre, BoulderfistOgre, BoulderfistOgre, BoulderfistOgre],
-                                 PredictableBot, PredictableBot)
+                                 PredictableAgent, PredictableAgent)
 
         for turn in range(0, 2):
             game.play_single_turn()
@@ -1593,8 +1623,13 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(3, game.players[0].minions[0].calculate_attack())
         self.assertEqual(2, game.players[0].minions[0].health)
 
+        game.players[0].hero.health = 28
+        game.players[0].hero.heal(2, None)
+
+        self.assertEqual(5, game.players[0].minions[0].calculate_attack())
+
     def test_FlesheatingGhoul(self):
-        game = generate_game_for(CircleOfHealing, StonetuskBoar, OneSpellTestingAgent, PredictableAgentWithoutHeroPower)
+        game = generate_game_for(CircleOfHealing, StonetuskBoar, OneCardPlayingAgent, PlayAndAttackAgent)
         ghoul = FlesheatingGhoul()
         ghoul.summon(game.players[0], game, 0)
         for turn in range(0, 2):
@@ -1611,7 +1646,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(30, game.players[0].hero.health)
 
     def test_QuestingAdventurer(self):
-        game = generate_game_for(QuestingAdventurer, StonetuskBoar, MinionPlayingAgent, DoNothingBot)
+        game = generate_game_for(QuestingAdventurer, StonetuskBoar, OneCardPlayingAgent, DoNothingAgent)
         for turn in range(0, 7):
             game.play_single_turn()
 
@@ -1634,7 +1669,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(4, game.players[0].minions[2].health)
 
     def test_GurubashiBerserker(self):
-        game = generate_game_for(GurubashiBerserker, MortalCoil, MinionPlayingAgent, OneSpellTestingAgent)
+        game = generate_game_for(GurubashiBerserker, MortalCoil, OneCardPlayingAgent, OneCardPlayingAgent)
         for turn in range(0, 10):
             game.play_single_turn()
 
@@ -1642,7 +1677,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(6, game.players[0].minions[0].health)
 
     def test_MadBomber(self):
-        game = generate_game_for(MadBomber, StonetuskBoar, MinionPlayingAgent, MinionPlayingAgent)
+        game = generate_game_for(MadBomber, StonetuskBoar, OneCardPlayingAgent, OneCardPlayingAgent)
         for turn in range(0, 3):
             game.play_single_turn()
 
@@ -1653,7 +1688,7 @@ class TestCommon(unittest.TestCase):
 
     def test_AncientMage(self):
         game = generate_game_for([StonetuskBoar, StonetuskBoar, AncientMage], StonetuskBoar,
-                                 MinionPlayingAgent, DoNothingBot)
+                                 OneCardPlayingAgent, DoNothingAgent)
         for turn in range(0, 6):
             game.play_single_turn()
 
@@ -1671,7 +1706,7 @@ class TestCommon(unittest.TestCase):
 
     def test_DefenderOfArgus(self):
         game = generate_game_for([StonetuskBoar, StonetuskBoar, DefenderOfArgus], StonetuskBoar,
-                                 MinionPlayingAgent, DoNothingBot)
+                                 OneCardPlayingAgent, DoNothingAgent)
         for turn in range(0, 6):
             game.play_single_turn()
 
@@ -1693,7 +1728,7 @@ class TestCommon(unittest.TestCase):
 
     def test_SunfuryProtector(self):
         game = generate_game_for([StonetuskBoar, StonetuskBoar, SunfuryProtector], StonetuskBoar,
-                                 MinionPlayingAgent, DoNothingBot)
+                                 OneCardPlayingAgent, DoNothingAgent)
         for turn in range(0, 4):
             game.play_single_turn()
 
@@ -1708,7 +1743,7 @@ class TestCommon(unittest.TestCase):
         self.assertTrue(game.players[0].minions[2].taunt)
 
     def test_HarrisonJones(self):
-        game = generate_game_for(HarrisonJones, LightsJustice, MinionPlayingAgent, SpellTestingAgent)
+        game = generate_game_for(HarrisonJones, LightsJustice, OneCardPlayingAgent, SpellTestingAgent)
         game.players[0].max_mana = 3  # Cheat so player 1 has room to draw 4
         for turn in range(0, 2):
             game.play_single_turn()
@@ -1722,7 +1757,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(8, len(game.players[0].hand))
 
     def test_KingMukla(self):
-        game = generate_game_for([KingMukla, MindControl], LightsJustice, MinionPlayingAgent, OneSpellTestingAgent)
+        game = generate_game_for([KingMukla, MindControl], LightsJustice, OneCardPlayingAgent, OneCardPlayingAgent)
         for turn in range(0, 4):
             game.play_single_turn()
 
@@ -1739,11 +1774,11 @@ class TestCommon(unittest.TestCase):
         for turn in range(0, 11):
             game.play_single_turn()
 
-        self.assertEqual(6, game.players[0].minions[0].calculate_attack())
-        self.assertEqual(6, game.players[0].minions[0].health)
+        self.assertEqual(7, game.players[0].minions[0].calculate_attack())
+        self.assertEqual(7, game.players[0].minions[0].health)
 
     def test_LeeroyJenkins(self):
-        game = generate_game_for(LeeroyJenkins, StonetuskBoar, MinionPlayingAgent, DoNothingBot)
+        game = generate_game_for(LeeroyJenkins, StonetuskBoar, OneCardPlayingAgent, DoNothingAgent)
         for turn in range(0, 9):
             game.play_single_turn()
 
@@ -1751,7 +1786,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(2, len(game.players[1].minions))
 
     def test_MountainGiant(self):
-        game = generate_game_for(MountainGiant, StonetuskBoar, MinionPlayingAgent, DoNothingBot)
+        game = generate_game_for(MountainGiant, StonetuskBoar, OneCardPlayingAgent, DoNothingAgent)
 
         game.play_single_turn()
 
@@ -1776,7 +1811,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(1, len(game.current_player.minions))
 
     def test_MoltenGiant(self):
-        game = generate_game_for(MoltenGiant, StonetuskBoar, DoNothingBot, DoNothingBot)
+        game = generate_game_for(MoltenGiant, StonetuskBoar, DoNothingAgent, DoNothingAgent)
 
         game.play_single_turn()
         self.assertEqual(20, game.current_player.hand[0].mana_cost(game.current_player))
@@ -1788,7 +1823,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(0, game.current_player.hand[0].mana_cost(game.current_player))
 
     def test_SeaGiant(self):
-        game = generate_game_for([SeaGiant, SummoningPortal], StonetuskBoar, MinionPlayingAgent, SpellTestingAgent)
+        game = generate_game_for([SeaGiant, SummoningPortal], StonetuskBoar, OneCardPlayingAgent, SpellTestingAgent)
 
         game.play_single_turn()
         game.play_single_turn()
@@ -1819,7 +1854,7 @@ class TestCommon(unittest.TestCase):
 
     def test_DreadCorsair(self):
         game = generate_game_for([DreadCorsair, LightsJustice, GladiatorsLongbow],
-                                 StonetuskBoar, MinionPlayingAgent, DoNothingBot)
+                                 StonetuskBoar, OneCardPlayingAgent, DoNothingAgent)
         for turn in range(0, 8):
             game.play_single_turn()  # Play 4 mana dread corsair
 
@@ -1838,7 +1873,7 @@ class TestCommon(unittest.TestCase):
 
     def test_CaptainsParrot(self):
         game = generate_game_for([CaptainsParrot, DreadCorsair, StonetuskBoar], StonetuskBoar,
-                                 MinionPlayingAgent, DoNothingBot)
+                                 OneCardPlayingAgent, DoNothingAgent)
         for turn in range(0, 3):
             game.play_single_turn()
 
@@ -1848,7 +1883,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual("Dread Corsair", game.players[0].hand[4].name)
 
     def test_TinkmasterOverspark(self):
-        game = generate_game_for(TinkmasterOverspark, StonetuskBoar, MinionPlayingAgent, MinionPlayingAgent)
+        game = generate_game_for(TinkmasterOverspark, StonetuskBoar, OneCardPlayingAgent, OneCardPlayingAgent)
         for turn in range(0, 6):
             game.play_single_turn()
 
@@ -1874,7 +1909,7 @@ class TestCommon(unittest.TestCase):
 
     def test_AlarmoBot(self):
         game = generate_game_for([AlarmoBot, Sap, Sap, Sap, Sap, Deathwing, Deathwing], StonetuskBoar,
-                                 MinionPlayingAgent, DoNothingBot)
+                                 OneCardPlayingAgent, DoNothingAgent)
         for turn in range(0, 6):
             game.play_single_turn()
 
@@ -1889,7 +1924,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(6, len(game.players[0].hand))
 
     def test_EliteTaurenChieftain(self):
-        game = generate_game_for(EliteTaurenChieftain, StonetuskBoar, MinionPlayingAgent, DoNothingBot)
+        game = generate_game_for(EliteTaurenChieftain, StonetuskBoar, OneCardPlayingAgent, DoNothingAgent)
         game.players[0].max_mana = 4
 
         game.play_single_turn()
@@ -1971,7 +2006,7 @@ class TestCommon(unittest.TestCase):
         # Ok, that's all 3 cards covered
 
     def test_MillhouseManastorm(self):
-        game = generate_game_for(MillhouseManastorm, SiphonSoul, MinionPlayingAgent, SpellTestingAgent)
+        game = generate_game_for(MillhouseManastorm, SiphonSoul, OneCardPlayingAgent, SpellTestingAgent)
         for turn in range(0, 3):
             game.play_single_turn()
 
@@ -1993,7 +2028,8 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(3, len(game.players[0].minions))  # 1st costs 1, 2nd costs 2
 
     def test_OldMurkEye(self):
-        game = generate_game_for([OldMurkEye, ArcaneExplosion], BluegillWarrior, MinionPlayingAgent, MinionPlayingAgent)
+        game = generate_game_for([OldMurkEye, ArcaneExplosion], BluegillWarrior,
+                                 OneCardPlayingAgent, OneCardPlayingAgent)
         for turn in range(0, 7):
             game.play_single_turn()
 
@@ -2014,7 +2050,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(2, game.players[0].minions[0].calculate_attack())
 
     def test_Ysera(self):
-        game = generate_game_for(Innervate, StonetuskBoar, SpellTestingAgent, DoNothingBot)
+        game = generate_game_for(Innervate, StonetuskBoar, SpellTestingAgent, DoNothingAgent)
         ysera = Ysera()
         ysera.summon(game.players[0], game, 0)
         for turn in range(0, 2):
@@ -2098,7 +2134,7 @@ class TestCommon(unittest.TestCase):
         game.play_single_turn()  # Play Emerald Drake and we are done
 
     def test_YseraOverload(self):
-        game = generate_game_for(MindControl, StonetuskBoar, DoNothingBot, DoNothingBot)
+        game = generate_game_for(MindControl, StonetuskBoar, DoNothingAgent, DoNothingAgent)
         ysera = Ysera()
         ysera.summon(game.players[0], game, 0)
         ysera.summon(game.players[0], game, 1)
@@ -2106,7 +2142,8 @@ class TestCommon(unittest.TestCase):
             game.play_single_turn()
 
     def test_GelbinMekkaTwerk(self):
-        game = generate_game_for([GelbinMekkatorque, TwistingNether], StonetuskBoar, OneSpellTestingAgent, DoNothingBot)
+        game = generate_game_for([GelbinMekkatorque, TwistingNether], StonetuskBoar,
+                                 OneCardPlayingAgent, DoNothingAgent)
         game.players[0].hero.health = 14
         for turn in range(0, 12):
             game.play_single_turn()
@@ -2165,7 +2202,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(5, game.players[0].minions[1].health)
 
     def test_LorewalkerCho(self):
-        game = generate_game_for(FreezingTrap, SinisterStrike, OneSpellTestingAgent, OneSpellTestingAgent)
+        game = generate_game_for(FreezingTrap, SinisterStrike, OneCardPlayingAgent, OneCardPlayingAgent)
         cho = LorewalkerCho()
         cho.summon(game.players[0], game, 0)
         for turn in range(0, 2):
@@ -2182,7 +2219,7 @@ class TestCommon(unittest.TestCase):
 
     def test_WildPyromancer(self):
         game = generate_game_for([WildPyromancer, MindBlast, PowerWordShield], Shieldbearer,
-                                 SpellTestingAgent, DoNothingBot)
+                                 SpellTestingAgent, DoNothingAgent)
         for turn in range(0, 4):
             game.play_single_turn()
 
@@ -2202,7 +2239,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(0, len(game.players[0].minions))
 
     def test_FacelessManipulator(self):
-        game = generate_game_for(FacelessManipulator, Abomination, EnemyMinionSpellTestingAgent, MinionPlayingAgent)
+        game = generate_game_for(FacelessManipulator, Abomination, EnemyMinionSpellTestingAgent, OneCardPlayingAgent)
         for turn in range(0, 10):
             game.play_single_turn()
 
@@ -2220,7 +2257,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(4, game.players[0].minions[0].calculate_max_health())
 
     def test_NerubianEgg(self):
-        game = generate_game_for(NerubianEgg, ShadowBolt, MinionPlayingAgent, SpellTestingAgent)
+        game = generate_game_for(NerubianEgg, ShadowBolt, OneCardPlayingAgent, SpellTestingAgent)
 
         for turn in range(0, 3):
             game.play_single_turn()
@@ -2239,7 +2276,7 @@ class TestCommon(unittest.TestCase):
 
     def test_Maexxna(self):
         game = generate_game_for(Maexxna, [Maexxna, WarGolem, Gruul],
-                                 PredictableAgentWithoutHeroPower, PredictableAgentWithoutHeroPower)
+                                 PlayAndAttackAgent, PlayAndAttackAgent)
 
         for turn in range(0, 13):
             game.play_single_turn()
@@ -2260,7 +2297,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(2, len(game.current_player.minions))
 
     def test_HauntedCreeper(self):
-        game = generate_game_for(HauntedCreeper, Frostbolt, MinionPlayingAgent, SpellTestingAgent)
+        game = generate_game_for(HauntedCreeper, Frostbolt, OneCardPlayingAgent, SpellTestingAgent)
         for turn in range(0, 4):
             game.play_single_turn()
 
@@ -2268,7 +2305,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual("Spectral Spider", game.players[0].minions[1].card.name)
 
     def test_HauntedCreeper_overfill(self):
-        game = generate_game_for(Blizzard, HauntedCreeper, SpellTestingAgent, MinionPlayingAgent)
+        game = generate_game_for(Blizzard, HauntedCreeper, SpellTestingAgent, OneCardPlayingAgent)
 
         for turn in range(0, 11):
             game.play_single_turn()
@@ -2280,7 +2317,7 @@ class TestCommon(unittest.TestCase):
 
     def test_NerubarWeblord(self):
         game = generate_game_for([NerubarWeblord, EarthenRingFarseer], [NoviceEngineer, IronfurGrizzly],
-                                 MinionPlayingAgent, MinionPlayingAgent)
+                                 OneCardPlayingAgent, OneCardPlayingAgent)
         for turn in range(0, 3):
             game.play_single_turn()
 
@@ -2296,7 +2333,7 @@ class TestCommon(unittest.TestCase):
     def test_NerubarWeblord_with_combo_and_choose(self):
         game = generate_game_for(NerubarWeblord,
                                  [KeeperOfTheGrove, AncientOfWar, Kidnapper, DefiasRingleader, SI7Agent],
-                                 MinionPlayingAgent, DoNothingBot)
+                                 OneCardPlayingAgent, DoNothingAgent)
 
         for turn in range(0, 5):
             game.play_single_turn()
@@ -2310,7 +2347,7 @@ class TestCommon(unittest.TestCase):
 
     def test_UnstableGhoul(self):
         game = generate_game_for([StonetuskBoar, FaerieDragon, GoldshireFootman, Frostbolt], UnstableGhoul,
-                                 SpellTestingAgent, MinionPlayingAgent)
+                                 SpellTestingAgent, OneCardPlayingAgent)
 
         for turn in range(0, 5):
             game.play_single_turn()
@@ -2323,7 +2360,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(30, game.other_player.hero.health)
 
     def test_Loatheb(self):
-        game = generate_game_for(Loatheb, [Assassinate, BoulderfistOgre], MinionPlayingAgent, SpellTestingAgent)
+        game = generate_game_for(Loatheb, [Assassinate, BoulderfistOgre], OneCardPlayingAgent, SpellTestingAgent)
 
         for turn in range(0, 9):
             game.play_single_turn()
@@ -2339,7 +2376,7 @@ class TestCommon(unittest.TestCase):
     def test_StoneskinGargoyle(self):
         game = generate_game_for(ConeOfCold,
                                  [NorthshireCleric, StoneskinGargoyle, StoneskinGargoyle, StoneskinGargoyle],
-                                 SpellTestingAgent, MinionPlayingAgent)
+                                 SpellTestingAgent, OneCardPlayingAgent)
 
         for turn in range(0, 7):
             game.play_single_turn()
@@ -2368,7 +2405,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(4, game.current_player.minions[2].health)
 
     def test_SludgeBelcher(self):
-        game = generate_game_for(SludgeBelcher, Fireball, MinionPlayingAgent, MinionPlayingAgent)
+        game = generate_game_for(SludgeBelcher, Fireball, OneCardPlayingAgent, OneCardPlayingAgent)
 
         for turn in range(0, 9):
             game.play_single_turn()
@@ -2384,7 +2421,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(2, game.other_player.minions[0].health)
 
     def test_FaerieDragon(self):
-        game = generate_game_for(FaerieDragon, Frostbolt, MinionPlayingAgent, SpellTestingAgent)
+        game = generate_game_for(FaerieDragon, Frostbolt, OneCardPlayingAgent, SpellTestingAgent)
         for turn in range(0, 3):
             game.play_single_turn()
 
@@ -2409,7 +2446,7 @@ class TestCommon(unittest.TestCase):
 
     def test_BaronRivendare(self):
         game = generate_game_for([BloodmageThalnos, HarvestGolem, BaronRivendare], StonetuskBoar,
-                                 MinionPlayingAgent, DoNothingBot)
+                                 OneCardPlayingAgent, DoNothingAgent)
 
         for turn in range(0, 7):
             game.play_single_turn()
@@ -2432,7 +2469,7 @@ class TestCommon(unittest.TestCase):
 
     def test_BaronRivendareFaceless(self):
         game = generate_game_for([HarvestGolem, BaronRivendare, FacelessManipulator], StonetuskBoar,
-                                 MinionPlayingAgent, DoNothingBot)
+                                 OneCardPlayingAgent, DoNothingAgent)
 
         for turn in range(0, 9):
             game.play_single_turn()
@@ -2444,7 +2481,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(4, len(game.current_player.minions))
 
     def test_DancingSwords(self):
-        game = generate_game_for(DancingSwords, ShadowBolt, MinionPlayingAgent, SpellTestingAgent)
+        game = generate_game_for(DancingSwords, ShadowBolt, OneCardPlayingAgent, SpellTestingAgent)
 
         for turn in range(0, 5):
             game.play_single_turn()
@@ -2457,7 +2494,7 @@ class TestCommon(unittest.TestCase):
 
     def test_Deathlord(self):
         game = generate_game_for(Deathlord, [HauntedCreeper, OasisSnapjaw, Frostbolt, WaterElemental, Pyroblast],
-                                 MinionPlayingAgent, DoNothingBot)
+                                 OneCardPlayingAgent, DoNothingAgent)
 
         for turn in range(0, 5):
             game.play_single_turn()
@@ -2503,14 +2540,14 @@ class TestCommon(unittest.TestCase):
 
         used_count = 0
 
-        for u in game.other_player.deck.used:
-            if u:
+        for c in game.other_player.deck.cards:
+            if c.drawn:
                 used_count += 1
 
         self.assertEqual(11, used_count)
 
     def test_SpectralKnight(self):
-        game = generate_game_for(SpectralKnight, Fireball, MinionPlayingAgent, SpellTestingAgent)
+        game = generate_game_for(SpectralKnight, Fireball, OneCardPlayingAgent, SpellTestingAgent)
         for turn in range(0, 9):
             game.play_single_turn()
 
@@ -2535,7 +2572,7 @@ class TestCommon(unittest.TestCase):
 
     def test_Reincarnate(self):
         game = generate_game_for([BoulderfistOgre, Reincarnate], SylvanasWindrunner,
-                                 MinionPlayingAgent, MinionPlayingAgent)
+                                 OneCardPlayingAgent, OneCardPlayingAgent)
 
         for turn in range(0, 13):
             game.play_single_turn()
@@ -2548,7 +2585,7 @@ class TestCommon(unittest.TestCase):
 
     def test_Undertaker(self):
         game = generate_game_for([Undertaker, GoldshireFootman, HarvestGolem, AnubarAmbusher], HauntedCreeper,
-                                 MinionPlayingAgent, MinionPlayingAgent)
+                                 OneCardPlayingAgent, OneCardPlayingAgent)
 
         for turn in range(0, 3):
             game.play_single_turn()
@@ -2583,20 +2620,20 @@ class TestCommon(unittest.TestCase):
 
     def test_WailingSoul(self):
         game = generate_game_for([StonetuskBoar, HauntedCreeper, IronfurGrizzly, WailingSoul], ScarletCrusader,
-                                 MinionPlayingAgent, MinionPlayingAgent)
+                                 OneCardPlayingAgent, OneCardPlayingAgent)
 
         for turn in range(0, 7):
             game.play_single_turn()
 
         self.assertEqual(4, len(game.current_player.minions))
         self.assertFalse(game.current_player.minions[3].charge)
-        self.assertIsNone(game.current_player.minions[2].deathrattle)
+        self.assertEqual(0, len(game.current_player.minions[2].deathrattle))
         self.assertFalse(game.current_player.minions[1].taunt)
         self.assertTrue(game.other_player.minions[0].divine_shield)
 
     def test_ZombieChow(self):
         game = generate_game_for([ZombieChow, ZombieChow, ZombieChow, AuchenaiSoulpriest], StonetuskBoar,
-                                 MinionPlayingAgent, DoNothingBot)
+                                 OneCardPlayingAgent, DoNothingAgent)
 
         game.play_single_turn()
 
@@ -2629,7 +2666,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(10, game.other_player.hero.health)
 
     def test_Feugen(self):
-        game = generate_game_for([Stalagg, Feugen], Assassinate, MinionPlayingAgent, SpellTestingAgent)
+        game = generate_game_for([Stalagg, Feugen], Assassinate, OneCardPlayingAgent, SpellTestingAgent)
 
         for turn in range(0, 10):
             game.play_single_turn()
@@ -2646,7 +2683,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual("Thaddius", game.other_player.minions[0].card.name)
 
     def test_Stalagg(self):
-        game = generate_game_for([Feugen, Stalagg], StonetuskBoar, MinionPlayingAgent, DoNothingBot)
+        game = generate_game_for([Feugen, Stalagg], StonetuskBoar, OneCardPlayingAgent, DoNothingAgent)
 
         for turn in range(0, 9):
             game.play_single_turn()
@@ -2671,7 +2708,7 @@ class TestCommon(unittest.TestCase):
 
     def test_Stalagg_Feugen_and_simultaneous_death(self):
         game = generate_game_for([Feugen, Stalagg], [WildGrowth, WildGrowth, TwistingNether],
-                                 MinionPlayingAgent, MinionPlayingAgent)
+                                 OneCardPlayingAgent, OneCardPlayingAgent)
         for turn in range(0, 11):
             game.play_single_turn()
 
@@ -2685,7 +2722,7 @@ class TestCommon(unittest.TestCase):
 
     def test_MadScientist(self):
         game = generate_game_for([MadScientist, EyeForAnEye, Repentance], BluegillWarrior,
-                                 SpellTestingAgent, PredictableAgentWithoutHeroPower)
+                                 SpellTestingAgent, PlayAndAttackAgent)
 
         for turn in range(0, 3):
             game.play_single_turn()
@@ -2717,7 +2754,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(2, len(game.current_player.secrets))
 
     def test_EchoingOoze(self):
-        game = generate_game_for(EchoingOoze, StoneskinGargoyle, MinionPlayingAgent, DoNothingBot)
+        game = generate_game_for(EchoingOoze, StoneskinGargoyle, OneCardPlayingAgent, DoNothingAgent)
 
         for turn in range(0, 3):
             game.play_single_turn()
@@ -2743,7 +2780,7 @@ class TestCommon(unittest.TestCase):
 
     def test_EchoingOoze_buff(self):
         game = generate_game_for([BloodfenRaptor, EchoingOoze, BlessingOfMight], StonetuskBoar,
-                                 SpellTestingAgent, DoNothingBot)
+                                 SpellTestingAgent, DoNothingAgent)
 
         for turn in range(0, 5):
             game.play_single_turn()
@@ -2755,7 +2792,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(2, game.current_player.minions[1].calculate_max_health())
 
     def testEchoingOoze_silence(self):
-        game = generate_game_for([EchoingOoze, Silence], StoneskinGargoyle, SpellTestingAgent, DoNothingBot)
+        game = generate_game_for([EchoingOoze, Silence], StoneskinGargoyle, SpellTestingAgent, DoNothingAgent)
 
         for turn in range(0, 3):
             game.play_single_turn()
@@ -2769,7 +2806,7 @@ class TestCommon(unittest.TestCase):
 
     def test_EchoingOoze_removal(self):
         game = generate_game_for([IronfurGrizzly, EchoingOoze, Frostbolt], StonetuskBoar,
-                                 SpellTestingAgent, DoNothingBot)
+                                 SpellTestingAgent, DoNothingAgent)
 
         for turn in range(0, 7):
             game.play_single_turn()
@@ -2780,7 +2817,7 @@ class TestCommon(unittest.TestCase):
 
     def test_EchoingOoze_Faceless(self):
         game = generate_game_for([BoulderfistOgre, EchoingOoze, FacelessManipulator], StonetuskBoar,
-                                 SpellTestingAgent, DoNothingBot)
+                                 SpellTestingAgent, DoNothingAgent)
 
         for turn in range(0, 13):
             game.play_single_turn()
@@ -2795,7 +2832,7 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(2, game.current_player.minions[2].calculate_max_health())
 
     def test_ShadeOfNaxxramas(self):
-        game = generate_game_for(ShadeOfNaxxramas, StonetuskBoar, MinionPlayingAgent, DoNothingBot)
+        game = generate_game_for(ShadeOfNaxxramas, StonetuskBoar, OneCardPlayingAgent, DoNothingAgent)
 
         for turn in range(0, 5):
             game.play_single_turn()
@@ -2828,7 +2865,7 @@ class TestCommon(unittest.TestCase):
 
     def test_KelThuzad(self):
         game = generate_game_for([StonetuskBoar, IronfurGrizzly, MagmaRager, KelThuzad], [WarGolem, Flamestrike],
-                                 MinionPlayingAgent, SpellTestingAgent)
+                                 OneCardPlayingAgent, SpellTestingAgent)
 
         for turn in range(0, 15):
             game.play_single_turn()
@@ -2844,7 +2881,7 @@ class TestCommon(unittest.TestCase):
 
     def test_KelThuzad_with_silence(self):
         game = generate_game_for([StonetuskBoar, IronfurGrizzly, MagmaRager, KelThuzad], [WarGolem, Flamestrike],
-                                 MinionPlayingAgent, MinionPlayingAgent)
+                                 OneCardPlayingAgent, OneCardPlayingAgent)
 
         for turn in range(0, 15):
             game.play_single_turn()
@@ -2861,7 +2898,7 @@ class TestCommon(unittest.TestCase):
 
     def test_KelThuzad_on_friendly_turn(self):
         game = generate_game_for([StonetuskBoar, IronfurGrizzly, MagmaRager, KelThuzad, Hellfire], StonetuskBoar,
-                                 MinionPlayingAgent, DoNothingBot)
+                                 OneCardPlayingAgent, DoNothingAgent)
 
         for turn in range(0, 16):
             game.play_single_turn()
@@ -2878,7 +2915,7 @@ class TestCommon(unittest.TestCase):
 
     def test_KelThuzad_after_friendly_death(self):
         game = generate_game_for([RagnarosTheFirelord, Naturalize, KelThuzad], StonetuskBoar,
-                                 SpellTestingAgent, DoNothingBot)
+                                 SpellTestingAgent, DoNothingAgent)
         for turn in range(0, 17):
             game.play_single_turn()
 
@@ -2886,3 +2923,27 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(2, len(game.current_player.minions))
         self.assertEqual("Kel'Thuzad", game.current_player.minions[0].card.name)
         self.assertEqual("Ragnaros the Firelord", game.current_player.minions[1].card.name)
+
+    def test_KelThuzad_with_another_KelThuzad(self):
+        game = generate_game_for([KelThuzad, KelThuzad, Pyroblast],
+                                 [TirionFordring, Assassinate, Assassinate, Assassinate],
+                                 OneCardPlayingAgent, SpellTestingAgent)
+
+        for turn in range(0, 17):
+            game.play_single_turn()
+
+        self.assertEqual(2, len(game.current_player.minions))
+
+        # One assassinate should be played, which should kill off one Kel'Thuzad, however the other Kel'Thuzad should
+        # bring bring back
+        game.play_single_turn()
+
+        self.assertEqual(2, len(game.other_player.minions))
+
+        # Still just the two Kel'Thuzads, after one is killed by pyroblast and brought back
+        game.play_single_turn()
+        self.assertEqual(2, len(game.current_player.minions))
+
+        # Now both Kel'Thuzads should be assassinated, and both be dead
+        game.play_single_turn()
+        self.assertEqual(0, len(game.other_player.minions))

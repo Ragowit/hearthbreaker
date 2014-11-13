@@ -1,6 +1,8 @@
 import copy
-from hearthbreaker.effects.minion import Summon
-from hearthbreaker.effects.player import ManaAdjustment
+from hearthbreaker.tags.action import Replace
+from hearthbreaker.tags.aura import ManaAura
+from hearthbreaker.tags.base import Deathrattle
+from hearthbreaker.tags.selector import PlayerSelector, SpecificCardSelector
 import hearthbreaker.targeting
 from hearthbreaker.constants import CHARACTER_CLASS, CARD_RARITY, MINION_TYPE
 from hearthbreaker.game_objects import Card, Minion, MinionCard
@@ -26,7 +28,7 @@ class AncestralSpirit(Card):
 
     def use(self, player, game):
         super().use(player, game)
-        self.target.add_effect(Summon("death", type(self.target.card), "self"))
+        self.target.deathrattle.append(Deathrattle(Replace(self.target.card), PlayerSelector()))
 
 
 class Bloodlust(Card):
@@ -58,15 +60,15 @@ class FarSight(Card):
 
     def use(self, player, game):
         def reduce_cost(card):
-            nonlocal effect
-            effect = ManaAdjustment(card, 3)
+            nonlocal aura
+            aura = ManaAura(3, 0, SpecificCardSelector(card), True, False)
 
         super().use(player, game)
-        effect = None
+        aura = None
         player.bind_once("card_drawn", reduce_cost)
         player.draw()
-        if effect is not None:
-            player.add_effect(effect)
+        if aura is not None:
+            player.add_aura(aura)
 
 
 class FeralSpirit(Card):
@@ -97,10 +99,11 @@ class ForkedLightning(Card):
     def use(self, player, game):
         super().use(player, game)
 
-        targets = copy.copy(game.other_player.minions)
+        minions = copy.copy(game.other_player.minions)
         for i in range(0, 2):
-            target = targets.pop(game.random(0, len(targets) - 1))
-            target.damage(player.effective_spell_damage(2), self)
+            minion = game.random_choice(minions)
+            minions.remove(minion)
+            minion.damage(player.effective_spell_damage(3), self)
 
     def can_use(self, player, game):
         return super().can_use(player, game) and len(game.other_player.minions) >= 2
@@ -169,7 +172,7 @@ class LightningStorm(Card):
         super().use(player, game)
 
         for minion in copy.copy(game.other_player.minions):
-            minion.damage(player.effective_spell_damage(game.random(2, 3)), self)
+            minion.damage(player.effective_spell_damage(game.random_amount(2, 3)), self)
 
 
 class RockbiterWeapon(Card):
