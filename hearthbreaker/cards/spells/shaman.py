@@ -1,8 +1,8 @@
 import copy
-from hearthbreaker.tags.action import Replace
+from hearthbreaker.tags.action import Summon
 from hearthbreaker.tags.aura import ManaAura
-from hearthbreaker.tags.base import Deathrattle
-from hearthbreaker.tags.selector import PlayerSelector, SpecificCardSelector
+from hearthbreaker.tags.base import Deathrattle, Aura
+from hearthbreaker.tags.selector import PlayerSelector, SpecificCardSelector, SelfSelector
 import hearthbreaker.targeting
 from hearthbreaker.constants import CHARACTER_CLASS, CARD_RARITY, MINION_TYPE
 from hearthbreaker.game_objects import Card, Minion, MinionCard
@@ -28,7 +28,7 @@ class AncestralSpirit(Card):
 
     def use(self, player, game):
         super().use(player, game)
-        self.target.deathrattle.append(Deathrattle(Replace(self.target.card), PlayerSelector()))
+        self.target.deathrattle.append(Deathrattle(Summon(self.target.card), PlayerSelector()))
 
 
 class Bloodlust(Card):
@@ -39,7 +39,7 @@ class Bloodlust(Card):
         super().use(player, game)
 
         for minion in player.minions:
-            minion.temp_attack += 3
+            minion.change_temp_attack(3)
 
 
 class EarthShock(Card):
@@ -206,7 +206,7 @@ class Windfury(Card):
     def use(self, player, game):
         super().use(player, game)
 
-        self.target.windfury = True
+        self.target.add_aura(Aura(hearthbreaker.tags.action.Windfury(), SelfSelector()))
 
 
 class Reincarnate(Card):

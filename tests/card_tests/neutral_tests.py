@@ -999,7 +999,7 @@ class TestCommon(unittest.TestCase):
             game.play_single_turn()
 
         def check_attack(m):
-            self.assertEqual(2, game.players[0].minions[0].temp_attack)
+            self.assertEqual(3, game.players[0].minions[0].calculate_attack())
 
         game.players[0].bind("spell_cast", check_attack)
         self.assertEqual(1, len(game.players[0].minions))
@@ -1009,7 +1009,6 @@ class TestCommon(unittest.TestCase):
 
         self.assertEqual(1, len(game.players[0].minions))
         self.assertEqual(1, game.players[0].minions[0].calculate_attack())
-        self.assertEqual(0, game.players[0].minions[0].temp_attack)
         self.assertEqual(6, len(game.players[0].hand))
 
     def test_RagingWorgen(self):
@@ -1669,12 +1668,19 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(4, game.players[0].minions[2].health)
 
     def test_GurubashiBerserker(self):
-        game = generate_game_for(GurubashiBerserker, MortalCoil, OneCardPlayingAgent, OneCardPlayingAgent)
+        game = generate_game_for([GurubashiBerserker, BoulderfistOgre],
+                                 MortalCoil, OneCardPlayingAgent, OneCardPlayingAgent)
         for turn in range(0, 10):
             game.play_single_turn()
 
         self.assertEqual(5, game.players[0].minions[0].calculate_attack())
         self.assertEqual(6, game.players[0].minions[0].health)
+
+        game.play_single_turn()
+        game.play_single_turn()
+
+        self.assertEqual(5, game.players[0].minions[1].calculate_attack())
+        self.assertEqual(6, game.players[0].minions[1].health)
 
     def test_MadBomber(self):
         game = generate_game_for(MadBomber, StonetuskBoar, OneCardPlayingAgent, OneCardPlayingAgent)
@@ -2006,14 +2012,16 @@ class TestCommon(unittest.TestCase):
         # Ok, that's all 3 cards covered
 
     def test_MillhouseManastorm(self):
-        game = generate_game_for(MillhouseManastorm, SiphonSoul, OneCardPlayingAgent, SpellTestingAgent)
+        game = generate_game_for([MillhouseManastorm, MagmaRager], SiphonSoul, OneCardPlayingAgent, SpellTestingAgent)
         for turn in range(0, 3):
             game.play_single_turn()
 
         self.assertEqual(1, len(game.players[0].minions))
-
         game.play_single_turn()
-
+        self.assertEqual(0, len(game.players[0].minions))
+        game.play_single_turn()
+        self.assertEqual(1, len(game.players[0].minions))
+        game.play_single_turn()
         self.assertEqual(1, len(game.players[0].minions))
 
     def test_PintSizedSummoner(self):
@@ -2237,6 +2245,21 @@ class TestCommon(unittest.TestCase):
 
         # The two pyros killed each other with the effect after mind blast
         self.assertEqual(0, len(game.players[0].minions))
+
+    def test_WildPyro_Equality(self):
+        game = generate_game_for([IronfurGrizzly, WildPyromancer, Equality], GoldshireFootman,
+                                 SpellTestingAgent, SpellTestingAgent)
+
+        for turn in range(0, 6):
+            game.play_single_turn()
+
+        self.assertEqual(1, len(game.players[0].minions))
+        self.assertEqual(7, len(game.players[1].minions))
+
+        game.play_single_turn()
+
+        self.assertEqual(0, len(game.players[0].minions))
+        self.assertEqual(0, len(game.players[1].minions))
 
     def test_FacelessManipulator(self):
         game = generate_game_for(FacelessManipulator, Abomination, EnemyMinionSpellTestingAgent, OneCardPlayingAgent)

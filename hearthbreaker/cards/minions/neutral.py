@@ -3,16 +3,18 @@ from hearthbreaker.cards.battlecries import draw_card, silence, deal_one_damage,
     heal_three, give_enemy_crystal, darkscale_healer, priestess_of_elune, \
     destroy_target, two_temp_attack, nightblade, ssc, deathwing, return_to_hand
 from hearthbreaker.tags.action import Charge, ChangeAttack, ChangeHealth, Heal, CantAttack, ManaChange, Summon, Draw, \
-    Chance, Kill, Damage, IncreaseTempAttack, ResurrectFriendly, DoubleDeathrattle, SummonFromDeck, Replace, IfInGraveyard, \
-    Steal, ApplySecretFromDeck, Duplicate
+    Chance, Kill, Damage, ResurrectFriendly, DoubleDeathrattle, SummonFromDeck, IfInGraveyard, \
+    Steal, ApplySecretFromDeck, Duplicate, Give, Windfury, IncreaseWeaponAttack, SwapWithHand
 from hearthbreaker.tags.aura import ManaAura
-from hearthbreaker.tags.base import Aura, Effect, Deathrattle
-from hearthbreaker.tags.condition import Adjacent, MinionIsType, MinionHasDeathrattle, IsMinion
+from hearthbreaker.tags.base import Aura, Effect, Deathrattle, AuraUntil
+from hearthbreaker.tags.condition import Adjacent, MinionIsType, MinionHasDeathrattle, IsMinion, IsSecret, \
+    MinionIsTarget, IsSpell
 from hearthbreaker.tags.event import TurnEnded, CardPlayed, MinionSummoned, TurnStarted, DidDamage, AfterAdded, \
-    SpellCast, CharacterHealed
+    SpellCast, CharacterHealed, CharacterDamaged, MinionDied, CardUsed
 from hearthbreaker.tags.selector import MinionSelector, BothPlayer, SelfSelector, RandomSelector, BattlecrySelector, \
-    PlayerSelector, MinionCardSelector, TargetSelector, EnemyPlayer, CharacterSelector, SpellSelector
-from hearthbreaker.game_objects import Minion, MinionCard, SecretCard, Card
+    PlayerSelector, MinionCardSelector, TargetSelector, EnemyPlayer, CharacterSelector, SpellSelector, WeaponSelector, \
+    HeroSelector
+from hearthbreaker.game_objects import Minion, MinionCard, Card
 from hearthbreaker.constants import CARD_RARITY, CHARACTER_CLASS, MINION_TYPE
 import hearthbreaker.targeting
 import copy
@@ -230,7 +232,7 @@ class LeperGnome(MinionCard):
                 player.game.current_player.hero.damage(2, None)
                 player.game.current_player.hero.activate_delayed()
 
-        return Minion(2, 1, deathrattle=Deathrattle(Damage(2), PlayerSelector(EnemyPlayer())))
+        return Minion(2, 1, deathrattle=Deathrattle(Damage(2), HeroSelector(EnemyPlayer())))
 
 
 class IronforgeRifleman(MinionCard):
@@ -295,7 +297,8 @@ class ManaAddict(MinionCard):
         super().__init__("Mana Addict", 2, CHARACTER_CLASS.ALL, CARD_RARITY.RARE)
 
     def create_minion(self, player):
-        return Minion(1, 3, effects=[Effect(SpellCast(), IncreaseTempAttack(2), SelfSelector())])
+        return Minion(1, 3, effects=[Effect(SpellCast(), Give(AuraUntil(ChangeAttack(2), SelfSelector(), TurnEnded())),
+                                            SelfSelector())])
 
 
 class OasisSnapjaw(MinionCard):
@@ -614,21 +617,7 @@ class AmaniBerserker(MinionCard):
         super().__init__("Amani Berserker", 2, CHARACTER_CLASS.ALL, CARD_RARITY.COMMON)
 
     def create_minion(self, player):
-        def increase_attack():
-            minion.change_attack(3)
-
-        def decrease_attack():
-            minion.change_attack(-3)
-
-        def silenced():
-            minion.unbind("enraged", increase_attack)
-            minion.unbind("unenraged", decrease_attack)
-
-        minion = Minion(2, 3)
-        minion.bind("enraged", increase_attack)
-        minion.bind("unenraged", decrease_attack)
-        minion.bind("silenced", silenced)
-        return minion
+        return Minion(2, 3, enrage=[ChangeAttack(3)])
 
 
 class SilverHandKnight(MinionCard):
@@ -745,21 +734,7 @@ class AngryChicken(MinionCard):
         super().__init__("Angry Chicken", 1, CHARACTER_CLASS.ALL, CARD_RARITY.RARE, MINION_TYPE.BEAST)
 
     def create_minion(self, player):
-        def increase_attack():
-            minion.change_attack(5)
-
-        def decrease_attack():
-            minion.change_attack(-5)
-
-        def silenced():
-            minion.unbind("enraged", increase_attack)
-            minion.unbind("unenraged", decrease_attack)
-
-        minion = Minion(1, 1)
-        minion.bind("enraged", increase_attack)
-        minion.bind("unenraged", decrease_attack)
-        minion.bind("silenced", silenced)
-        return minion
+        return Minion(1, 1, enrage=[ChangeAttack(5)])
 
 
 class RagingWorgen(MinionCard):
@@ -767,23 +742,7 @@ class RagingWorgen(MinionCard):
         super().__init__("Raging Worgen", 3, CHARACTER_CLASS.ALL, CARD_RARITY.COMMON)
 
     def create_minion(self, player):
-        def increase_attack():
-            minion.change_attack(1)
-            minion.windfury = True
-
-        def decrease_attack():
-            minion.change_attack(-1)
-            minion.windfury = False
-
-        def silenced():
-            minion.unbind("enraged", increase_attack)
-            minion.unbind("unenraged", decrease_attack)
-
-        minion = Minion(3, 3)
-        minion.bind("enraged", increase_attack)
-        minion.bind("unenraged", decrease_attack)
-        minion.bind("silenced", silenced)
-        return minion
+        return Minion(3, 3, enrage=[ChangeAttack(1), Windfury()])
 
 
 class TaurenWarrior(MinionCard):
@@ -791,22 +750,7 @@ class TaurenWarrior(MinionCard):
         super().__init__("Tauren Warrior", 3, CHARACTER_CLASS.ALL, CARD_RARITY.COMMON)
 
     def create_minion(self, player):
-        def increase_attack():
-            minion.change_attack(3)
-
-        def decrease_attack():
-            minion.change_attack(-3)
-
-        def silenced():
-            minion.unbind("enraged", increase_attack)
-            minion.unbind("unenraged", decrease_attack)
-
-        minion = Minion(2, 3)
-        minion.taunt = True
-        minion.bind("enraged", increase_attack)
-        minion.bind("unenraged", decrease_attack)
-        minion.bind("silenced", silenced)
-        return minion
+        return Minion(2, 3, taunt=True, enrage=[ChangeAttack(3)])
 
 
 class SpitefulSmith(MinionCard):
@@ -814,33 +758,7 @@ class SpitefulSmith(MinionCard):
         super().__init__("Spiteful Smith", 5, CHARACTER_CLASS.ALL, CARD_RARITY.COMMON)
 
     def create_minion(self, player):
-        def increase_weapon_attack():
-            if player.hero.weapon:
-                player.hero.weapon.base_attack += 2
-                if player.game.current_player is player:
-                    player.hero.change_temp_attack(2)
-
-        def decrease_weapon_attack():
-            if player.hero.weapon:
-                player.hero.weapon.base_attack -= 2
-                if player.game.current_player is player:
-                    player.hero.change_temp_attack(-2)
-
-        def weapon_equipped():
-            if minion.enraged:
-                increase_weapon_attack()
-
-        def silenced():
-            minion.unbind("enraged", increase_weapon_attack)
-            minion.unbind("unenraged", decrease_weapon_attack)
-            player.hero.unbind("weapon_equipped", weapon_equipped)
-
-        minion = Minion(4, 6)
-        minion.bind("enraged", increase_weapon_attack)
-        minion.bind("unenraged", decrease_weapon_attack)
-        player.hero.bind("weapon_equipped", weapon_equipped)
-        minion.bind("silenced", silenced)
-        return minion
+        return Minion(4, 6, enrage=[Give(Aura(IncreaseWeaponAttack(2), WeaponSelector()))])
 
 
 class BloodKnight(MinionCard):
@@ -957,7 +875,7 @@ class CairneBloodhoof(MinionCard):
         super().__init__("Cairne Bloodhoof", 6, CHARACTER_CLASS.ALL, CARD_RARITY.LEGENDARY)
 
     def create_minion(self, player):
-        return Minion(4, 5, deathrattle=Deathrattle(Replace(BaineBloodhoof()), PlayerSelector()))
+        return Minion(4, 5, deathrattle=Deathrattle(Summon(BaineBloodhoof()), PlayerSelector()))
 
 
 class DamagedGolem(MinionCard):
@@ -973,7 +891,7 @@ class HarvestGolem(MinionCard):
         super().__init__("Harvest Golem", 3, CHARACTER_CLASS.ALL, CARD_RARITY.COMMON)
 
     def create_minion(self, player):
-        return Minion(2, 3, deathrattle=Deathrattle(Replace(DamagedGolem()), PlayerSelector()))
+        return Minion(2, 3, deathrattle=Deathrattle(Summon(DamagedGolem()), PlayerSelector()))
 
 
 class FinkleEinhorn(MinionCard):
@@ -1274,19 +1192,7 @@ class ManaWraith(MinionCard):
         super().__init__("Mana Wraith", 2, CHARACTER_CLASS.ALL, CARD_RARITY.RARE)
 
     def create_minion(self, player):
-        class Filter:
-            def __init__(self):
-                self.amount = -1
-                self.filter = lambda c: isinstance(c, MinionCard)
-                self.min = 0
-
-        filter = Filter()
-        minion = Minion(2, 2)
-        minion.bind_once("silenced", lambda: player.game.current_player.mana_filters.remove(filter))
-        player.game.current_player.mana_filters.append(filter)
-        minion.bind_once("silenced", lambda: player.game.other_player.mana_filters.remove(filter))
-        player.game.other_player.mana_filters.append(filter)
-        return minion
+        return Minion(2, 2, auras=[Aura(ManaChange(-1, 0, MinionCardSelector()), PlayerSelector(players=BothPlayer()))])
 
 
 class MindControlTech(MinionCard):
@@ -1310,16 +1216,8 @@ class MurlocTidecaller(MinionCard):
         super().__init__("Murloc Tidecaller", 1, CHARACTER_CLASS.ALL, CARD_RARITY.RARE, MINION_TYPE.MURLOC)
 
     def create_minion(self, player):
-        def check_murloc(m):
-            if m is not minion and m.card.minion_type is MINION_TYPE.MURLOC:
-                minion.change_attack(1)
-
-        minion = Minion(1, 2)
-        player.game.current_player.bind("minion_played", check_murloc)
-        minion.bind_once("silenced", lambda: player.game.current_player.unbind("minion_played", check_murloc))
-        player.game.other_player.bind("minion_played", check_murloc)
-        minion.bind_once("silenced", lambda: player.game.other_player.unbind("minion_played", check_murloc))
-        return minion
+        return Minion(1, 2, effects=[(Effect(MinionSummoned(MinionIsType(MINION_TYPE.MURLOC), player=BothPlayer()),
+                                             ChangeAttack(1), SelfSelector()))])
 
 
 class Onyxia(MinionCard):
@@ -1375,12 +1273,7 @@ class AcolyteOfPain(MinionCard):
         super().__init__("Acolyte of Pain", 3, CHARACTER_CLASS.ALL, CARD_RARITY.COMMON)
 
     def create_minion(self, player):
-        def acolyte_draw(amount, player):
-            minion.player.draw()
-        minion = Minion(1, 3)
-        minion.bind("damaged", acolyte_draw)
-        minion.bind_once("silenced", lambda: minion.unbind("damaged", acolyte_draw))
-        return minion
+        return Minion(1, 3, effects=[Effect(CharacterDamaged(), Draw(), PlayerSelector())])
 
 
 class CultMaster(MinionCard):
@@ -1388,14 +1281,7 @@ class CultMaster(MinionCard):
         super().__init__("Cult Master", 4, CHARACTER_CLASS.ALL, CARD_RARITY.COMMON)
 
     def create_minion(self, player):
-        def cult_draw(m, by):
-            if m is not minion:
-                m.player.draw()
-
-        minion = Minion(4, 2)
-        player.bind("minion_died", cult_draw)
-        minion.bind_once("silenced", lambda: player.unbind("minion_died", cult_draw))
-        return minion
+        return Minion(4, 2, effects=[Effect(MinionDied(), Draw(), PlayerSelector())])
 
 
 class Secretkeeper(MinionCard):
@@ -1403,17 +1289,16 @@ class Secretkeeper(MinionCard):
         super().__init__("Secretkeeper", 1, CHARACTER_CLASS.ALL, CARD_RARITY.RARE)
 
     def create_minion(self, player):
-        def keeper_grow(card):
-            if isinstance(card, SecretCard):
-                minion.change_attack(1)
-                minion.increase_health(1)
+        return Minion(1, 2, effects=[Effect(SpellCast(IsSecret(), BothPlayer()), ChangeAttack(1), SelfSelector()),
+                                     Effect(SpellCast(IsSecret(), BothPlayer()), ChangeHealth(1), SelfSelector())])
 
-        minion = Minion(1, 2)
-        player.game.current_player.bind("spell_cast", keeper_grow)
-        minion.bind_once("silenced", lambda: player.game.current_player.unbind("spell_cast", keeper_grow))
-        player.game.other_player.bind("spell_cast", keeper_grow)
-        minion.bind_once("silenced", lambda: player.game.other_player.unbind("spell_cast", keeper_grow))
-        return minion
+
+class VioletApprentice(MinionCard):
+    def __init__(self):
+        super().__init__("Violet Apprentice", 0, CHARACTER_CLASS.ALL, CARD_RARITY.SPECIAL)
+
+    def create_minion(self, player):
+        return Minion(1, 1)
 
 
 class VioletTeacher(MinionCard):
@@ -1421,20 +1306,7 @@ class VioletTeacher(MinionCard):
         super().__init__("Violet Teacher", 4, CHARACTER_CLASS.ALL, CARD_RARITY.RARE)
 
     def create_minion(self, player):
-        def summon_apprentice(card):
-            class VioletApprentice(MinionCard):
-                def __init__(self):
-                    super().__init__("Violet Apprentice", 0, CHARACTER_CLASS.ALL, CARD_RARITY.SPECIAL)
-
-                def create_minion(self, player):
-                    return Minion(1, 1)
-            apprentice = VioletApprentice()
-            apprentice.summon(minion.player, minion.player.game, minion.index + 1)
-
-        minion = Minion(3, 5)
-        player.bind("spell_cast", summon_apprentice)
-        minion.bind_once("silenced", lambda: player.unbind("spell_cast", summon_apprentice))
-        return minion
+        return Minion(3, 5, effects=[Effect(SpellCast(), Summon(VioletApprentice()), PlayerSelector())])
 
 
 class GadgetzanAuctioneer(MinionCard):
@@ -1442,13 +1314,15 @@ class GadgetzanAuctioneer(MinionCard):
         super().__init__("Gadgetzan Auctioneer", 5, CHARACTER_CLASS.ALL, CARD_RARITY.RARE)
 
     def create_minion(self, player):
-        def miracle_draw(card):
-            minion.player.draw()
+        return Minion(4, 4, effects=[Effect(SpellCast(), Draw(), PlayerSelector())])
 
-        minion = Minion(4, 4)
-        player.bind("spell_cast", miracle_draw)
-        minion.bind_once("silenced", lambda: player.unbind("spell_cast", miracle_draw))
-        return minion
+
+class FlameOfAzzinoth(MinionCard):
+    def __init__(self):
+        super().__init__("Flame of Azzinoth", 1, CHARACTER_CLASS.ALL, CARD_RARITY.SPECIAL)
+
+    def create_minion(self, player):
+        return Minion(2, 1)
 
 
 class IllidanStormrage(MinionCard):
@@ -1456,21 +1330,7 @@ class IllidanStormrage(MinionCard):
         super().__init__("Illidan Stormrage", 6, CHARACTER_CLASS.ALL, CARD_RARITY.LEGENDARY, MINION_TYPE.DEMON)
 
     def create_minion(self, player):
-        def summon_flame(card):
-            class FlameOfAzzinoth(MinionCard):
-                def __init__(self):
-                    super().__init__("Flame of Azzinoth", 1, CHARACTER_CLASS.ALL, CARD_RARITY.SPECIAL)
-
-                def create_minion(self, player):
-                    return Minion(2, 1)
-            if card is not self:
-                flame = FlameOfAzzinoth()
-                flame.summon(minion.player, minion.player.game, minion.index + 1)
-
-        minion = Minion(7, 5)
-        player.bind("card_used", summon_flame)
-        minion.bind_once("silenced", lambda: player.unbind("card_played", summon_flame))
-        return minion
+        return Minion(7, 5, effects=[Effect(CardUsed(), Summon(FlameOfAzzinoth()), PlayerSelector())])
 
 
 class FlesheatingGhoul(MinionCard):
@@ -1478,16 +1338,7 @@ class FlesheatingGhoul(MinionCard):
         super().__init__("Flesheating Ghoul", 3, CHARACTER_CLASS.ALL, CARD_RARITY.COMMON)
 
     def create_minion(self, player):
-        def ghoul_grow(m, by):
-            if m is not minion:
-                minion.change_attack(1)
-
-        minion = Minion(2, 3)
-        player.game.players[0].bind("minion_died", ghoul_grow)
-        minion.bind_once("silenced", lambda: player.game.players[0].unbind("minion_died", ghoul_grow))
-        player.game.players[1].bind("minion_died", ghoul_grow)
-        minion.bind_once("silenced", lambda: player.game.players[1].unbind("minion_died", ghoul_grow))
-        return minion
+        return Minion(2, 3, effects=[Effect(MinionDied(player=BothPlayer()), ChangeAttack(1), SelfSelector())])
 
 
 class Lightwarden(MinionCard):
@@ -1512,13 +1363,8 @@ class GurubashiBerserker(MinionCard):
         super().__init__("Gurubashi Berserker", 5, CHARACTER_CLASS.ALL, CARD_RARITY.COMMON)
 
     def create_minion(self, player):
-        def gurubashi_grow(amount, player):
-            minion.change_attack(3)
-
-        minion = Minion(2, 7)
-        minion.bind("damaged", gurubashi_grow)
-        minion.bind_once("silenced", lambda: minion.unbind("damaged", gurubashi_grow))
-        return minion
+        return Minion(2, 7, effects=[
+            Effect(CharacterDamaged(condition=MinionIsTarget()), ChangeAttack(3), SelfSelector())])
 
 
 class AncientMage(MinionCard):
@@ -1695,17 +1541,6 @@ class CaptainsParrot(MinionCard):
 
     def create_minion(self, player):
         def draw_pirate(m):
-            # minions = []
-            # for i in range(0, 30):
-            #     if not m.player.deck.used[i] and isinstance(m.player.deck.cards[i], MinionCard) and \
-            #             m.player.deck.cards[i].minion_type == MINION_TYPE.PIRATE:
-            #         minions.append(i)
-            # if len(minions) > 0:
-            #     index = minions.pop(player.game.random(0, len(minions) - 1))
-            #     m.player.deck.used[index] = True
-            #     m.player.deck.left -= 1
-            #     m.player.hand.append(m.player.deck.cards[index])
-            #     self.trigger("card_drawn", m.player.deck.cards[index])
             if len(m.player.hand) < 10:
                 card = m.game.random_draw(m.player.deck.cards,
                                           lambda c: not c.drawn and
@@ -1756,22 +1591,7 @@ class AlarmoBot(MinionCard):
         super().__init__("Alarm-o-Bot", 3, CHARACTER_CLASS.ALL, CARD_RARITY.RARE)
 
     def create_minion(self, player):
-        def swap_with_hand():
-            swap_targets = []
-            for i in range(0, len(player.hand)):
-                if isinstance(player.hand[i], MinionCard):
-                    swap_targets.append(player.hand[i])
-            if len(swap_targets) > 0:
-                swap_target = player.game.random_choice(swap_targets)
-                index = minion.index
-                minion.bounce()
-                player.hand.remove(swap_target)
-                swap_target.summon(player, player.game, index)
-
-        minion = Minion(0, 3)
-        player.bind("turn_started", swap_with_hand)
-        minion.bind_once("silenced", lambda: player.unbind("turn_started", swap_with_hand))
-        return minion
+        return Minion(0, 3, effects=[Effect(TurnStarted(), SwapWithHand(), PlayerSelector())])
 
 
 class EliteTaurenChieftain(MinionCard):
@@ -1836,22 +1656,8 @@ class MillhouseManastorm(MinionCard):
 
     def create_minion(self, player):
         def free_spells(m):
-            class Filter:
-                def __init__(self):
-                    self.amount = 10
-                    self.filter = lambda c: c.is_spell()
-                    self.min = 0
-
-            free = Filter()
-
-            def start_free_spells():
-                player.game.other_player.mana_filters.append(free)
-
-            def end_free_spells():
-                player.game.other_player.mana_filters.remove(free)
-
-            player.game.other_player.bind_once("turn_started", start_free_spells)
-            player.game.other_player.bind_once("turn_ended", end_free_spells)
+            m.player.opponent.add_effect(Effect(TurnStarted(), Give(ManaAura(100, 0, SpellSelector(), False, True)),
+                                                PlayerSelector()))
 
         return Minion(4, 4, battlecry=free_spells)
 
@@ -1861,30 +1667,8 @@ class PintSizedSummoner(MinionCard):
         super().__init__("Pint-Sized Summoner", 2, CHARACTER_CLASS.ALL, CARD_RARITY.RARE)
 
     def create_minion(self, player):
-        class Filter:
-            def __init__(self):
-                self.amount = 1
-                self.filter = lambda c: isinstance(c, MinionCard)
-                self.min = 0
-
-        lesser = Filter()
-
-        def start_discounted_minion():
-            player.mana_filters.append(lesser)
-
-        def end_discounted_minion(m):
-            player.mana_filters.remove(lesser)
-
-        def subbind():
-            player.bind_once("minion_played", end_discounted_minion)
-            minion.bind_once("silenced", lambda: player.unbind("minion_played", end_discounted_minion))
-
-        minion = Minion(2, 2)
-        player.bind("turn_started", start_discounted_minion)
-        player.bind("turn_started", subbind)
-        minion.bind_once("silenced", lambda: player.unbind("turn_started", start_discounted_minion))
-        minion.bind_once("silenced", lambda: player.unbind("turn_started", subbind))
-        return minion
+        return Minion(2, 2, effects=[Effect(TurnStarted(), Give(ManaAura(1, 0, MinionCardSelector(), True, True)),
+                                            PlayerSelector())])
 
 
 class OldMurkEye(MinionCard):
@@ -2107,16 +1891,8 @@ class WildPyromancer(MinionCard):
         super().__init__("Wild Pyromancer", 2, CHARACTER_CLASS.ALL, CARD_RARITY.RARE)
 
     def create_minion(self, player):
-        def one_damage_to_all_minions(card):
-            if card.is_spell():
-                targets = copy.copy(player.game.other_player.minions)
-                targets.extend(player.game.current_player.minions)
-                for target in targets:
-                    target.damage(1, None)
-        minion = Minion(3, 2)
-        player.bind("card_used", one_damage_to_all_minions)  # This activates before the spell, not after
-        minion.bind_once("silenced", lambda: player.unbind("card_used", one_damage_to_all_minions))
-        return minion
+        return Minion(3, 2, effects=[Effect(CardUsed(IsSpell()), Damage(1), MinionSelector(condition=None,
+                                                                                           players=BothPlayer()))])
 
 
 class FacelessManipulator(MinionCard):
@@ -2146,7 +1922,7 @@ class NerubianEgg(MinionCard):
         super().__init__("Nerubian Egg", 2, CHARACTER_CLASS.ALL, CARD_RARITY.RARE)
 
     def create_minion(self, player):
-        return Minion(0, 2, deathrattle=Deathrattle(Replace(Nerubian()), PlayerSelector()))
+        return Minion(0, 2, deathrattle=Deathrattle(Summon(Nerubian()), PlayerSelector()))
 
 
 class Maexxna(MinionCard):
@@ -2171,7 +1947,7 @@ class HauntedCreeper(MinionCard):
 
     def create_minion(self, player):
 
-        return Minion(1, 2, deathrattle=Deathrattle(Replace(SpectralSpider(), 2), PlayerSelector()))
+        return Minion(1, 2, deathrattle=Deathrattle(Summon(SpectralSpider(), 2), PlayerSelector()))
 
 
 class NerubarWeblord(MinionCard):
@@ -2227,7 +2003,7 @@ class SludgeBelcher(MinionCard):
         super().__init__("Sludge Belcher", 5, CHARACTER_CLASS.ALL, CARD_RARITY.COMMON)
 
     def create_minion(self, player):
-        return Minion(3, 5, taunt=True, deathrattle=Deathrattle(Replace(Slime()), PlayerSelector()))
+        return Minion(3, 5, taunt=True, deathrattle=Deathrattle(Summon(Slime()), PlayerSelector()))
 
 
 class BaronRivendare(MinionCard):
@@ -2289,10 +2065,7 @@ class ZombieChow(MinionCard):
         super().__init__("Zombie Chow", 1, CHARACTER_CLASS.ALL, CARD_RARITY.COMMON)
 
     def create_minion(self, player):
-        def restore_5_health(minion):
-            minion.player.opponent.hero.heal(minion.player.effective_heal_power(5), minion)
-
-        return Minion(2, 3, deathrattle=Deathrattle(Heal(5), PlayerSelector(EnemyPlayer())))
+        return Minion(2, 3, deathrattle=Deathrattle(Heal(5), HeroSelector(EnemyPlayer())))
 
 
 class Thaddius(MinionCard):
@@ -2308,7 +2081,7 @@ class Feugen(MinionCard):
         super().__init__("Feugen", 5, CHARACTER_CLASS.ALL, CARD_RARITY.LEGENDARY)
 
     def create_minion(self, player):
-        return Minion(4, 7, deathrattle=Deathrattle(IfInGraveyard(Replace(Thaddius()), Stalagg()), PlayerSelector()))
+        return Minion(4, 7, deathrattle=Deathrattle(IfInGraveyard(Summon(Thaddius()), Stalagg()), PlayerSelector()))
 
 
 class Stalagg(MinionCard):
@@ -2316,7 +2089,7 @@ class Stalagg(MinionCard):
         super().__init__("Stalagg", 5, CHARACTER_CLASS.ALL, CARD_RARITY.LEGENDARY)
 
     def create_minion(self, player):
-        return Minion(7, 4, deathrattle=Deathrattle(IfInGraveyard(Replace(Thaddius()), Feugen()), PlayerSelector()))
+        return Minion(7, 4, deathrattle=Deathrattle(IfInGraveyard(Summon(Thaddius()), Feugen()), PlayerSelector()))
 
 
 class MadScientist(MinionCard):
@@ -2324,20 +2097,7 @@ class MadScientist(MinionCard):
         super().__init__("Mad Scientist", 2, CHARACTER_CLASS.ALL, CARD_RARITY.COMMON)
 
     def create_minion(self, player):
-        def play_secret(minion):
-            secret = minion.game.random_draw(minion.player.deck.cards,
-                                             lambda c: not c.drawn and
-                                             isinstance(c, SecretCard) and
-                                             c.name not in [s.name for s in minion.player.secrets])
-            if secret:
-                minion.player.secrets.append(secret)
-                secret.drawn = True
-                minion.player.deck.left -= 1
-                if minion.player is minion.game.other_player:
-                    secret.player = minion.player
-                    secret.activate(minion.player)
-
-        return Minion(2, 2, deathrattle=Deathrattle(ApplySecretFromDeck(), SelfSelector()))
+        return Minion(2, 2, deathrattle=Deathrattle(ApplySecretFromDeck(), PlayerSelector()))
 
 
 class EchoingOoze(MinionCard):
