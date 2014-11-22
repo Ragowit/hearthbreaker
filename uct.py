@@ -72,10 +72,6 @@ class HearthState:
         assert self.game.players[0].hero.health > 0 and self.game.players[1].hero.health > 0 and not self.game.game_ended
 
         def _choose_target(targets):
-            print("*****************************************************************************************")
-            print(str(targets))
-            print(str(move))
-  
             if move[4] is None:
                 return None
             else:
@@ -100,6 +96,7 @@ class HearthState:
             self.game.current_player.agent.choose_target = _choose_target
             self.game.current_player.hero.power.use()
         elif move[0] == "summon_minion":
+            self.game.current_player.agent.choose_target = _choose_target
             self.game.current_player.agent.choose_index = _choose_index
             self.game.play_card(self.game.current_player.hand[move[3]])
         elif move[2] is None:  # Passing index rather than object, hopefully the game copy fix will help with this
@@ -308,7 +305,7 @@ def UCTPlayGame():
     state = HearthState()
     while (state.GetMoves() != []):
         print(str(state))
-        m = UCT(rootstate = state, seconds = 60, verbose = False)
+        m = UCT(rootstate = state, seconds = 5, verbose = False)
         print("Best Move: " + str(m) + "\n")
         state.DoMove(m)
     if state.GetResult(state.playerJustMoved) == 1.0:
