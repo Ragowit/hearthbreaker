@@ -20,8 +20,9 @@ import random
 import time
 from tests.testing_utils import generate_game_for
 from hearthbreaker.cards import *
-from hearthbreaker.agents.basic_agents import DoNothingBot
+from hearthbreaker.agents.basic_agents import DoNothingAgent
 from hearthbreaker.game_objects import *
+from hearthbreaker.replay import *
 
 
 class HearthState:
@@ -29,11 +30,11 @@ class HearthState:
     """
     def __init__(self):
         self.playerJustMoved = 2 # At the root pretend the player just moved is p2 - p1 has the first move
-        #deck1 = [GoldshireFootman, GoldshireFootman, MurlocRaider, MurlocRaider, BloodfenRaptor, BloodfenRaptor,
-        #         FrostwolfGrunt, FrostwolfGrunt, RiverCrocolisk, RiverCrocolisk, IronfurGrizzly, IronfurGrizzly,
-        #         MagmaRager, MagmaRager, SilverbackPatriarch, SilverbackPatriarch, ChillwindYeti, ChillwindYeti,
-        #         OasisSnapjaw, OasisSnapjaw, SenjinShieldmasta, SenjinShieldmasta, BootyBayBodyguard, BootyBayBodyguard,
-        #         FenCreeper, FenCreeper, BoulderfistOgre, BoulderfistOgre, WarGolem, WarGolem]
+        deck1 = [GoldshireFootman, GoldshireFootman, MurlocRaider, MurlocRaider, BloodfenRaptor, BloodfenRaptor,
+                 FrostwolfGrunt, FrostwolfGrunt, RiverCrocolisk, RiverCrocolisk, IronfurGrizzly, IronfurGrizzly,
+                 MagmaRager, MagmaRager, SilverbackPatriarch, SilverbackPatriarch, ChillwindYeti, ChillwindYeti,
+                 OasisSnapjaw, OasisSnapjaw, SenjinShieldmasta, SenjinShieldmasta, BootyBayBodyguard, BootyBayBodyguard,
+                 FenCreeper, FenCreeper, BoulderfistOgre, BoulderfistOgre, WarGolem, WarGolem]
         #deck2 = [GoldshireFootman, GoldshireFootman, MurlocRaider, MurlocRaider, BloodfenRaptor, BloodfenRaptor,
         #         FrostwolfGrunt, FrostwolfGrunt, RiverCrocolisk, RiverCrocolisk, IronfurGrizzly, IronfurGrizzly,
         #         MagmaRager, MagmaRager, SilverbackPatriarch, SilverbackPatriarch, ChillwindYeti, ChillwindYeti,
@@ -41,11 +42,16 @@ class HearthState:
         #         FenCreeper, FenCreeper, BoulderfistOgre, BoulderfistOgre, WarGolem, WarGolem]
         #deck1 = RiverCrocolisk
         #deck1 = [Innervate, Innervate, WildGrowth, WildGrowth, Wrath, Wrath]
-        deck1 = [Soulfire, Soulfire]
+        #deck1 = [Soulfire, Soulfire]
         #deck1 = [Soulfire, Soulfire, MortalCoil, MortalCoil]
-        deck2 = RiverCrocolisk
+        #deck2 = RiverCrocolisk
+        deck2 = [Backstab, Backstab, Shadowstep, Shadowstep, Shiv, Shiv, AnubarAmbusher, AnubarAmbusher, Assassinate,
+                 Assassinate, Vanish, Vanish, AmaniBerserker, AmaniBerserker, MadBomber, MadBomber, YouthfulBrewmaster,
+                 YouthfulBrewmaster, AcolyteOfPain, AcolyteOfPain, QuestingAdventurer, RagingWorgen, RagingWorgen,
+                 AncientBrewmaster, AncientBrewmaster, DefenderOfArgus, DefenderOfArgus, GurubashiBerserker,
+                 GurubashiBerserker, RagnarosTheFirelord]
         random.seed(1857)
-        game = generate_game_for(deck1, deck2, DoNothingBot, DoNothingBot)
+        game = generate_game_for(deck1, deck2, DoNothingAgent, DoNothingAgent)
         game._start_turn()
         self.game = game
 
@@ -54,9 +60,9 @@ class HearthState:
         """
         st = HearthState()
         st.playerJustMoved = self.playerJustMoved
-        #st.game = self.game.copy()
+        st.game = self.game.copy()
         #st.game = copy.copy(self.game.copy())
-        st.game = copy.deepcopy(self.game.copy())
+        #st.game = copy.deepcopy(self.game.copy())
         return st
 
     def DoMove(self, move):
@@ -66,7 +72,14 @@ class HearthState:
         assert self.game.players[0].hero.health > 0 and self.game.players[1].hero.health > 0 and not self.game.game_ended
 
         def _choose_target(targets):
-            return targets[move[4]]
+            print("*****************************************************************************************")
+            print(str(targets))
+            print(str(move))
+  
+            if move[4] is None:
+                return None
+            else:
+                return targets[move[4]]
 
         def _choose_index(targets, player):
             return move[4]
@@ -91,10 +104,12 @@ class HearthState:
             self.game.play_card(self.game.current_player.hand[move[3]])
         elif move[2] is None:  # Passing index rather than object, hopefully the game copy fix will help with this
             self.game.play_card(self.game.current_player.hand[move[3]])
-        elif move[0] == "minion_attack" or move[0] == "hero_attack" or move[0] == "mage_power":
+        elif move[0] == "minion_attack":
             self.game.current_player.agent.choose_target = _choose_target
-            m = self.game.current_player.minions[move[3]]
-            m.attack()
+            self.game.current_player.minions[move[3]].attack()
+        elif move[0] == "hero_attack":
+            self.game.current_player.agent.choose_target = _choose_target
+            self.game.current_player.hero.attack()
         elif move[0] == "targeted_spell":
             self.game.current_player.agent.choose_target = _choose_target
             self.game.play_card(self.game.current_player.hand[move[3]])
@@ -149,8 +164,19 @@ class HearthState:
 
         if self.game.current_player.hero.can_attack():
             for i in range(len(targets)):
-                valid_moves.append(["hero_attack", self.game.current_player.hero, targets[i],
-                                    self.game.current_player.hand.index(card), i])
+                valid_moves.append(["hero_attack", self.game.current_player.hero, targets[i], None, i])
+
+        if (self.game.current_player.hero.power.__str__() == "Fireblast" or \
+           self.game.current_player.hero.power.__str__() == "Mind Spike" or \
+           self.game.current_player.hero.power.__str__() == "Mind Shatter" or \
+           self.game.current_player.hero.power.__str__() == "Lesser Heal") and \
+           self.game.current_player.hero.power.can_use():
+            for target in hearthbreaker.targeting.find_spell_target(self.game, lambda t: t.spell_targetable()):
+                valid_moves.append(["hero_power", self.game.current_player.hero, target, 0, \
+                                   hearthbreaker.targeting.find_spell_target(self.game, lambda t: \
+                                                                            t.spell_targetable()).index(target)])
+        elif self.game.current_player.hero.power.can_use():
+            valid_moves.append(["hero_power", self.game.current_player.hero, None, None, None])
 
         valid_moves.append(["end_turn", None, None])
         return valid_moves
@@ -164,7 +190,7 @@ class HearthState:
             return 0
         elif self.game.players[2 - playerjm].hero.health <= 0:
             return 1
-        else:  # Should not be possible to get here...
+        else:  # Should not be possible to get here unless we terminate the game early.
             return 0.5
 
     def __repr__(self):
@@ -265,8 +291,7 @@ def UCT(rootstate, seconds, verbose = False):
 
         # Backpropagate
         while node != None: # backpropagate from the expanded node and work back to the root node
-            #node.Update(state.GetResult(node.playerJustMoved)) # state is terminal. Update node with result from POV of node.playerJustMoved
-            node.Update(state.GetResult(node.playerJustMoved)) # state is terminal. Update node with result from POV of node.activePlayer
+            node.Update(state.GetResult(node.playerJustMoved)) # state is terminal. Update node with result from POV of node.playerJustMoved
             node = node.parentNode
 
     # Output some information about the tree - can be omitted
@@ -283,7 +308,7 @@ def UCTPlayGame():
     state = HearthState()
     while (state.GetMoves() != []):
         print(str(state))
-        m = UCT(rootstate = state, seconds = 5, verbose = False)
+        m = UCT(rootstate = state, seconds = 60, verbose = False)
         print("Best Move: " + str(m) + "\n")
         state.DoMove(m)
     if state.GetResult(state.playerJustMoved) == 1.0:

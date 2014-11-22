@@ -71,6 +71,9 @@ class MagePower(Power):
         target.damage(1 * self.hero.player.spell_multiplier, None)
         self.hero.player.game.check_delayed()
 
+    def __str__(self):
+        return "Fireblast"
+
 
 class PriestPower(Power):
     def __init__(self, hero):
