@@ -259,6 +259,13 @@ class Node:
              s += str(c) + "\n"
         return s[:-2]
 
+    def clean(self):
+        for child in self.childNodes:
+            child.clean()
+        del self.childNodes
+        del self.parentNode
+        del self.untriedMoves
+
 
 def UCT(rootstate, seconds, verbose = False):
     """ Conduct a UCT search for seconds starting from rootstate.
@@ -295,7 +302,11 @@ def UCT(rootstate, seconds, verbose = False):
     if (verbose): print(rootnode.TreeToString(0))
     else: print(rootnode.ChildrenToString())
 
-    return sorted(rootnode.childNodes, key = lambda c: c.visits)[-1].move # return the move that was most visited
+    bestmove = sorted(rootnode.childNodes, key = lambda c: c.visits)[-1].move # return the move that was most visited
+    rootnode.clean()
+    del rootnode
+    
+    return bestmove
 
 
 def UCTPlayGame():
