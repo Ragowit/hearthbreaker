@@ -1,19 +1,19 @@
-from hearthbreaker.cards.battlecries import draw_card, silence, deal_one_damage, \
-    gain_one_health_for_each_card_in_hand, deal_two_damage, heal_two, \
-    heal_three, give_enemy_crystal, darkscale_healer, priestess_of_elune, \
-    destroy_target, two_temp_attack, nightblade, ssc, deathwing, return_to_hand
 from hearthbreaker.tags.action import Charge, ChangeAttack, ChangeHealth, Heal, CantAttack, ManaChange, Summon, Draw, \
     Chance, Kill, Damage, ResurrectFriendly, DoubleDeathrattle,\
-    Steal, Duplicate, Give, Windfury, IncreaseWeaponAttack, SwapWithHand, AddCard, Transform, ApplySecret
+    Steal, Duplicate, Give, Windfury, IncreaseWeaponAttack, SwapWithHand, AddCard, Transform, ApplySecret, Silence
 from hearthbreaker.tags.aura import ManaAura
-from hearthbreaker.tags.base import Aura, Effect, Deathrattle, AuraUntil, CardQuery, CARD_SOURCE
+from hearthbreaker.tags.base import Aura, Effect, Deathrattle, AuraUntil, CardQuery, CARD_SOURCE, Battlecry
 from hearthbreaker.tags.condition import Adjacent, MinionIsType, MinionHasDeathrattle, IsMinion, IsSecret, \
     MinionIsTarget, IsSpell, IsDamaged, InGraveyard, ManaCost
 from hearthbreaker.tags.event import TurnEnded, CardPlayed, MinionSummoned, TurnStarted, DidDamage, AfterAdded, \
     SpellCast, CharacterHealed, CharacterDamaged, MinionDied, CardUsed, MinionPlaced
 from hearthbreaker.tags.selector import MinionSelector, BothPlayer, SelfSelector, RandomSelector, BattlecrySelector, \
     PlayerSelector, MinionCardSelector, TargetSelector, EnemyPlayer, CharacterSelector, SpellSelector, WeaponSelector, \
-    HeroSelector, OtherPlayer
+    HeroSelector, OtherPlayer, UserPicker
+from hearthbreaker.cards.battlecries import draw_card, silence, deal_one_damage, \
+    gain_one_health_for_each_card_in_hand, deal_two_damage, heal_two, \
+    heal_three, give_enemy_crystal, darkscale_healer, priestess_of_elune, \
+    destroy_target, two_temp_attack, nightblade, ssc, deathwing, return_to_hand
 from hearthbreaker.game_objects import Minion, MinionCard, Card
 from hearthbreaker.constants import CARD_RARITY, CHARACTER_CLASS, MINION_TYPE
 import hearthbreaker.targeting
@@ -56,10 +56,10 @@ class StonetuskBoar(MinionCard):
 class IronbeakOwl(MinionCard):
     def __init__(self):
         super().__init__("Ironbeak Owl", 2, CHARACTER_CLASS.ALL, CARD_RARITY.COMMON, MINION_TYPE.BEAST,
-                         hearthbreaker.targeting.find_minion_battlecry_target)
+                         battlecry=Battlecry(Silence(), MinionSelector(players=BothPlayer(), picker=UserPicker())))
 
     def create_minion(self, player):
-        return Minion(2, 1, battlecry=silence)
+        return Minion(2, 1)
 
 
 class WarGolem(MinionCard):
@@ -578,11 +578,6 @@ class Abomination(MinionCard):
         super().__init__("Abomination", 5, CHARACTER_CLASS.ALL, CARD_RARITY.RARE)
 
     def create_minion(self, player):
-        def deal_two_to_all(minion):
-            for target in hearthbreaker.targeting.find_battlecry_target(player.game, lambda x: True):
-                target.damage(2, self)
-            player.game.check_delayed()
-
         return Minion(4, 4, deathrattle=Deathrattle(Damage(2), CharacterSelector(players=BothPlayer())), taunt=True)
 
 
@@ -2066,3 +2061,20 @@ class PilotedShredder(MinionCard):
     def create_minion(self, player):
         return Minion(4, 3, deathrattle=Deathrattle(Summon(CardQuery(conditions=[ManaCost(2), IsMinion()])),
                                                     PlayerSelector()))
+
+
+class AntiqueHealbot(MinionCard):
+    def __init__(self):
+        super().__init__("Antique Healbot", 5, CHARACTER_CLASS.ALL, CARD_RARITY.COMMON, MINION_TYPE.MECH,
+                         battlecry=Battlecry(Heal(8), HeroSelector()))
+
+    def create_minion(self, player):
+        return Minion(3, 3)
+
+
+class AnnoyOTron(MinionCard):
+    def __init__(self):
+        super().__init__("Annoy-o-Tron", 2, CHARACTER_CLASS.ALL, CARD_RARITY.COMMON, MINION_TYPE.MECH)
+
+    def create_minion(self, player):
+        return Minion(1, 2, divine_shield=True, taunt=True)

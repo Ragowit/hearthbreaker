@@ -3,7 +3,6 @@ from hearthbreaker.tags.base import ReversibleAction, Action, MinionAction, Aura
     CARD_SOURCE
 import hearthbreaker.game_objects
 from hearthbreaker.tags.condition import IsSecret
-import hearthbreaker.tags.selector
 import hearthbreaker.proxies
 
 
@@ -19,8 +18,10 @@ class Freeze(Action):
 
 class Give(Action):
     def __init__(self, auras):
+
         if isinstance(auras, Action):
-            self.auras = [Aura(auras, hearthbreaker.tags.selector.SelfSelector())]
+            from hearthbreaker.tags.selector import SelfSelector
+            self.auras = [Aura(auras, SelfSelector())]
         elif isinstance(auras, list):
             self.auras = auras
         else:
@@ -54,7 +55,8 @@ class Give(Action):
 class Take(Action):
     def __init__(self, aura):
         if isinstance(aura, Action):
-            self.aura = Aura(aura, hearthbreaker.tags.selector.SelfSelector())
+            from hearthbreaker.tags.selector import SelfSelector
+            self.aura = Aura(aura, SelfSelector())
         else:
             self.aura = aura
 
@@ -206,9 +208,10 @@ class ManaChange(ReversibleAction):
         }
 
     def __from_json__(self, amount, minimum, card_selector):
+        from hearthbreaker.tags.base import Selector
         self.amount = amount
         self.minimum = minimum
-        self.card_selector = hearthbreaker.tags.selector.Selector.from_json(**card_selector)
+        self.card_selector = Selector.from_json(**card_selector)
         self.filters = {}
         return self
 
@@ -216,7 +219,7 @@ class ManaChange(ReversibleAction):
 class Summon(Action):
     def __init__(self, card, count=1):
         if isinstance(card, hearthbreaker.game_objects.Card):
-            self.card = CardQuery(card.name)
+            self.card = CardQuery(card.ref_name)
         else:
             self.card = card
         self.count = count
@@ -233,8 +236,12 @@ class Summon(Action):
         card = self.card.get_card(target)
         if card is None:
             return
+
+        # TODO add explicit patters for multi minion summoning (if there is ever more than two)
         for summon in range(self.count):
             card.summon(target, target.game, index)
+            if isinstance(actor, hearthbreaker.game_objects.Minion):
+                index = actor.index  # Move the later minions to the left of their originator
 
     def __to_json__(self):
         if self.count > 1:
@@ -257,7 +264,7 @@ class Summon(Action):
 class Transform(Action):
     def __init__(self, card):
         if isinstance(card, hearthbreaker.game_objects.Card):
-            self.card = CardQuery(card.name)
+            self.card = CardQuery(card.ref_name)
         else:
             self.card = card
 
@@ -472,7 +479,7 @@ class Chance(Action):
 class AddCard(Action):
     def __init__(self, card):
         if isinstance(card, hearthbreaker.game_objects.Card):
-            self.card = CardQuery(card.name)
+            self.card = CardQuery(card.ref_name)
         else:
             self.card = card
 
@@ -538,56 +545,6 @@ class Bounce(Action):
         return {
             'name': 'bounce'
         }
-
-
-# class SummonFromDeck(Action):
-#     def act(self, actor, target):
-#         chosen_card = target.game.random_draw(target.deck.cards,
-#                                               lambda c: not c.drawn and
-#                                               isinstance(c, hearthbreaker.game_objects.MinionCard))
-#         if chosen_card:
-#             chosen_card.drawn = True
-#             target.deck.left -= 1
-#             chosen_card.summon(target, target.game, len(target.minions))
-#
-#     def __to_json__(self):
-#         return {
-#             'name': 'summon_from_deck'
-#         }
-#
-#
-# class SummonFromHand(Action):
-#     def __init__(self, condition=None):
-#         self.condition = condition
-#
-#     def act(self, actor, target):
-#         if self.condition:
-#             chosen_card = target.game.random_draw(target.hand,
-#                                                   lambda c: self.condition.evaluate(c) and
-#                                                   isinstance(c, hearthbreaker.game_objects.MinionCard))
-#         else:
-#             chosen_card = target.game.random_draw(target.hand,
-#                                                   lambda c: isinstance(c, hearthbreaker.game_objects.MinionCard))
-#         if chosen_card:
-#             chosen_card.summon(target, target.game, len(target.minions))
-#             target.hand.remove(chosen_card)
-#
-#     def __to_json__(self):
-#         if self.condition:
-#             return {
-#                 'name': 'summon_from_hand',
-#                 'condition': self.condition
-#             }
-#         return {
-#             'name': 'summon_from_hand'
-#         }
-#
-#     def __from_json__(self, condition=None):
-#         if condition:
-#             self.condition = Condition.from_json(**condition)
-#         else:
-#             self.condition = None
-#         return self
 
 
 class SwapWithHand(Action):
@@ -799,4 +756,14 @@ class IncreaseWeaponAttack(ReversibleAction):
         return {
             'name': 'increase_weapon_attack',
             'amount': self.amount
+        }
+
+
+class Silence(Action):
+    def act(self, actor, target):
+        target.silence()
+
+    def __to_json__(self):
+        return {
+            'name': 'silence'
         }
