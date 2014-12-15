@@ -128,14 +128,16 @@ class Picker(JSONObject, metaclass=abc.ABCMeta):
         pass
 
     @staticmethod
-    def from_json(name):
+    def from_json(name, count=0):
         from hearthbreaker.tags.selector import UserPicker, AllPicker, RandomPicker
         if name == "user":
             return UserPicker()
         elif name == "all":
             return AllPicker()
         elif name == "random":
-            return RandomPicker()
+            return RandomPicker(count)
+        else:
+            raise TypeError("WHat are you even doing?")
 
 
 class Selector(JSONObject, metaclass=abc.ABCMeta):
@@ -418,7 +420,7 @@ class CARD_SOURCE:
     @staticmethod
     def to_str(source_number):
         sources = dict(zip(CARD_SOURCE.__sources.values(), CARD_SOURCE.__sources.keys()))
-        return sources[source_number].capitalize()
+        return sources[source_number].lower()
 
 
 class CardQuery(JSONObject):
@@ -518,8 +520,11 @@ class CardQuery(JSONObject):
 
 
 class Battlecry(JSONObject):
-    def __init__(self, action, selector, condition=None):
-        self.action = action
+    def __init__(self, actions, selector, condition=None):
+        if isinstance(actions, Action):
+            self.actions = [actions]
+        else:
+            self.actions = actions
         self.selector = selector
         self.condition = condition
 
@@ -529,33 +534,34 @@ class Battlecry(JSONObject):
                 return
         targets = self.selector.get_targets(target, target)
         for t in targets:
-            self.action.act(target, t)
+            for action in self.actions:
+                action.act(target, t)
 
     def __to_json__(self):
         if self.condition:
             return {
-                'action': self.action,
+                'actions': self.actions,
                 'selector': self.selector,
                 'condition': self.condition
             }
         return {
-            'action': self.action,
+            'actions': self.actions,
             'selector': self.selector
         }
 
     @staticmethod
-    def from_json(action, selector, condition=None):
-        action = Action.from_json(**action)
+    def from_json(actions, selector, condition=None):
+        actions = [Action.from_json(**action) for action in actions]
         selector = Selector.from_json(**selector)
         if condition:
             condition = Condition.from_json(**condition)
-        return Battlecry(action, selector, condition)
+        return Battlecry(actions, selector, condition)
 
 
 class Choice(Battlecry):
-    def __init__(self, card, action, selector, condition=None):
+    def __init__(self, card, actions, selector, condition=None):
         self.card = card
-        super().__init__(action, selector, condition)
+        super().__init__(actions, selector, condition)
 
     def __to_json__(self):
         super_json = super().__to_json__()
@@ -563,10 +569,10 @@ class Choice(Battlecry):
         return super_json
 
     @staticmethod
-    def from_json(card, action, selector, condition=None):
-        action = Action.from_json(**action)
+    def from_json(card, actions, selector, condition=None):
+        actions = [Action.from_json(**action) for action in actions]
         selector = Selector.from_json(**selector)
         if condition:
             condition = Condition.from_json(**condition)
         card = hearthbreaker.game_objects.card_lookup(card)
-        return Choice(card, action, selector, condition)
+        return Choice(card, actions, selector, condition)

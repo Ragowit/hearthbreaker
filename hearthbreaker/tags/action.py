@@ -1,6 +1,6 @@
 import copy
 from hearthbreaker.tags.base import ReversibleAction, Action, MinionAction, Aura, Condition, AuraUntil, CardQuery, \
-    CARD_SOURCE
+    CARD_SOURCE, Effect
 import hearthbreaker.game_objects
 from hearthbreaker.tags.condition import IsSecret
 import hearthbreaker.proxies
@@ -42,7 +42,11 @@ class Give(Action):
             'auras': self.auras
         }
 
-    def __from_json__(self, auras):
+    def __from_json__(self, auras=None, effects=None):
+        if effects:  # To allow for give to work with effects as well, we check at load time
+            effects = [Effect.from_json(**effect) for effect in effects]
+            return GiveEffect(effects)
+
         self.auras = []
         for aura in auras:
             if "until" in aura:
@@ -50,6 +54,25 @@ class Give(Action):
             else:
                 self.auras.append(Aura.from_json(**aura))
         return self
+
+
+class GiveEffect(Action):
+    def __init__(self, effects):
+
+        if isinstance(effects, Effect):
+            self.effects = [effects]
+        else:
+            self.effects = effects
+
+    def act(self, actor, target):
+        for effect in self.effects:
+            target.add_effect(effect)
+
+    def __to_json__(self):
+        return {
+            'name': 'give',
+            'effects': self.effects
+        }
 
 
 class Take(Action):
@@ -168,6 +191,25 @@ class MinimumHealth(MinionAction):
         return {
             'name': 'minimun_health',
             'min_health': self.min_health
+        }
+
+
+class SetAttack(ReversibleAction):
+    def __init__(self, attack):
+        self.attack = attack
+        self._diff = 0
+
+    def act(self, actor, target):
+        self._diff = self.attack - target.calculate_attack()
+        target.attack_delta += self._diff
+
+    def unact(self, actor, target):
+        target.attack_delta -= self._diff
+
+    def __to_json__(self):
+        return {
+            'name': 'set_attack',
+            'attack': self.attack
         }
 
 
@@ -340,6 +382,21 @@ class Draw(Action):
         }
 
 
+class Discard(Action):
+    def __init__(self, amount=1):
+        self.amount = amount
+
+    def act(self, actor, target):
+        for index in range(0, self.amount):
+            target.discard()
+
+    def __to_json__(self):
+        return {
+            'name': 'discard',
+            'amount': self.amount
+        }
+
+
 class Charge(MinionAction):
     def act(self, actor, target):
         target.charge += 1
@@ -376,6 +433,19 @@ class Stealth(MinionAction):
     def __to_json__(self):
         return {
             'name': 'stealth'
+        }
+
+
+class DivineShield(MinionAction):
+    def act(self, actor, target):
+        target.divine_shield += 1
+
+    def unact(self, actor, target):
+        target.divine_shield -= 1
+
+    def __to_json__(self):
+        return {
+            'name': 'divine_shield'
         }
 
 
@@ -420,6 +490,24 @@ class CantAttack(MinionAction):
     def __to_json__(self):
         return {
             "name": "cant_attack"
+        }
+
+
+class SpellDamage(MinionAction):
+    def __init__(self, damage):
+        super().__init__()
+        self.damage = damage
+
+    def act(self, actor, target):
+        target.player.spell_damage += self.damage
+
+    def unact(self, actor, target):
+        target.player.spell_damage -= self.damage
+
+    def __to_json__(self):
+        return {
+            'name': 'spell_damage',
+            'damage': self.damage
         }
 
 
@@ -477,24 +565,28 @@ class Chance(Action):
 
 
 class AddCard(Action):
-    def __init__(self, card):
+    def __init__(self, card, count=1):
         if isinstance(card, hearthbreaker.game_objects.Card):
             self.card = CardQuery(card.ref_name)
         else:
             self.card = card
+        self.count = count
 
     def act(self, actor, target):
-        if len(target.hand) < 10:
-            target.hand.append(self.card.get_card(target))
+        for i in range(self.count):
+            if len(target.hand) < 10:
+                target.hand.append(self.card.get_card(target))
 
     def __to_json__(self):
         return {
             'name': 'add_card',
-            'card': self.card
+            'card': self.card,
+            'count': self.count
         }
 
     def __from_json__(self, card, count=1):
         self.card = CardQuery.from_json(**card)
+        self.count = count
         return self
 
 
@@ -604,25 +696,30 @@ class ApplySecret(Action):
 
     def __from_json__(self, source):
         self.source = CARD_SOURCE.from_str(source)
-        self._query = CardQuery(conditions=[IsSecret()], source=source)
+        self._query = CardQuery(conditions=[IsSecret()], source=self.source)
+        return self
 
 
 class Equip(Action):
     def __init__(self, weapon):
-        self.weapon = weapon
+        if isinstance(weapon, hearthbreaker.game_objects.Card):
+            self.weapon = CardQuery(weapon.ref_name)
+        else:
+            self.weapon = weapon
 
     def act(self, actor, target):
-        weapon = self.weapon.create_weapon(target)
+        card = self.weapon.get_card(target)
+        weapon = card.create_weapon(target)
         weapon.equip(target)
 
     def __to_json__(self):
         return {
             'name': 'equip',
-            'weapon': self.weapon.name
+            'weapon': self.weapon
         }
 
     def __from_json__(self, weapon):
-        self.weapon = hearthbreaker.game_objects.card_lookup(weapon)
+        self.weapon = CardQuery.from_json(**weapon)
         return self
 
 
@@ -766,4 +863,34 @@ class Silence(Action):
     def __to_json__(self):
         return {
             'name': 'silence'
+        }
+
+
+class DestroyManaCrystal(Action):
+    def act(self, actor, target):
+        target.max_mana -= 1
+        if target.mana > 0:
+            target.mana -= 1
+
+    def __to_json__(self):
+        return {
+            'name': 'destroy_mana_crystal'
+        }
+
+
+class GiveManaCrystal(Action):
+    def __init__(self, count=1, empty=False):
+        self.count = count
+        self.empty = empty
+
+    def act(self, actor, target):
+        target.max_mana = min(self.count + target.max_mana, 10)
+        if not self.empty:
+            target.mana += self.count
+
+    def __to_json__(self):
+        return {
+            'name': 'give_mana_crystal',
+            'count': self.count,
+            'empty': self.empty,
         }

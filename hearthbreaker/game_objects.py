@@ -1,11 +1,6 @@
 import copy
 import random
 import abc
-
-# import hearthbreaker.tags.base
-# import hearthbreaker.tags.action
-# import hearthbreaker.tags.selector
-# import hearthbreaker.tags.event
 import hearthbreaker.powers
 import hearthbreaker.targeting
 import hearthbreaker.constants
@@ -277,6 +272,13 @@ class Character(Bindable, metaclass=abc.ABCMeta):
         else:
             self.player.remove_aura(aura)
 
+    def _remove_stealth(self):
+        from hearthbreaker.tags.action import Stealth
+        if self.stealth:
+            self.auras = [aura for aura in filter(
+                lambda a: not isinstance(a.action, Stealth), self.auras)]
+            self.stealth = 0
+
     def attack(self):
         """
         Causes this :class:`Character` to attack.
@@ -310,6 +312,7 @@ class Character(Bindable, metaclass=abc.ABCMeta):
 
         self.player.trigger("pre_attack", self)
         target = self.choose_target(targets)
+        self._remove_stealth()
         self.player.trigger("attack", self, target)
         self.trigger("attack", target)
         target.trigger("attacked", self)
@@ -407,6 +410,7 @@ class Character(Bindable, metaclass=abc.ABCMeta):
             self.health -= amount
             if issubclass(type(attacker), Character):
                 attacker.trigger("did_damage", self, amount)
+                attacker._remove_stealth()
             self.trigger("health_changed")
             if not self.enraged and self.health != self.calculate_max_health():
                 self.enraged = True
@@ -771,7 +775,7 @@ class MinionCard(Card, metaclass=abc.ABCMeta):
     """
     def __init__(self, name, mana, character_class, rarity, minion_type=hearthbreaker.constants.MINION_TYPE.NONE,
                  targeting_func=None, filter_func=lambda target: not target.stealth, ref_name=None, battlecry=None,
-                 choices=None, overload=0):
+                 choices=None, combo=None, overload=0):
         """
         All parameters are passed directly to the :meth:`superclass's __init__ method <Card.__init__>`.
 
@@ -795,11 +799,15 @@ class MinionCard(Card, metaclass=abc.ABCMeta):
         :type battlecry: :class:`hearthbreaker.tags.base.Battlecry`
         :param choices: Gives a list of :class:`hearthbreaker.tags.base.Choice` s for the user to pick between
         :type choices: [:class:`hearthbreaker.tags.base.Choice`]
+        :param combo: Describes the battlecry this minion will have if played after another card.  Note that this
+                      does not count as a battlecry for cards such as Nerub'ar Weblord.
+        :type combo: :class:`hearthbreaker.tags.base.Battlecry`
         """
         super().__init__(name, mana, character_class, rarity, targeting_func, filter_func, overload, ref_name)
         self.minion_type = minion_type
         self.battlecry = battlecry
         self.choices = choices
+        self.combo = combo
 
     def can_use(self, player, game):
         """
@@ -825,7 +833,7 @@ class MinionCard(Card, metaclass=abc.ABCMeta):
          5. Battlecry activated (if needed)
          6. minion_played event
          7. minion_summoned_event
-         8. after_minion_added event
+         8. after_added event
 
         The precise ordering of events is necessary so that various tags (Sword of Justice, Knife Juggler, etc)
         trigger in the correct order, and to distinguish from :meth:`summon`, which is called when a minion is
@@ -847,16 +855,19 @@ class MinionCard(Card, metaclass=abc.ABCMeta):
         if self.choices:
             choice = player.agent.choose_option(*self.choices)
             choice.battlecry(minion)
-        if self.battlecry:  # There are currently two battlecry systems, hence the weirdness
-            self.battlecry.battlecry(minion)
-        elif minion.battlecry is not None:
-            minion.battlecry(minion)
+        if self.combo and player.cards_played > 0:
+            self.combo.battlecry(minion)
+        else:
+            if self.battlecry:  # There are currently two battlecry systems, hence the weirdness
+                self.battlecry.battlecry(minion)
+            elif minion.battlecry is not None:
+                minion.battlecry(minion)
         if not minion.removed:
             # In case the minion has been replaced by its battlecry (e.g. Faceless Manipulator)
             minion = player.minions[minion.index]
             player.trigger("minion_played", minion)
             player.trigger("minion_summoned", minion)
-            player.trigger("after_minion_added", minion)
+            player.trigger("after_added", minion)
 
     def summon(self, player, game, index):
         """
@@ -870,7 +881,7 @@ class MinionCard(Card, metaclass=abc.ABCMeta):
          1. Minion is placed on the board
          2. minion_placed event
          3. minion_summoned_event
-         4. after_minion_added event
+         4. after_added event
 
         The ordering is important so that efects trigger in the correct order.
 
@@ -890,7 +901,7 @@ class MinionCard(Card, metaclass=abc.ABCMeta):
             minion.add_to_board(index)
             player.trigger("minion_placed", minion)
             player.trigger("minion_summoned", minion)
-            player.trigger("after_minion_added", minion)
+            player.trigger("after_added", minion)
             return minion
 
     @abc.abstractmethod
@@ -955,7 +966,7 @@ class Minion(Character):
                  deathrattle=None, taunt=False, charge=False, spell_damage=0, divine_shield=False, stealth=False,
                  windfury=False, spell_targetable=True, effects=None, auras=None, enrage=None):
         super().__init__(attack, health, enrage=enrage)
-        from hearthbreaker.tags.action import Charge, Taunt, Stealth, Windfury, NoSpellTarget
+        from hearthbreaker.tags.action import Charge, Taunt, Stealth, Windfury, NoSpellTarget, DivineShield, SpellDamage
         from hearthbreaker.tags.base import Deathrattle, Aura
         from hearthbreaker.tags.selector import SelfSelector
         self.game = None
@@ -963,8 +974,7 @@ class Minion(Character):
         self.index = -1
         self.charge = 0
         self.taunt = 0
-        self.spell_damage = spell_damage
-        self.divine_shield = divine_shield
+        self.divine_shield = 0
         self.can_be_targeted_by_spells = True
         self.battlecry = battlecry
         if isinstance(deathrattle, Deathrattle):
@@ -990,18 +1000,14 @@ class Minion(Character):
             self._auras_to_add.append(Aura(Taunt(), SelfSelector()))
         if stealth:
             self._auras_to_add.append(Aura(Stealth(), SelfSelector()))
+        if divine_shield:
+            self._auras_to_add.append(Aura(DivineShield(), SelfSelector()))
         if windfury:
             self._auras_to_add.append(Aura(Windfury(), SelfSelector()))
         if not spell_targetable:
             self._auras_to_add.append(Aura(NoSpellTarget(), SelfSelector()))
-        self.bind("did_damage", self.__on_did_damage)
-
-    def __on_did_damage(self, amount, target):
-        from hearthbreaker.tags.action import Stealth
-        if self.stealth:
-            self.auras = [aura for aura in filter(
-                lambda a: not isinstance(a.action, Stealth), self.auras)]
-            self.stealth = 0
+        if spell_damage:
+            self._auras_to_add.append(Aura(SpellDamage(spell_damage), SelfSelector()))
 
     def add_to_board(self, index):
         aura_affects = {}
@@ -1014,7 +1020,6 @@ class Minion(Character):
         self.game.minion_counter += 1
         self.player.minions.insert(index, self)
         self.born = self.game.minion_counter
-        self.player.spell_damage += self.spell_damage
         count = 0
         for minion in self.player.minions:
             minion.index = count
@@ -1101,8 +1106,11 @@ class Minion(Character):
         super().attack()
 
     def damage(self, amount, attacker):
+        from hearthbreaker.tags.action import DivineShield
         if self.divine_shield:
-            self.divine_shield = False
+            self.auras = [aura for aura in filter(
+                lambda a: not isinstance(a.action, DivineShield), self.auras)]
+            self.divine_shield = 0
         else:
             super().damage(amount, attacker)
 
@@ -1131,9 +1139,6 @@ class Minion(Character):
 
     def silence(self):
         super().silence()
-        self.player.spell_damage -= self.spell_damage
-        self.spell_damage = 0
-        self.divine_shield = False
         self.battlecry = None
         self.deathrattle = []
 
@@ -1152,15 +1157,14 @@ class Minion(Character):
     def copy(self, new_owner, new_game=None):
         new_minion = Minion(self.base_attack, self.base_health, self.battlecry)
         new_minion.health = self.base_health - (self.calculate_max_health() - self.health)
-        new_minion.divine_shield = self.divine_shield
         new_minion.deathrattle = copy.deepcopy(self.deathrattle)
+        new_minion.divine_shield = 0
         new_minion.taunt = 0
         new_minion.charge = 0
         new_minion.stealth = 0
         new_minion.enraged = self.enraged
         new_minion.enrage = copy.deepcopy(self.enrage)
         new_minion.can_be_targeted_by_spells = self.can_be_targeted_by_spells
-        new_minion.spell_damage = self.spell_damage
         new_minion.immune = self.immune
         new_minion.index = self.index
         new_minion.active = self.active
@@ -1184,7 +1188,6 @@ class Minion(Character):
         from hearthbreaker.tags.base import Action, Deathrattle, Effect, Aura
         minion = Minion(md['attack'], md['max_health'])
         minion.health = md['max_health'] - md['damage']
-        minion.divine_shield = md['divine_shield']
         minion.exhausted = md['exhausted']
         minion.active = not md['already_attacked']
         minion.born = md['sequence_id']
@@ -1224,7 +1227,6 @@ class Minion(Character):
             'damage': self.calculate_max_health() - self.health,
             'max_health': self.base_health,
             'attack': self.base_attack,
-            "divine_shield": self.divine_shield,
             "exhausted": self.exhausted,
             "already_attacked": not self.active,
             'deathrattles': self.deathrattle,
