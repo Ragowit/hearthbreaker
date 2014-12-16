@@ -212,7 +212,10 @@ class Node:
         self.childNodes = []
         self.wins = 0
         self.visits = 0
-        self.untriedMoves = state.GetMoves() # future child nodes
+        if not move or move[0] != "end_turn":
+            self.untriedMoves = state.GetMoves() # future child nodes
+        else:
+            self.untriedMoves = []
         self.playerJustMoved = state.playerJustMoved # the only part of the state that the Node needs later
         
     def UCTSelectChild(self):
