@@ -1,9 +1,9 @@
 import copy
-from hearthbreaker.tags.action import ChangeAttack, Immune
 from hearthbreaker.tags.aura import ManaAura
 from hearthbreaker.tags.base import Aura, AuraUntil
 from hearthbreaker.tags.event import TurnEnded
 from hearthbreaker.tags.selector import MinionSelector, SelfSelector, CurrentPlayer, SpecificCardSelector
+from hearthbreaker.tags.status import ChangeAttack, Immune
 import hearthbreaker.targeting
 from hearthbreaker.constants import CHARACTER_CLASS, CARD_RARITY, MINION_TYPE
 from hearthbreaker.game_objects import Card, SecretCard, Minion, MinionCard, Hero
@@ -86,13 +86,14 @@ class ExplosiveTrap(SecretCard):
     def deactivate(self, player):
         player.opponent.unbind("attack", self._reveal)
 
-    def _reveal(self, minion, target):
+    def _reveal(self, attacker, target):
         if isinstance(target, Hero):
-            enemies = copy.copy(minion.game.current_player.minions)
-            enemies.append(minion.game.current_player.hero)
+            game = attacker.player.game
+            enemies = copy.copy(game.current_player.minions)
+            enemies.append(game.current_player.hero)
             for enemy in enemies:
                 enemy.damage(2, None)
-            minion.game.check_delayed()
+            game.check_delayed()
             super().reveal()
 
 
@@ -299,3 +300,21 @@ class SnakeTrap(SecretCard):
             for i in range(0, 3):
                 snake.summon(player, player.game, len(player.minions))
             super().reveal()
+
+
+class CallPet(Card):
+    def __init__(self):
+        super().__init__("Call Pet", 2, CHARACTER_CLASS.HUNTER, CARD_RARITY.RARE)
+
+    def use(self, player, game):
+        def reduce_cost(card):
+            if card.is_minion() and card.minion_type == MINION_TYPE.BEAST:
+                nonlocal aura
+                aura = ManaAura(4, 0, SpecificCardSelector(card), True, False)
+
+        super().use(player, game)
+        aura = None
+        player.bind_once("card_drawn", reduce_cost)
+        player.draw()
+        if aura is not None:
+            player.add_aura(aura)

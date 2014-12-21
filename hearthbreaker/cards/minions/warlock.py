@@ -1,12 +1,13 @@
 from hearthbreaker.constants import CHARACTER_CLASS, CARD_RARITY, MINION_TYPE
-from hearthbreaker.tags.action import ChangeHealth, ManaChange, Summon, Kill, Damage, Discard, DestroyManaCrystal
+from hearthbreaker.tags.action import Summon, Kill, Damage, Discard, DestroyManaCrystal
 from hearthbreaker.tags.base import Effect, Aura, Deathrattle, CardQuery, CARD_SOURCE, Battlecry
-from hearthbreaker.tags.condition import MinionIsType, MinionCountIs
+from hearthbreaker.tags.condition import IsType, MinionCountIs
 from hearthbreaker.tags.event import TurnEnded
 from hearthbreaker.tags.selector import MinionSelector, MinionCardSelector, PlayerSelector, \
     SelfSelector, BothPlayer, HeroSelector, CharacterSelector, RandomPicker
 from hearthbreaker.game_objects import MinionCard, Minion, WeaponCard, Weapon
 from hearthbreaker.powers import JaraxxusPower
+from hearthbreaker.tags.status import ChangeHealth, ManaChange
 
 
 class FlameImp(MinionCard):
@@ -147,7 +148,7 @@ class Voidcaller(MinionCard):
         super().__init__("Voidcaller", 4, CHARACTER_CLASS.WARLOCK, CARD_RARITY.COMMON, MINION_TYPE.DEMON)
 
     def create_minion(self, player):
-        return Minion(3, 4, deathrattle=Deathrattle(Summon(CardQuery(conditions=[MinionIsType(MINION_TYPE.DEMON)],
+        return Minion(3, 4, deathrattle=Deathrattle(Summon(CardQuery(conditions=[IsType(MINION_TYPE.DEMON)],
                                                                      source=CARD_SOURCE.MY_HAND)), PlayerSelector()))
 
 

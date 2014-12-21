@@ -1,7 +1,7 @@
 import random
 import unittest
 
-from hearthbreaker.agents.basic_agents import DoNothingAgent
+from hearthbreaker.agents.basic_agents import DoNothingAgent, PredictableAgent
 from hearthbreaker.constants import MINION_TYPE
 from tests.agents.testing_agents import CardTestingAgent, OneCardPlayingAgent, WeaponTestingAgent, \
     PlayAndAttackAgent, SelfSpellTestingAgent, EnemyMinionSpellTestingAgent
@@ -315,6 +315,20 @@ class TestHunter(unittest.TestCase):
         self.assertEqual(3, game.current_player.minions[1].health)
         self.assertEqual(3, game.current_player.minions[2].health)
 
+    def test_ExplosiveTrap_hero(self):
+        game = generate_game_for(ExplosiveTrap, Naturalize, OneCardPlayingAgent, PredictableAgent)
+        for turn in range(0, 3):
+            game.play_single_turn()
+
+        self.assertEqual(1, len(game.current_player.secrets))
+        self.assertEqual(30, game.current_player.hero.health)
+        self.assertEqual(30, game.other_player.hero.health)
+
+        game.play_single_turn()
+        self.assertEqual(0, len(game.other_player.secrets))
+        self.assertEqual(29, game.current_player.hero.health)
+        self.assertEqual(29, game.other_player.hero.health)
+
     def test_SavannahHighmane(self):
         game = generate_game_for(SavannahHighmane, SiphonSoul, OneCardPlayingAgent, CardTestingAgent)
         for turn in range(0, 12):
@@ -564,3 +578,19 @@ class TestHunter(unittest.TestCase):
         self.assertEqual(0, len(game.other_player.minions))
         self.assertEqual(4, len(game.other_player.hand))
         self.assertEqual(MINION_TYPE.BEAST, game.other_player.hand[3].minion_type)
+
+    def test_CallPet(self):
+        game = generate_game_for([CallPet, CallPet, MoltenGiant, MoltenGiant, MoltenGiant, KingKrush, MoltenGiant,
+                                  MoltenGiant], MortalCoil, CardTestingAgent, DoNothingAgent)
+        for turn in range(0, 4):
+            game.play_single_turn()
+
+        # King Krush should cost 4 less (9 - 4 = 5)
+        self.assertEqual(5, len(game.players[0].hand))
+        self.assertEqual(5, game.players[0].hand[4].mana_cost(game.players[0]))
+
+        for turn in range(0, 2):
+            game.play_single_turn()
+
+        # Molten Giant should not be affected since it's not a beast
+        self.assertEqual(20, game.players[0].hand[5].mana_cost(game.players[0]))
