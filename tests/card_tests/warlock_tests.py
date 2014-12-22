@@ -560,3 +560,51 @@ class TestWarlock(unittest.TestCase):
         # The golem is played alone, which results in its death at the end of the turn
         game.play_single_turn()
         self.assertEqual(0, len(game.current_player.minions))
+
+    def test_Darkbomb(self):
+        game = generate_game_for(Darkbomb, StonetuskBoar, OneCardPlayingAgent, DoNothingAgent)
+        for turn in range(0, 3):
+            game.play_single_turn()
+
+        self.assertEqual(27, game.players[1].hero.health)
+
+    def test_DemonheartEnemy(self):
+        game = generate_game_for(Demonheart, FlameImp, EnemyMinionSpellTestingAgent, OneCardPlayingAgent)
+        for turn in range(0, 8):
+            game.play_single_turn()
+
+        self.assertEqual(4, len(game.players[1].minions))
+
+        game.play_single_turn()
+        # Demonheart to kill enemy Flame Imp
+        self.assertEqual(3, len(game.players[1].minions))
+
+    def test_DemonheartAlly(self):
+        game = generate_game_for(Demonheart, StonetuskBoar, CardTestingAgent, DoNothingAgent)
+        imp = FlameImp()
+        imp.summon(game.players[0], game, 0)
+
+        for turn in range(0, 8):
+            game.play_single_turn()
+
+        self.assertEqual(1, len(game.players[0].minions))
+
+        game.play_single_turn()
+        # Demonheart to buff own Flame Imp
+        self.assertEqual(1, len(game.players[0].minions))
+        self.assertEqual(8, game.players[0].minions[0].calculate_attack())
+        self.assertEqual(7, game.players[0].minions[0].health)
+
+    def test_DemonheartAllyNonDemon(self):
+        game = generate_game_for(Demonheart, StonetuskBoar, CardTestingAgent, DoNothingAgent)
+        raptor = BloodfenRaptor()
+        raptor.summon(game.players[0], game, 0)
+
+        for turn in range(0, 8):
+            game.play_single_turn()
+
+        self.assertEqual(1, len(game.players[0].minions))
+
+        game.play_single_turn()
+        # Demonheart to kill own Raptor
+        self.assertEqual(0, len(game.players[0].minions))

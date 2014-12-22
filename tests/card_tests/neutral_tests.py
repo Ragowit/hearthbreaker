@@ -2250,6 +2250,21 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(6, len(game.players[1].hand))
         self.assertNotEqual("Magma Rager", game.players[1].hand[5].name)
 
+    def test_Lorewalker_Cho_with_Secrets(self):
+        game = generate_game_for([LorewalkerCho, EyeForAnEye, Hellfire],
+                                 Moonfire, OneCardPlayingAgent, CardTestingAgent)
+
+        for turn in range(6):
+            game.play_single_turn()
+
+        self.assertEqual(1, len(game.current_player.secrets))
+        self.assertEqual(0, len(game.other_player.secrets))
+
+        # Hellfire will proc the secret for one player, but not the other
+        game.play_single_turn()
+        self.assertEqual(0, len(game.current_player.secrets))
+        self.assertEqual(0, len(game.other_player.secrets))
+
     def test_WildPyromancer(self):
         game = generate_game_for([WildPyromancer, MindBlast, PowerWordShield], Shieldbearer,
                                  CardTestingAgent, DoNothingAgent)
@@ -3147,3 +3162,136 @@ class TestCommon(unittest.TestCase):
         # Harvest Golem should be back at 3 again
         self.assertEqual("Harvest Golem", game.players[0].hand[0].name)
         self.assertEqual(3, game.players[0].hand[0].mana_cost(game.players[0]))
+
+    def test_ClockworkGiant(self):
+        game = generate_game_for([Mechwarper, ClockworkGiant], StonetuskBoar, OneCardPlayingAgent, DoNothingAgent)
+
+        game.play_single_turn()
+
+        self.assertEqual(5, len(game.players[1].hand))
+        # Initial cost is 12, opponent have 5 cards in hand, 12 - 5 = 7
+        self.assertEqual(7, game.players[0].hand[1].mana_cost(game.players[0]))
+
+        game.play_single_turn()
+        game.play_single_turn()
+
+        self.assertEqual(6, len(game.players[1].hand))
+        self.assertEqual(1, len(game.players[0].minions))
+        # Initial cost is 12, opponent have 6 cards in hand and you have Mechwarper in play, 12 - 6 - 1 = 5
+        self.assertEqual(5, game.players[0].hand[0].mana_cost(game.players[0]))
+
+    def test_ArmorPlating(self):
+        game = generate_game_for(ArmorPlating, StonetuskBoar, OneCardPlayingAgent, OneCardPlayingAgent)
+
+        for turn in range(0, 3):
+            game.play_single_turn()
+
+        self.assertEqual(1, game.players[1].minions[0].calculate_attack())
+        self.assertEqual(2, game.players[1].minions[0].health)
+        self.assertEqual(2, game.players[1].minions[0].calculate_max_health())
+
+        # Test that this spell is being silenced properly as well
+        game.players[1].minions[0].silence()
+        self.assertEqual(1, game.players[1].minions[0].calculate_attack())
+        self.assertEqual(1, game.players[1].minions[0].health)
+        self.assertEqual(1, game.players[1].minions[0].calculate_max_health())
+
+    def test_EmergencyCoolant(self):
+        game = generate_game_for(EmergencyCoolant, StonetuskBoar, OneCardPlayingAgent, OneCardPlayingAgent)
+
+        for turn in range(0, 3):
+            game.play_single_turn()
+
+        self.assertTrue(game.players[1].minions[0].frozen)
+
+    def test_FinickyCloakfield(self):
+        game = generate_game_for([StonetuskBoar, FinickyCloakfield, MoltenGiant], StonetuskBoar, OneCardPlayingAgent,
+                                 DoNothingAgent)
+
+        for turn in range(0, 3):
+            game.play_single_turn()
+
+        self.assertTrue(game.players[0].minions[0].stealth)
+
+        game.play_single_turn()
+        game.play_single_turn()
+
+        self.assertFalse(game.players[0].minions[0].stealth)
+
+    def test_ReversingSwitch(self):
+        game = generate_game_for(ReversingSwitch, GoldshireFootman, OneCardPlayingAgent, OneCardPlayingAgent)
+
+        for turn in range(0, 3):
+            game.play_single_turn()
+
+        self.assertEqual(2, game.players[1].minions[0].calculate_attack())
+        self.assertEqual(1, game.players[1].minions[0].health)
+        self.assertEqual(1, game.players[1].minions[0].calculate_max_health())
+
+    def test_RustyHorn(self):
+        game = generate_game_for(RustyHorn, StonetuskBoar, OneCardPlayingAgent, OneCardPlayingAgent)
+
+        for turn in range(0, 3):
+            game.play_single_turn()
+
+        self.assertTrue(game.players[1].minions[0].taunt)
+
+        # Test that this spell is being silenced properly as well
+        game.players[1].minions[0].silence()
+        self.assertFalse(game.players[1].minions[0].taunt)
+
+    def test_TimeRewinder(self):
+        game = generate_game_for([StonetuskBoar, TimeRewinder], StonetuskBoar, OneCardPlayingAgent, OneCardPlayingAgent)
+
+        for turn in range(0, 2):
+            game.play_single_turn()
+
+        self.assertEqual(3, len(game.players[0].hand))
+        self.assertEqual(1, len(game.players[0].minions))
+
+        for turn in range(0, 2):
+            game.play_single_turn()
+
+        self.assertEqual(4, len(game.players[0].hand))
+        self.assertEqual(0, len(game.players[0].minions))
+
+    def test_WhirlingBlades(self):
+        game = generate_game_for(WhirlingBlades, StonetuskBoar, OneCardPlayingAgent, OneCardPlayingAgent)
+
+        for turn in range(0, 3):
+            game.play_single_turn()
+
+        self.assertEqual(2, game.players[1].minions[0].calculate_attack())
+        self.assertEqual(1, game.players[1].minions[0].health)
+        self.assertEqual(1, game.players[1].minions[0].calculate_max_health())
+
+        # Test that this spell is being silenced properly as well
+        game.players[1].minions[0].silence()
+        self.assertEqual(1, game.players[1].minions[0].calculate_attack())
+        self.assertEqual(1, game.players[1].minions[0].health)
+        self.assertEqual(1, game.players[1].minions[0].calculate_max_health())
+
+    def test_ClockworkGnome(self):
+        game = generate_game_for(ClockworkGnome, StonetuskBoar, OneCardPlayingAgent, PredictableAgent)
+
+        for turn in range(0, 1):
+            game.play_single_turn()
+
+        self.assertEqual(1, len(game.players[0].minions))
+        self.assertEqual(3, len(game.players[0].hand))
+
+        game.play_single_turn()
+        self.assertEqual(0, len(game.players[0].minions))
+        self.assertEqual(4, len(game.players[0].hand))
+        self.assertEqual("Rusty Horn", game.players[0].hand[-1].name)
+
+    def test_BoomBot(self):
+        game = generate_game_for(BoomBot, StonetuskBoar, OneCardPlayingAgent, PredictableAgent)
+
+        game.play_single_turn()
+        self.assertEqual(1, len(game.players[0].minions))
+        self.assertEqual(30, game.players[1].hero.health)
+
+        game.play_single_turn()
+        self.assertEqual(0, len(game.players[0].minions))
+        self.assertNotEqual(30, game.players[1].hero.health)

@@ -21,6 +21,8 @@ from hearthbreaker.tags.status import ChangeAttack, ChangeHealth, ManaChange, Ch
     SpellDamage, DoubleDeathrattle, IncreaseWeaponAttack
 import hearthbreaker.targeting
 import copy
+from hearthbreaker.cards.spells.neutral import ArmorPlating, EmergencyCoolant, FinickyCloakfield, TimeRewinder,\
+    ReversingSwitch, RustyHorn, WhirlingBlades
 
 
 class BloodfenRaptor(MinionCard):
@@ -1630,13 +1632,6 @@ class OldMurkEye(MinionCard):
                                                                               BothPlayer()))), SelfSelector()))
 
     def create_minion(self, player):
-        def set_base_attack(m):
-            targets = copy.copy(player.game.current_player.minions)
-            targets.extend(player.game.other_player.minions)
-            for target in targets:
-                if target is not m and target.card.minion_type is MINION_TYPE.MURLOC:
-                    m.change_attack(1)
-
         return Minion(2, 4, charge=True,
                       effects=[Effect(MinionPlaced(condition=IsType(MINION_TYPE.MURLOC), player=BothPlayer()),
                                       ChangeAttack(1), SelfSelector()),
@@ -2096,3 +2091,36 @@ class Frog(MinionCard):
 
     def create_minion(self, p):
         return Minion(0, 1, taunt=True)
+
+
+class ClockworkGiant(MinionCard):
+    def __init__(self):
+        super().__init__("Clockwork Giant", 12, CHARACTER_CLASS.ALL, CARD_RARITY.EPIC, MINION_TYPE.MECH)
+
+    def create_minion(self, player):
+        return Minion(8, 8)
+
+    def mana_cost(self, player):
+        cost = super().mana_cost(player) - len(player.game.other_player.hand)
+        return cost
+
+
+class ClockworkGnome(MinionCard):
+    def __init__(self):
+        super().__init__("Clockwork Gnome", 1, CHARACTER_CLASS.ALL, CARD_RARITY.COMMON, MINION_TYPE.MECH)
+
+    def create_minion(self, player):
+        spare_part_list = [ArmorPlating(), EmergencyCoolant(), FinickyCloakfield(), TimeRewinder(), ReversingSwitch(),
+                           RustyHorn(), WhirlingBlades()]
+        return Minion(2, 1,
+                      deathrattle=Deathrattle(AddCard(CardQuery(source=CARD_SOURCE.LIST, source_list=spare_part_list)),
+                                              PlayerSelector()))
+
+
+class BoomBot(MinionCard):
+    def __init__(self):
+        super().__init__("Boom Bot", 1, CHARACTER_CLASS.ALL, CARD_RARITY.SPECIAL, MINION_TYPE.MECH)
+
+    def create_minion(self, player):
+        return Minion(1, 1, deathrattle=Deathrattle(Damage(player.game.random_amount(1, 4)),
+                                                    CharacterSelector(players=EnemyPlayer(), picker=RandomPicker())))

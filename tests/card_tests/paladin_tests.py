@@ -572,3 +572,37 @@ class TestPaladin(unittest.TestCase):
         self.assertEqual(0, len(game.players[0].secrets))
         self.assertEqual(30, game.players[0].hero.health)
         self.assertEqual(29, game.players[1].hero.health)
+
+    def test_CobaltGuardian(self):
+        game = generate_game_for([CobaltGuardian, HarvestGolem], StonetuskBoar, OneCardPlayingAgent, DoNothingAgent)
+
+        for turn in range(0, 9):
+            game.play_single_turn()
+
+        self.assertEqual(1, len(game.players[0].minions))
+        self.assertEqual("Cobalt Guardian", game.players[0].minions[0].card.name)
+        self.assertFalse(game.players[0].minions[0].divine_shield)
+
+        game.play_single_turn()
+        game.play_single_turn()
+
+        self.assertEqual(2, len(game.players[0].minions))
+        self.assertTrue(game.players[0].minions[1].divine_shield)
+
+    def test_Coghammer(self):
+        game = generate_game_for([StonetuskBoar, Coghammer], StonetuskBoar, OneCardPlayingAgent, DoNothingAgent)
+
+        for turn in range(0, 4):
+            game.play_single_turn()
+
+        self.assertEqual(1, len(game.players[0].minions))
+        self.assertFalse(game.players[0].minions[0].divine_shield)
+        self.assertFalse(game.players[0].minions[0].taunt)
+
+        game.play_single_turn()
+
+        self.assertEqual(2, game.players[0].hero.weapon.base_attack)
+        self.assertEqual(3, game.players[0].hero.weapon.durability)
+        self.assertEqual(1, len(game.players[0].minions))
+        self.assertTrue(game.players[0].minions[0].divine_shield)
+        self.assertTrue(game.players[0].minions[0].taunt)

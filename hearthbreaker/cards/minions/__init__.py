@@ -185,6 +185,9 @@ from hearthbreaker.cards.minions.neutral import (
     BurlyRockjawTrogg,
     Mechwarper,
     Frog,
+    ClockworkGiant,
+    ClockworkGnome,
+    BoomBot,
 )
 
 from hearthbreaker.cards.minions.druid import (
@@ -228,6 +231,7 @@ from hearthbreaker.cards.minions.paladin import (
     ArgentProtector,
     GuardianOfKings,
     TirionFordring,
+    CobaltGuardian,
 )
 
 from hearthbreaker.cards.minions.priest import (

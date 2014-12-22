@@ -1,3 +1,13 @@
+from hearthbreaker.cards.spells.neutral import (
+    ArmorPlating,
+    EmergencyCoolant,
+    FinickyCloakfield,
+    ReversingSwitch,
+    RustyHorn,
+    TimeRewinder,
+    WhirlingBlades,
+)
+
 from hearthbreaker.cards.spells.druid import (
     Innervate,
     Moonfire,
@@ -39,6 +49,7 @@ from hearthbreaker.cards.spells.hunter import (
     AnimalCompanion,
     SnakeTrap,
     CallPet,
+    CobraShot,
 )
 
 from hearthbreaker.cards.spells.mage import (
@@ -144,6 +155,7 @@ from hearthbreaker.cards.spells.shaman import (
     TotemicMight,
     Windfury,
     Reincarnate,
+    Crackle,
 )
 
 from hearthbreaker.cards.spells.warlock import (
@@ -160,7 +172,9 @@ from hearthbreaker.cards.spells.warlock import (
     BaneOfDoom,
     Shadowflame,
     Corruption,
-    PowerOverwhelming
+    PowerOverwhelming,
+    Darkbomb,
+    Demonheart,
 )
 
 from hearthbreaker.cards.spells.warrior import (

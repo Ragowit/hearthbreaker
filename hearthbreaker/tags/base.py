@@ -181,9 +181,6 @@ class Action(JSONObject, metaclass=abc.ABCMeta):
         self.__init__(**kwargs)
         return self
 
-    def track_changes(self, player):
-        pass
-
 
 class Status(JSONObject, metaclass=abc.ABCMeta):
     @abc.abstractmethod
@@ -349,7 +346,6 @@ class Effect(JSONObject):
 
     def apply(self):
         self.event.bind(self.target, self._find_target)
-        self.action.track_changes(self.target.player)
 
     def unapply(self):
         self.event.unbind(self.target, self._find_target)
@@ -491,7 +487,7 @@ class CardQuery(JSONObject):
         elif self.source == CARD_SOURCE.LIST:
             card_list = self.source_list
         elif self.source == CARD_SOURCE.LAST_SPELL:
-            return player.game.last_spell
+            return type(player.game.last_spell)()
         else:
             card_list = []
         # TODO Throw an exception in any other case?

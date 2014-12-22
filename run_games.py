@@ -41,11 +41,13 @@ def do_stuff():
             print(json.dumps(new_game.__to_json__(), default=lambda o: o.__to_json__()))
             raise e
 
-        if _count % 10 == 0:
-            print("game #{}".format(_count))
+        del new_game
 
-    deck1 = load_deck("mage.hsdeck")
-    deck2 = load_deck("druid.hsdeck")
+        if _count % 1 == 0:
+            print("---- game #{} ----".format(_count))
+
+    deck1 = load_deck("warlock_tech.hsdeck")
+    deck2 = load_deck("agro_giant_mage.hsdeck")
     game = Game([deck1, deck2], [RandomAgent(), RandomAgent()])
 
     print(timeit.timeit(play_game, 'gc.enable()', number=1000))

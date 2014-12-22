@@ -651,7 +651,7 @@ class Character(Bindable, GameObject, metaclass=abc.ABCMeta):
 
         :rtype boolean:
         """
-        return self.calculate_attack() > 0 and self.active and not self.frozen
+        return self.calculate_attack() > 0 and self.active and not self.frozen and not (self.dead or self.removed)
 
     def spell_targetable(self):
         """
@@ -1265,7 +1265,8 @@ class Minion(Character):
         minion.game = game
         minion.player = player
         minion._effects_to_add = [Effect.from_json(game, **effect) for effect in md['effects']]
-        minion._auras_to_add = [Aura.from_json(**aura) for aura in md['auras']]
+        minion._auras_to_add = [AuraUntil.from_json(**aura) if 'until' in aura else Aura.from_json(**aura)
+                                for aura in md['auras']]
         return minion
 
     def bounce(self):
@@ -1396,8 +1397,7 @@ class Weapon(Bindable, GameObject):
         self.card = None
 
     def copy(self, new_owner):
-        new_weapon = copy.copy(self)
-        new_weapon.events = copy.copy(self.events)
+        new_weapon = Weapon(self.base_attack, self.durability, self.battlecry, copy.deepcopy(self.deathrattle))
         new_weapon.player = new_owner
         return new_weapon
 
@@ -1914,10 +1914,10 @@ class Game(Bindable):
         self.current_player.overload = 0
         self.current_player.cards_played = 0
         self.current_player.dead_this_turn = []
-        self.current_player.trigger("turn_started")
         self.current_player.hero.power.used = False
         self.current_player.hero.active = True
         self.current_player.draw()
+        self.current_player.trigger("turn_started")
         self._has_turn_ended = False
 
     def game_over(self):
@@ -1951,7 +1951,8 @@ class Game(Bindable):
 
     def copy(self):
         copied_game = copy.copy(self)
-        copied_game.cards_played_total = []
+        copied_game.events = {}
+        copied_game.__all_cards_played = []
         copied_game.players = [player.copy(copied_game) for player in self.players]
         if self.current_player is self.players[0]:
             copied_game.current_player = copied_game.players[0]
