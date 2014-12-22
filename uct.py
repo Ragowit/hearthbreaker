@@ -18,11 +18,12 @@
 from math import *
 import random
 import time
+import sys, traceback
 from tests.testing_utils import generate_game_for
 from hearthbreaker.cards import *
 from hearthbreaker.agents.basic_agents import DoNothingAgent
 from hearthbreaker.game_objects import *
-from hearthbreaker.replay import *
+from hearthbreaker.constants import CHARACTER_CLASS
 
 
 class HearthState:
@@ -30,29 +31,31 @@ class HearthState:
     """
     def __init__(self):
         self.playerJustMoved = 2 # At the root pretend the player just moved is p2 - p1 has the first move
-        deck1 = [GoldshireFootman, GoldshireFootman, MurlocRaider, MurlocRaider, BloodfenRaptor, BloodfenRaptor,
-                 FrostwolfGrunt, FrostwolfGrunt, RiverCrocolisk, RiverCrocolisk, IronfurGrizzly, IronfurGrizzly,
-                 MagmaRager, MagmaRager, SilverbackPatriarch, SilverbackPatriarch, ChillwindYeti, ChillwindYeti,
-                 OasisSnapjaw, OasisSnapjaw, SenjinShieldmasta, SenjinShieldmasta, BootyBayBodyguard, BootyBayBodyguard,
-                 FenCreeper, FenCreeper, BoulderfistOgre, BoulderfistOgre, WarGolem, WarGolem]
-        #deck2 = [GoldshireFootman, GoldshireFootman, MurlocRaider, MurlocRaider, BloodfenRaptor, BloodfenRaptor,
+        random.seed(1857)
+
+        #deck1 = [GoldshireFootman, GoldshireFootman, MurlocRaider, MurlocRaider, BloodfenRaptor, BloodfenRaptor,
         #         FrostwolfGrunt, FrostwolfGrunt, RiverCrocolisk, RiverCrocolisk, IronfurGrizzly, IronfurGrizzly,
         #         MagmaRager, MagmaRager, SilverbackPatriarch, SilverbackPatriarch, ChillwindYeti, ChillwindYeti,
         #         OasisSnapjaw, OasisSnapjaw, SenjinShieldmasta, SenjinShieldmasta, BootyBayBodyguard, BootyBayBodyguard,
         #         FenCreeper, FenCreeper, BoulderfistOgre, BoulderfistOgre, WarGolem, WarGolem]
-        #deck1 = RiverCrocolisk
-        #deck1 = [Innervate, Innervate, WildGrowth, WildGrowth, Wrath, Wrath]
-        #deck1 = [Soulfire, Soulfire]
-        #deck1 = [Soulfire, Soulfire, MortalCoil, MortalCoil]
-        #deck2 = RiverCrocolisk
-        deck2 = [Backstab, Backstab, Shadowstep, Shadowstep, Shiv, Shiv, AnubarAmbusher, AnubarAmbusher, Assassinate,
-                 Assassinate, Vanish, Vanish, AmaniBerserker, AmaniBerserker, MadBomber, MadBomber, YouthfulBrewmaster,
-                 YouthfulBrewmaster, AcolyteOfPain, AcolyteOfPain, QuestingAdventurer, RagingWorgen, RagingWorgen,
-                 AncientBrewmaster, AncientBrewmaster, DefenderOfArgus, DefenderOfArgus, GurubashiBerserker,
-                 GurubashiBerserker, RagnarosTheFirelord]
-        random.seed(1857)
-        game = generate_game_for(deck1, deck2, DoNothingAgent, DoNothingAgent)
-        game._start_turn()
+        #deck2 = [Backstab, Backstab, Shadowstep, Shadowstep, Shiv, Shiv, AnubarAmbusher, AnubarAmbusher, Assassinate,
+        #         Assassinate, Vanish, Vanish, AmaniBerserker, AmaniBerserker, MadBomber, MadBomber, YouthfulBrewmaster,
+        #         YouthfulBrewmaster, AcolyteOfPain, AcolyteOfPain, QuestingAdventurer, RagingWorgen, RagingWorgen,
+        #         AncientBrewmaster, AncientBrewmaster, DefenderOfArgus, DefenderOfArgus, GurubashiBerserker,
+        #         GurubashiBerserker, RagnarosTheFirelord]
+        #game = generate_game_for(deck1, deck2, DoNothingAgent, DoNothingAgent)
+        #game._start_turn()
+
+        card_set1 = []
+        class1 = CHARACTER_CLASS.WARLOCK
+        card_set2 = []
+        class2 = CHARACTER_CLASS.ALL
+        deck1 = Deck(card_set1, class1)
+        deck2 = Deck(card_set2, class2)
+        game = Game([deck1, deck2], [DoNothingAgent(), DoNothingAgent()])
+        game.current_player = game.players[1]
+        game.other_player = game.players[0]
+
         self.game = game
 
     def Clone(self):
@@ -78,7 +81,7 @@ class HearthState:
                 return targets[move[4]]
 
         def _choose_index(targets, player):
-            return move[4]
+            return move[5]
 
         def _choose_option(*options):
             return options[move[4]]
@@ -89,27 +92,83 @@ class HearthState:
             self.playerJustMoved = 2
 
         # print(str(self.game.current_player.mana) + "/" + str(self.game.current_player.max_mana))
-        if move[0] == "end_turn":
-            self.game._end_turn()
-            self.game._start_turn()
+        if move[0] == "pick_class":
+            self.game.current_player.deck.character_class = move[1]
+            self.game.current_player.hero.character_class = move[1]
+            self.game.current_player.hero.power = hearthbreaker.powers.powers(move[1])(self.game.current_player.hero)
+        elif move[0] == "pick_card":
+            card = move[1] #copy.deepcopy(move[1])
+            card.drawn = False
+            self.game.current_player.deck.cards.append(card)
+            if self.game.current_player == self.game.players[0]:
+                self.game.current_player = self.game.players[1]
+                self.game.other_player = self.game.players[0]
+            else:
+                self.game.current_player = self.game.players[0]
+                self.game.other_player = self.game.players[1]
+        elif move[0] == "end_turn":
+            try:
+                self.game._end_turn()
+                self.game._start_turn()
+            except:
+                print(self.game.players[0].deck.__str__())
+                print(self.game.players[1].deck.__str__())
+                traceback.print_exc()
+                sys.exit()
         elif move[0] == "hero_power":
-            self.game.current_player.agent.choose_target = _choose_target
-            self.game.current_player.hero.power.use()
+            try:
+                self.game.current_player.agent.choose_target = _choose_target
+                self.game.current_player.hero.power.use()
+            except:
+                print(self.game.players[0].deck.__str__())
+                print(self.game.players[1].deck.__str__())
+                traceback.print_exc()
+                sys.exit()
         elif move[0] == "summon_minion":
-            self.game.current_player.agent.choose_target = _choose_target
-            self.game.current_player.agent.choose_index = _choose_index
-            self.game.play_card(self.game.current_player.hand[move[3]])
+            try:
+                self.game.current_player.agent.choose_target = _choose_target
+                self.game.current_player.agent.choose_index = _choose_index
+                self.game.play_card(self.game.current_player.hand[move[3]])
+            except:
+                print(self.game.players[0].deck.__str__())
+                print(self.game.players[1].deck.__str__())
+                traceback.print_exc()
+                sys.exit()
         elif move[2] is None:  # Passing index rather than object, hopefully the game copy fix will help with this
-            self.game.play_card(self.game.current_player.hand[move[3]])
+            try:
+                self.game.play_card(self.game.current_player.hand[move[3]])
+            except:
+                print(self.game.players[0].deck.__str__())
+                print(self.game.players[1].deck.__str__())
+                traceback.print_exc()
+                sys.exit()
         elif move[0] == "minion_attack":
-            self.game.current_player.agent.choose_target = _choose_target
-            self.game.current_player.minions[move[3]].attack()
+            try:
+                self.game.current_player.agent.choose_target = _choose_target
+                self.game.current_player.minions[move[3]].attack()
+            except:
+                print(self.game.players[0].deck.__str__())
+                print(self.game.players[1].deck.__str__())
+                traceback.print_exc()
+                sys.exit()
         elif move[0] == "hero_attack":
-            self.game.current_player.agent.choose_target = _choose_target
-            self.game.current_player.hero.attack()
+            try:
+                self.game.current_player.agent.choose_target = _choose_target
+                self.game.current_player.hero.attack()
+            except:
+                print(self.game.players[0].deck.__str__())
+                print(self.game.players[1].deck.__str__())
+                traceback.print_exc()
+                sys.exit()
         elif move[0] == "targeted_spell":
-            self.game.current_player.agent.choose_target = _choose_target
-            self.game.play_card(self.game.current_player.hand[move[3]])
+            try:
+                self.game.current_player.agent.choose_target = _choose_target
+                self.game.play_card(self.game.current_player.hand[move[3]])
+            except:
+                print(self.game.players[0].deck.__str__())
+                print(self.game.players[1].deck.__str__())
+                traceback.print_exc()
+                sys.exit()
         else:
             raise NameError("DoMove ran into unclassified card", move)
 
@@ -118,64 +177,157 @@ class HearthState:
         """
         if self.game.game_ended or self.game.players[0].hero.health <= 0 or self.game.players[1].hero.health <= 0:
             return []
-        valid_moves = []  # Move format is [string, attacker/card, target, attacker/card index, target index]
+        valid_moves = []  # Move format is [string, attacker/card, target, attacker/card index, target index, summoning index]
 
-        for card in self.game.current_player.hand:
-            dupe = False
-            for i in range(len(valid_moves)):
-                if valid_moves[i][1].name == card.name:
-                    dupe = True
-                    break
-            if not dupe:
-                if card.can_use(self.game.current_player, self.game) and isinstance(card, MinionCard):
-                    valid_moves.append(["summon_minion", card, None, self.game.current_player.hand.index(card), 0])
-                elif card.can_use(self.game.current_player, self.game) and isinstance(card, WeaponCard):
-                    valid_moves.append(["equip_weapon", card, None, self.game.current_player.hand.index(card), 0])
-                elif card.can_use(self.game.current_player, self.game) and isinstance(card, SecretCard):
-                    valid_moves.append(["played_secret", card, None, self.game.current_player.hand.index(card), 0])
-                elif card.can_use(self.game.current_player, self.game) and not card.targetable:
-                    valid_moves.append(["untargeted_spell", card, None, self.game.current_player.hand.index(card), 0])
-                elif card.can_use(self.game.current_player, self.game) and card.targetable:
-                    for i in range(len(card.targets)):
-                        valid_moves.append(["targeted_spell", card, card.targets[i],
-                                            self.game.current_player.hand.index(card), i])
+        if not self.game.pre_game_run and len(self.game.current_player.deck.cards) == 30 and len(self.game.other_player.deck.cards) == 30:
+            self.game.pre_game()
+            self.game._start_turn()
 
-        found_taunt = False
-        targets = []
-        for enemy in copy.copy(self.game.other_player.minions):
-            if enemy.taunt and enemy.can_be_attacked():
-                found_taunt = True
-            if enemy.can_be_attacked():
-                targets.append(enemy)
+        if self.game.current_player.hero.character_class == hearthbreaker.constants.CHARACTER_CLASS.ALL:
+            valid_moves.append(["pick_class", hearthbreaker.constants.CHARACTER_CLASS.DRUID])
+            valid_moves.append(["pick_class", hearthbreaker.constants.CHARACTER_CLASS.HUNTER])
+            valid_moves.append(["pick_class", hearthbreaker.constants.CHARACTER_CLASS.MAGE])
+            valid_moves.append(["pick_class", hearthbreaker.constants.CHARACTER_CLASS.PALADIN])
+            valid_moves.append(["pick_class", hearthbreaker.constants.CHARACTER_CLASS.PRIEST])
+            valid_moves.append(["pick_class", hearthbreaker.constants.CHARACTER_CLASS.ROGUE])
+            valid_moves.append(["pick_class", hearthbreaker.constants.CHARACTER_CLASS.SHAMAN])
+            valid_moves.append(["pick_class", hearthbreaker.constants.CHARACTER_CLASS.WARLOCK])
+            valid_moves.append(["pick_class", hearthbreaker.constants.CHARACTER_CLASS.WARRIOR])
+        elif len(self.game.current_player.deck.cards) < 30:
+            owned_cards = []
+            ### BASIC ###
+            # Druid
+            owned_cards.extend([Innervate(), Moonfire(), Claw(), MarkOfTheWild(), WildGrowth(), HealingTouch(),
+                                SavageRoar(), Swipe(), Starfire(), IronbarkProtector()])
+            # Mage
+            owned_cards.extend([ArcaneMissiles(), MirrorImage(), ArcaneExplosion(), Frostbolt(), ArcaneIntellect(),
+                                FrostNova(), Fireball(), Polymorph(), WaterElemental(), Flamestrike()])
+            # Warlock
+            owned_cards.extend([SacrificialPact(), Corruption(), MortalCoil(), Soulfire(), Voidwalker(), Succubus(),
+                                DrainLife(), ShadowBolt(), Hellfire(), DreadInfernal()])
+            # Neutral
+            owned_cards.extend([ElvenArcher(), GoldshireFootman(), GrimscaleOracle(), MurlocRaider(), StonetuskBoar(),
+                                VoodooDoctor(), AcidicSwampOoze(), BloodfenRaptor(), BluegillWarrior(),
+                                FrostwolfGrunt(), KoboldGeomancer(), MurlocTidehunter(), NoviceEngineer(),
+                                RiverCrocolisk(), DalaranMage(), IronforgeRifleman(), IronfurGrizzly(), MagmaRager(),
+                                RaidLeader(), RazorfenHunter(), ShatteredSunCleric(), SilverbackPatriarch(),
+                                Wolfrider(), ChillwindYeti(), DragonlingMechanic(), GnomishInventor(), OasisSnapjaw(),
+                                OgreMagi(), SenjinShieldmasta(), StormwindKnight(), BootyBayBodyguard(),
+                                DarkscaleHealer(), FrostwolfWarlord(), GurubashiBerserker(), Nightblade(),
+                                StormpikeCommando(), Archmage(), BoulderfistOgre(), LordOfTheArena(),
+                                RecklessRocketeer(), CoreHound(), StormwindChampion(), WarGolem()])
 
-        if found_taunt:
-            targets = [target for target in targets if target.taunt]
+            ### CLASSIC ###
+            # Druid
+            owned_cards.extend([Wrath(), Starfall(), DruidOfTheClaw()])
+            # Mage
+            owned_cards.extend([IceLance(), ManaWyrm(), SorcerersApprentice(), IceBarrier(), EtherealArcanist()])
+            # Warlock
+            owned_cards.extend([FlameImp(), Demonfire(), SummoningPortal(), Doomguard()])
+            # Neutral
+            owned_cards.extend([Wisp(), ArgentSquire(), SouthseaDeckhand(), AmaniBerserker(), BloodsailRaider(),
+                                DireWolfAlpha(), FaerieDragon(), IronbeakOwl(), KnifeJuggler(), LootHoarder(),
+                                MadBomber(), MasterSwordsmith(), Demolisher(), HarvestGolem(), ImpMaster(),
+                                JunglePanther(), QuestingAdventurer(), TinkmasterOverspark(), CultMaster(),
+                                DefenderOfArgus(), SilvermoonGuardian(), AzureDrake(), FenCreeper(), SpitefulSmith(),
+                                StranglethornTiger(), FrostElemental()])
+
+            ### PROMO ###
+            owned_cards.extend([GelbinMekkatorque()])
+
+            ### NAXXRAMAS ###
+            # Druid
+            owned_cards.extend([PoisonSeeds()])
+            # Mage
+            owned_cards.extend([Duplicate()])
+            # Warlock
+            owned_cards.extend([Voidcaller()])
+            # Neutral
+            owned_cards.extend([Undertaker(), ZombieChow(), HauntedCreeper(), MadScientist(), NerubarWeblord(),
+                                NerubianEgg(), UnstableGhoul(), DancingSwords(), Deathlord(), StoneskinGargoyle(),
+                                BaronRivendare(), WailingSoul(), Feugen(), Loatheb(), SludgeBelcher(), SpectralKnight(),
+                                Stalagg(), Maexxna()])
+
+            ### GOBLINS VS GNOMES ##
+            # Mage
+            owned_cards.extend([Snowchugger()])
+            # Neutral
+            owned_cards.extend([Mechwarper()])
+            
+            if self.game.current_player.name == "one":
+                card_list = filter(lambda c: c.character_class == hearthbreaker.constants.CHARACTER_CLASS.ALL or c.character_class == self.game.current_player.hero.character_class,
+                                   owned_cards)
+            else:
+                card_list = filter(lambda c: c.character_class == hearthbreaker.constants.CHARACTER_CLASS.ALL or c.character_class == self.game.current_player.hero.character_class,
+                                   get_cards())
+            for card in card_list:
+                counter = [x for x in self.game.current_player.deck.cards if x.name == card.name]
+                
+                if len(counter) < 1 or (len(counter) < 2 and card.rarity != hearthbreaker.constants.CARD_RARITY.LEGENDARY):
+                    valid_moves.append(["pick_card", card])
         else:
-            targets.append(self.game.other_player.hero)
-
-        for minion in copy.copy(self.game.current_player.minions):
-            if minion.can_attack():
+            for card in self.game.current_player.hand:
+                dupe = False
+                for i in range(len(valid_moves)):
+                    if valid_moves[i][1].name == card.name:
+                        dupe = True
+                        break
+                if not dupe:
+                    if card.can_use(self.game.current_player, self.game) and isinstance(card, MinionCard):
+                        for i in range(len(self.game.current_player.minions) + 1):
+                            if card.targetable and card.targets is not None:
+                                for j in range(len(card.targets)):
+                                    valid_moves.append(["summon_minion", card, None, self.game.current_player.hand.index(card), j, i])
+                            else:
+                                valid_moves.append(["summon_minion", card, None, self.game.current_player.hand.index(card), 0, i])
+                    elif card.can_use(self.game.current_player, self.game) and isinstance(card, WeaponCard):
+                        valid_moves.append(["equip_weapon", card, None, self.game.current_player.hand.index(card), 0])
+                    elif card.can_use(self.game.current_player, self.game) and isinstance(card, SecretCard):
+                        valid_moves.append(["played_secret", card, None, self.game.current_player.hand.index(card), 0])
+                    elif card.can_use(self.game.current_player, self.game) and not card.targetable:
+                        valid_moves.append(["untargeted_spell", card, None, self.game.current_player.hand.index(card), 0])
+                    elif card.can_use(self.game.current_player, self.game) and card.targetable:
+                        for i in range(len(card.targets)):
+                            valid_moves.append(["targeted_spell", card, card.targets[i],
+                                                self.game.current_player.hand.index(card), i])
+    
+            found_taunt = False
+            targets = []
+            for enemy in copy.copy(self.game.other_player.minions):
+                if enemy.taunt and enemy.can_be_attacked():
+                    found_taunt = True
+                if enemy.can_be_attacked():
+                    targets.append(enemy)
+    
+            if found_taunt:
+                targets = [target for target in targets if target.taunt]
+            else:
+                targets.append(self.game.other_player.hero)
+    
+            for minion in copy.copy(self.game.current_player.minions):
+                if minion.can_attack():
+                    for i in range(len(targets)):
+                        valid_moves.append(["minion_attack", minion, targets[i],
+                                            self.game.current_player.minions.index(minion), i])
+    
+            if self.game.current_player.hero.can_attack():
                 for i in range(len(targets)):
-                    valid_moves.append(["minion_attack", minion, targets[i],
-                                        self.game.current_player.minions.index(minion), i])
+                    valid_moves.append(["hero_attack", self.game.current_player.hero, targets[i], None, i])
+    
+            if (self.game.current_player.hero.power.__str__() == "Fireblast" or \
+               self.game.current_player.hero.power.__str__() == "Mind Spike" or \
+               self.game.current_player.hero.power.__str__() == "Mind Shatter" or \
+               self.game.current_player.hero.power.__str__() == "Lesser Heal") and \
+               self.game.current_player.hero.power.can_use():
+                for target in hearthbreaker.targeting.find_spell_target(self.game, lambda t: t.spell_targetable()):
+                    valid_moves.append(["hero_power", self.game.current_player.hero, target, 0, \
+                                       hearthbreaker.targeting.find_spell_target(self.game, lambda t: \
+                                                                                t.spell_targetable()).index(target)])
+            elif self.game.current_player.hero.power.can_use():
+                valid_moves.append(["hero_power", self.game.current_player.hero, None, None, None])
+    
+            valid_moves.append(["end_turn", None, None])
 
-        if self.game.current_player.hero.can_attack():
-            for i in range(len(targets)):
-                valid_moves.append(["hero_attack", self.game.current_player.hero, targets[i], None, i])
-
-        if (self.game.current_player.hero.power.__str__() == "Fireblast" or \
-           self.game.current_player.hero.power.__str__() == "Mind Spike" or \
-           self.game.current_player.hero.power.__str__() == "Mind Shatter" or \
-           self.game.current_player.hero.power.__str__() == "Lesser Heal") and \
-           self.game.current_player.hero.power.can_use():
-            for target in hearthbreaker.targeting.find_spell_target(self.game, lambda t: t.spell_targetable()):
-                valid_moves.append(["hero_power", self.game.current_player.hero, target, 0, \
-                                   hearthbreaker.targeting.find_spell_target(self.game, lambda t: \
-                                                                            t.spell_targetable()).index(target)])
-        elif self.game.current_player.hero.power.can_use():
-            valid_moves.append(["hero_power", self.game.current_player.hero, None, None, None])
-
-        valid_moves.append(["end_turn", None, None])
         return valid_moves
     
     def GetResult(self, playerjm):
@@ -319,9 +471,14 @@ def UCTPlayGame():
     state = HearthState()
     while (state.GetMoves() != []):
         print(str(state))
-        m = UCT(rootstate = state, seconds = 5, verbose = False)
+        m = UCT(rootstate = state, seconds = 45, verbose = False)
         print("Best Move: " + str(m) + "\n")
         state.DoMove(m)
+
+        if len(state.game.current_player.deck.cards) == 30 and len(state.game.other_player.deck.cards) == 30:
+            print(state.game.players[0].deck.__str__())
+            print(state.game.players[1].deck.__str__())
+            print()
     if state.GetResult(state.playerJustMoved) == 1.0:
         print("Player " + str(state.playerJustMoved) + " wins!")
     elif state.GetResult(state.playerJustMoved) == 0.0:

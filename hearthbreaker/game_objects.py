@@ -1442,8 +1442,8 @@ class Weapon(Bindable, GameObject):
 
 class Deck:
     def __init__(self, cards, character_class):
-        if len(cards) != 30:
-            raise GameException("Deck must have exactly 30 cards in it")
+        #if len(cards) != 30:
+        #    raise GameException("Deck must have exactly 30 cards in it")
         self.cards = cards
         self.character_class = character_class
         for card in cards:
@@ -1481,6 +1481,13 @@ class Deck:
                 self.left += 1
                 return
         raise GameException("Tried to put back a card that didn't come from this deck")
+
+    def __str__(self):
+        card_list = []
+        for index in range(0, 30):
+            card_list.append(self.cards[index].name)
+
+        return ", ".join(card_list)
 
     def __to_json__(self):
         card_list = []
@@ -1822,7 +1829,7 @@ class Game(Bindable):
         self.other_player.opponent = self.current_player
         self.game_ended = False
         self.minion_counter = 0
-        self.__pre_game_run = False
+        self.pre_game_run = False
         self.last_spell = None
         self._has_turn_ended = True
         self.__all_cards_played = []
@@ -1849,9 +1856,9 @@ class Game(Bindable):
             minion.activate_delayed()
 
     def pre_game(self):
-        if self.__pre_game_run:
+        if self.pre_game_run:
             return
-        self.__pre_game_run = True
+        self.pre_game_run = True
 
         for i in range(0, 3):
             self.players[0].draw()

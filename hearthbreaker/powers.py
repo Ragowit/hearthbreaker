@@ -21,6 +21,8 @@ def powers(character_class):
         return WarlockPower
     elif character_class == hearthbreaker.constants.CHARACTER_CLASS.WARRIOR:
         return WarriorPower
+    else:
+        return Power
 
 
 class Power:
@@ -36,6 +38,9 @@ class Power:
             self.hero.player.trigger("used_power")
             self.hero.player.mana -= 2
             self.used = True
+
+    def __str__(self):
+        return ""
 
 
 class DruidPower(Power):
