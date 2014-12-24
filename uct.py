@@ -92,7 +92,19 @@ class HearthState:
             self.playerJustMoved = 2
 
         # print(str(self.game.current_player.mana) + "/" + str(self.game.current_player.max_mana))
-        if move[0] == "pick_class":
+        if move[0] == "pre_game":
+            self.game.pre_game()
+            self.game._start_turn()
+
+            #if self.game.current_player == self.game.players[1]:
+            #    # Make sure players[0] begin the game
+            #    self.game.current_player = self.game.players[0]
+            #    self.game.other_player = self.game.players[1]
+            #    if self.game.current_player.name == "one":
+            #        self.playerJustMoved = 1
+            #    else:
+            #        self.playerJustMoved = 2
+        elif move[0] == "pick_class":
             self.game.current_player.deck.character_class = move[1]
             self.game.current_player.hero.character_class = move[1]
             self.game.current_player.hero.power = hearthbreaker.powers.powers(move[1])(self.game.current_player.hero)
@@ -130,6 +142,8 @@ class HearthState:
                 self.game.current_player.agent.choose_index = _choose_index
                 self.game.play_card(self.game.current_player.hand[move[3]])
             except:
+                print(move)
+                print(self.game.current_player.hand)
                 print(self.game.players[0].deck.__str__())
                 print(self.game.players[1].deck.__str__())
                 traceback.print_exc()
@@ -180,10 +194,8 @@ class HearthState:
         valid_moves = []  # Move format is [string, attacker/card, target, attacker/card index, target index, summoning index]
 
         if not self.game.pre_game_run and len(self.game.current_player.deck.cards) == 30 and len(self.game.other_player.deck.cards) == 30:
-            self.game.pre_game()
-            self.game._start_turn()
-
-        if self.game.current_player.hero.character_class == hearthbreaker.constants.CHARACTER_CLASS.ALL:
+            valid_moves.append(["pre_game"])
+        elif self.game.current_player.hero.character_class == hearthbreaker.constants.CHARACTER_CLASS.ALL:
             valid_moves.append(["pick_class", hearthbreaker.constants.CHARACTER_CLASS.DRUID])
             valid_moves.append(["pick_class", hearthbreaker.constants.CHARACTER_CLASS.HUNTER])
             valid_moves.append(["pick_class", hearthbreaker.constants.CHARACTER_CLASS.MAGE])
@@ -344,10 +356,10 @@ class HearthState:
 
     def __repr__(self):
         s = "Turn: " + str(self.game.turn)
-        s += "\n[" + str(self.game.players[0].hero.health) + " hp:" + str(len(self.game.players[0].hand)) + " in hand:" + str(self.game.players[0].deck.left) + " in deck:" + str(self.game.players[0].mana) + "/" + str(self.game.players[0].max_mana) + " mana] "
+        s += "\n[" + str(self.game.players[0].hero.health) + " hp ~ " + str(len(self.game.players[0].hand)) + " in hand ~ " + str(self.game.players[0].deck.left) + "/" + str(len(self.game.players[0].deck.cards)) + " in deck ~ " + str(self.game.players[0].mana) + "/" + str(self.game.players[0].max_mana) + " mana] "
         for minion in copy.copy(self.game.players[0].minions):
             s += str(minion.calculate_attack()) + "/" + str(minion.health) + ":"
-        s += "\n[" + str(self.game.players[1].hero.health) + " hp:" + str(len(self.game.players[1].hand)) + " in hand:" + str(self.game.players[1].deck.left) + " in deck:" + str(self.game.players[1].mana) + "/" + str(self.game.players[1].max_mana) + " mana] "
+        s += "\n[" + str(self.game.players[1].hero.health) + " hp ~ " + str(len(self.game.players[1].hand)) + " in hand ~ " + str(self.game.players[1].deck.left) + "/" + str(len(self.game.players[1].deck.cards)) + " in deck ~ " + str(self.game.players[1].mana) + "/" + str(self.game.players[1].max_mana) + " mana] "
         for minion in copy.copy(self.game.players[1].minions):
             s += str(minion.calculate_attack()) + "/" + str(minion.health) + ":"
         s += "\n" + "Current Player: " + str(self.game.current_player.name)
@@ -364,7 +376,7 @@ class Node:
         self.childNodes = []
         self.wins = 0
         self.visits = 0
-        if not move or move[0] != "end_turn":
+        if not move or move[0] != "end_turn": #or move[0] != "pre_game":
             self.untriedMoves = state.GetMoves() # future child nodes
         else:
             self.untriedMoves = []
@@ -471,7 +483,7 @@ def UCTPlayGame():
     state = HearthState()
     while (state.GetMoves() != []):
         print(str(state))
-        m = UCT(rootstate = state, seconds = 45, verbose = False)
+        m = UCT(rootstate = state, seconds = 60, verbose = False)
         print("Best Move: " + str(m) + "\n")
         state.DoMove(m)
 
