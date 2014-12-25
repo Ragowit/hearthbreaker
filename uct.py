@@ -214,6 +214,9 @@ class HearthState:
             # Mage
             owned_cards.extend([ArcaneMissiles(), MirrorImage(), ArcaneExplosion(), Frostbolt(), ArcaneIntellect(),
                                 FrostNova(), Fireball(), Polymorph(), WaterElemental(), Flamestrike()])
+            # Priest
+            owned_cards.extend([HolySmite(), MindVision(), PowerWordShield(), NorthshireCleric(), DivineSpirit(),
+                                MindBlast(), ShadowWordPain(), ShadowWordDeath(), HolyNova(), MindControl()])            
             # Warlock
             owned_cards.extend([SacrificialPact(), Corruption(), MortalCoil(), Soulfire(), Voidwalker(), Succubus(),
                                 DrainLife(), ShadowBolt(), Hellfire(), DreadInfernal()])
@@ -234,6 +237,8 @@ class HearthState:
             owned_cards.extend([Wrath(), Starfall(), DruidOfTheClaw()])
             # Mage
             owned_cards.extend([IceLance(), ManaWyrm(), SorcerersApprentice(), IceBarrier(), EtherealArcanist()])
+            # Priest
+            owned_cards.extend([CircleOfHealing(), Silence(), InnerFire(), MassDispel()])
             # Warlock
             owned_cards.extend([FlameImp(), Demonfire(), SummoningPortal(), Doomguard()])
             # Neutral
@@ -252,6 +257,8 @@ class HearthState:
             owned_cards.extend([PoisonSeeds()])
             # Mage
             owned_cards.extend([Duplicate()])
+            # Priest
+            owned_cards.extend([DarkCultist()])
             # Warlock
             owned_cards.extend([Voidcaller()])
             # Neutral
@@ -483,7 +490,7 @@ def UCTPlayGame():
     state = HearthState()
     while (state.GetMoves() != []):
         print(str(state))
-        m = UCT(rootstate = state, seconds = 60, verbose = False)
+        m = UCT(rootstate = state, seconds = 480, verbose = False)
         print("Best Move: " + str(m) + "\n")
         state.DoMove(m)
 
