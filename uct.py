@@ -47,7 +47,7 @@ class HearthState:
         #game._start_turn()
 
         card_set1 = []
-        class1 = CHARACTER_CLASS.WARLOCK
+        class1 = CHARACTER_CLASS.MAGE
         card_set2 = []
         class2 = CHARACTER_CLASS.ALL
         deck1 = Deck(card_set1, class1)
@@ -64,8 +64,7 @@ class HearthState:
         st = HearthState()
         st.playerJustMoved = self.playerJustMoved
         st.game = self.game.copy()
-        #st.game = copy.copy(self.game.copy())
-        #st.game = copy.deepcopy(self.game.copy())
+        #st.game = copy.deepcopy(self.game)
         return st
 
     def DoMove(self, move):
@@ -93,6 +92,8 @@ class HearthState:
 
         # print(str(self.game.current_player.mana) + "/" + str(self.game.current_player.max_mana))
         if move[0] == "pre_game":
+            self.game.current_player = self.game.players[1]
+            self.game.other_player = self.game.players[0]
             self.game.pre_game()
             self.game._start_turn()
 
@@ -100,10 +101,11 @@ class HearthState:
             #    # Make sure players[0] begin the game
             #    self.game.current_player = self.game.players[0]
             #    self.game.other_player = self.game.players[1]
-            #    if self.game.current_player.name == "one":
-            #        self.playerJustMoved = 1
-            #    else:
-            #        self.playerJustMoved = 2
+
+            #if self.game.current_player.name == "one":
+            #    self.playerJustMoved = 1
+            #else:
+            #    self.playerJustMoved = 2
         elif move[0] == "pick_class":
             self.game.current_player.deck.character_class = move[1]
             self.game.current_player.hero.character_class = move[1]
@@ -144,6 +146,7 @@ class HearthState:
             except:
                 print(move)
                 print(self.game.current_player.hand)
+                print(self.game.other_player.hand)
                 print(self.game.players[0].deck.__str__())
                 print(self.game.players[1].deck.__str__())
                 traceback.print_exc()
@@ -152,6 +155,9 @@ class HearthState:
             try:
                 self.game.play_card(self.game.current_player.hand[move[3]])
             except:
+                print(move)
+                print(self.game.current_player.hand)
+                print(self.game.other_player.hand)
                 print(self.game.players[0].deck.__str__())
                 print(self.game.players[1].deck.__str__())
                 traceback.print_exc()
@@ -179,6 +185,9 @@ class HearthState:
                 self.game.current_player.agent.choose_target = _choose_target
                 self.game.play_card(self.game.current_player.hand[move[3]])
             except:
+                print(move)
+                print(self.game.current_player.hand)
+                print(self.game.other_player.hand)
                 print(self.game.players[0].deck.__str__())
                 print(self.game.players[1].deck.__str__())
                 traceback.print_exc()
@@ -211,12 +220,18 @@ class HearthState:
             # Druid
             owned_cards.extend([Innervate(), Moonfire(), Claw(), MarkOfTheWild(), WildGrowth(), HealingTouch(),
                                 SavageRoar(), Swipe(), Starfire(), IronbarkProtector()])
+            # Hunter
+            owned_cards.extend([HuntersMark(), ArcaneShot(), Tracking(), TimberWolf(), AnimalCompanion(), KillCommand(),
+                                MultiShot(), Houndmaster(), StarvingBuzzard(), TundraRhino()])
             # Mage
             owned_cards.extend([ArcaneMissiles(), MirrorImage(), ArcaneExplosion(), Frostbolt(), ArcaneIntellect(),
                                 FrostNova(), Fireball(), Polymorph(), WaterElemental(), Flamestrike()])
             # Priest
             owned_cards.extend([HolySmite(), MindVision(), PowerWordShield(), NorthshireCleric(), DivineSpirit(),
-                                MindBlast(), ShadowWordPain(), ShadowWordDeath(), HolyNova(), MindControl()])            
+                                MindBlast(), ShadowWordPain(), ShadowWordDeath(), HolyNova(), MindControl()])
+            # Rogue
+            owned_cards.extend([Backstab(), DeadlyPoison(), SinisterStrike(), Sap(), Shiv(), FanOfKnives(),
+                                AssassinsBlade(), Assassinate(), Vanish(), Sprint()])
             # Warlock
             owned_cards.extend([SacrificialPact(), Corruption(), MortalCoil(), Soulfire(), Voidwalker(), Succubus(),
                                 DrainLife(), ShadowBolt(), Hellfire(), DreadInfernal()])
@@ -235,10 +250,14 @@ class HearthState:
             ### CLASSIC ###
             # Druid
             owned_cards.extend([Wrath(), Starfall(), DruidOfTheClaw()])
+            # Hunter
+            owned_cards.extend([DeadlyShot()])
             # Mage
             owned_cards.extend([IceLance(), ManaWyrm(), SorcerersApprentice(), IceBarrier(), EtherealArcanist()])
             # Priest
             owned_cards.extend([CircleOfHealing(), Silence(), InnerFire(), MassDispel()])
+            # Rogue
+            owned_cards.extend([ColdBlood(), Conceal(), Eviscerate()])
             # Warlock
             owned_cards.extend([FlameImp(), Demonfire(), SummoningPortal(), Doomguard()])
             # Neutral
@@ -255,10 +274,14 @@ class HearthState:
             ### NAXXRAMAS ###
             # Druid
             owned_cards.extend([PoisonSeeds()])
+            # Hunter
+            owned_cards.extend([Webspinner()])
             # Mage
             owned_cards.extend([Duplicate()])
             # Priest
             owned_cards.extend([DarkCultist()])
+            # Rogue
+            owned_cards.extend([AnubarAmbusher()])
             # Warlock
             owned_cards.extend([Voidcaller()])
             # Neutral
