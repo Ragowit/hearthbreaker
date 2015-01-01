@@ -95,17 +95,9 @@ class HearthState:
             self.game.current_player = self.game.players[1]
             self.game.other_player = self.game.players[0]
             self.game.pre_game()
+            #self.game._start_turn()
+        elif move[0] == "start_turn":
             self.game._start_turn()
-
-            #if self.game.current_player == self.game.players[1]:
-            #    # Make sure players[0] begin the game
-            #    self.game.current_player = self.game.players[0]
-            #    self.game.other_player = self.game.players[1]
-
-            #if self.game.current_player.name == "one":
-            #    self.playerJustMoved = 1
-            #else:
-            #    self.playerJustMoved = 2
         elif move[0] == "pick_class":
             self.game.current_player.deck.character_class = move[1]
             self.game.current_player.hero.character_class = move[1]
@@ -167,6 +159,9 @@ class HearthState:
                 self.game.current_player.agent.choose_target = _choose_target
                 self.game.current_player.minions[move[3]].attack()
             except:
+                print(move)
+                print(self.game.current_player.minions)
+                print(self.game.other_player.minions)
                 print(self.game.players[0].deck.__str__())
                 print(self.game.players[1].deck.__str__())
                 traceback.print_exc()
@@ -204,6 +199,8 @@ class HearthState:
 
         if not self.game.pre_game_run and len(self.game.current_player.deck.cards) == 30 and len(self.game.other_player.deck.cards) == 30:
             valid_moves.append(["pre_game"])
+        elif self.game.pre_game_run and len(self.game.current_player.deck.cards) == 30 and len(self.game.other_player.deck.cards) == 30 and self.game.current_player.max_mana == 0 and self.game.turn == 0:
+            valid_moves.append(["start_turn"])
         elif self.game.current_player.hero.character_class == hearthbreaker.constants.CHARACTER_CLASS.ALL:
             valid_moves.append(["pick_class", hearthbreaker.constants.CHARACTER_CLASS.DRUID])
             valid_moves.append(["pick_class", hearthbreaker.constants.CHARACTER_CLASS.HUNTER])
@@ -371,7 +368,7 @@ class HearthState:
             valid_moves.append(["end_turn", None, None])
 
         return valid_moves
-    
+
     def GetResult(self, playerjm):
         """ Get the game result from the viewpoint of playerjm. 
         """
@@ -406,10 +403,10 @@ class Node:
         self.childNodes = []
         self.wins = 0
         self.visits = 0
-        if not move or move[0] != "end_turn": #or move[0] != "pre_game":
-            self.untriedMoves = state.GetMoves() # future child nodes
-        else:
+        if move and (move[0] == "end_turn" or move[0] == "pre_game" or move[0] == "start_turn"):
             self.untriedMoves = []
+        else:
+            self.untriedMoves = state.GetMoves() # future child nodes
         self.playerJustMoved = state.playerJustMoved # the only part of the state that the Node needs later
         
     def UCTSelectChild(self):
