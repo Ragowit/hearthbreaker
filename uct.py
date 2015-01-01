@@ -315,7 +315,7 @@ class HearthState:
             # Mage
             owned_cards.extend([Snowchugger()])
             # Paladin
-            #owned_cards.extend([SealOfLight()])
+            owned_cards.extend([SealOfLight()])
             # Neutral
             owned_cards.extend([Mechwarper()])
             
