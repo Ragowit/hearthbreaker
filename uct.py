@@ -234,14 +234,16 @@ class HearthState:
             owned_cards.extend([Backstab(), DeadlyPoison(), SinisterStrike(), Sap(), Shiv(), FanOfKnives(),
                                 AssassinsBlade(), Assassinate(), Vanish(), Sprint()])
             # Shaman
-            owned_cards.extend([AncestralHealing(), TotemicMight(), FrostShock(), RockbiterWeapon(), Windfury(),
-                                FlametongueTotem(), Hex(), Windspeaker(), Bloodlust(), FireElemental()])
+            owned_cards.extend([AncestralHealing(), TotemicMight(), FrostShock(), RockbiterWeapon(),
+                                hearthbreaker.cards.spells.shaman.Windfury(), FlametongueTotem(), Hex(), Windspeaker(),
+                                Bloodlust(), FireElemental()])
             # Warlock
             owned_cards.extend([SacrificialPact(), Corruption(), MortalCoil(), Soulfire(), Voidwalker(), Succubus(),
                                 DrainLife(), ShadowBolt(), Hellfire(), DreadInfernal()])
             # Warrior
-            owned_cards.extend([Execute(), Whirlwind(), FieryWarAxe(), Cleave(), HeroicStrike(), Charge(),
-                                ShieldBlock(), WarsongCommander(), KorkronElite(), ArcaniteReaper()])
+            owned_cards.extend([Execute(), Whirlwind(), FieryWarAxe(), Cleave(), HeroicStrike(),
+                                hearthbreaker.cards.spells.warrior.Charge(), ShieldBlock(), WarsongCommander(),
+                                KorkronElite(), ArcaniteReaper()])
             # Neutral
             owned_cards.extend([ElvenArcher(), GoldshireFootman(), GrimscaleOracle(), MurlocRaider(), StonetuskBoar(),
                                 VoodooDoctor(), AcidicSwampOoze(), BloodfenRaptor(), BluegillWarrior(),
