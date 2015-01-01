@@ -223,15 +223,25 @@ class HearthState:
             # Mage
             owned_cards.extend([ArcaneMissiles(), MirrorImage(), ArcaneExplosion(), Frostbolt(), ArcaneIntellect(),
                                 FrostNova(), Fireball(), Polymorph(), WaterElemental(), Flamestrike()])
+            # Paladin
+            owned_cards.extend([LightsJustice(), BlessingOfMight(), HandOfProtection(), Humility(), HolyLight(),
+                                TruesilverChampion(), BlessingOfKings(), Consecration(), HammerOfWrath(),
+                                GuardianOfKings()])
             # Priest
             owned_cards.extend([HolySmite(), MindVision(), PowerWordShield(), NorthshireCleric(), DivineSpirit(),
                                 MindBlast(), ShadowWordPain(), ShadowWordDeath(), HolyNova(), MindControl()])
             # Rogue
             owned_cards.extend([Backstab(), DeadlyPoison(), SinisterStrike(), Sap(), Shiv(), FanOfKnives(),
                                 AssassinsBlade(), Assassinate(), Vanish(), Sprint()])
+            # Shaman
+            owned_cards.extend([AncestralHealing(), TotemicMight(), FrostShock(), RockbiterWeapon(), Windfury(),
+                                FlametongueTotem(), Hex(), Windspeaker(), Bloodlust(), FireElemental()])
             # Warlock
             owned_cards.extend([SacrificialPact(), Corruption(), MortalCoil(), Soulfire(), Voidwalker(), Succubus(),
                                 DrainLife(), ShadowBolt(), Hellfire(), DreadInfernal()])
+            # Warrior
+            owned_cards.extend([Execute(), Whirlwind(), FieryWarAxe(), Cleave(), HeroicStrike(), Charge(),
+                                ShieldBlock(), WarsongCommander(), KorkronElite(), ArcaniteReaper()])
             # Neutral
             owned_cards.extend([ElvenArcher(), GoldshireFootman(), GrimscaleOracle(), MurlocRaider(), StonetuskBoar(),
                                 VoodooDoctor(), AcidicSwampOoze(), BloodfenRaptor(), BluegillWarrior(),
@@ -251,12 +261,18 @@ class HearthState:
             owned_cards.extend([DeadlyShot()])
             # Mage
             owned_cards.extend([IceLance(), ManaWyrm(), SorcerersApprentice(), IceBarrier(), EtherealArcanist()])
+            # Paladin
+            owned_cards.extend([EyeForAnEye(), NobleSacrifice(), Repentance(), ArgentProtector()])
             # Priest
             owned_cards.extend([CircleOfHealing(), Silence(), InnerFire(), MassDispel()])
             # Rogue
             owned_cards.extend([ColdBlood(), Conceal(), Eviscerate()])
+            # Shaman
+            owned_cards.extend([AncestralSpirit()])
             # Warlock
             owned_cards.extend([FlameImp(), Demonfire(), SummoningPortal(), Doomguard()])
+            # Warrior
+            owned_cards.extend([Rampage(), Armorsmith(), MortalStrike(), Brawl()])
             # Neutral
             owned_cards.extend([Wisp(), ArgentSquire(), SouthseaDeckhand(), AmaniBerserker(), BloodsailRaider(),
                                 DireWolfAlpha(), FaerieDragon(), IronbeakOwl(), KnifeJuggler(), LootHoarder(),
@@ -275,12 +291,18 @@ class HearthState:
             owned_cards.extend([Webspinner()])
             # Mage
             owned_cards.extend([Duplicate()])
+            # Paladin
+            #owned_cards.extend([])
             # Priest
             owned_cards.extend([DarkCultist()])
             # Rogue
             owned_cards.extend([AnubarAmbusher()])
+            # Shaman
+            owned_cards.extend([Reincarnate()])
             # Warlock
             owned_cards.extend([Voidcaller()])
+            # Warrior
+            owned_cards.extend([DeathsBite()])
             # Neutral
             owned_cards.extend([Undertaker(), ZombieChow(), HauntedCreeper(), MadScientist(), NerubarWeblord(),
                                 NerubianEgg(), UnstableGhoul(), DancingSwords(), Deathlord(), StoneskinGargoyle(),
@@ -290,6 +312,8 @@ class HearthState:
             ### GOBLINS VS GNOMES ##
             # Mage
             owned_cards.extend([Snowchugger()])
+            # Paladin
+            #owned_cards.extend([SealOfLight()])
             # Neutral
             owned_cards.extend([Mechwarper()])
             
