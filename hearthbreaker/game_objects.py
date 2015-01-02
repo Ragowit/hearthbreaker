@@ -457,6 +457,7 @@ class Character(Bindable, GameObject, metaclass=abc.ABCMeta):
         """
         if self.dead:
             return
+        self.player.trigger("pre_damage", self, attacker, amount)
         if not self.immune:
             self.trigger("damaged", amount, attacker)
             self.player.trigger("character_damaged", self, attacker, amount)
@@ -787,12 +788,7 @@ class Card(Bindable, GameObject):
         :param hearthbreaker.game_objects.Player player: The player who is using the card.
         :param hearthbreaker.game_objects.Game game: The game this card is being used in.
         """
-        player.overload += self.overload
-        if self.targetable:
-            if self.targets is None:
-                self.target = None
-            else:
-                self.target = player.agent.choose_target(self.targets)
+        pass
 
     @staticmethod
     def is_spell():
@@ -1409,8 +1405,6 @@ class Weapon(Bindable, GameObject):
         if self.deathrattle is not None:
             self.deathrattle.deathrattle(self.player.hero)
         self.player.hero.weapon = None
-        if self.player.game.current_player is self.player:
-            self.player.hero.silence()
         self.player.hero.trigger("weapon_destroyed")
 
     def equip(self, player):
@@ -2007,6 +2001,11 @@ class Game(Bindable):
         self.current_player.mana -= card.mana_cost(self.current_player)
         self.current_player.trigger("card_played", card, card_index)
         self._all_cards_played.append(card)
+
+        self.current_player.overload += card.overload
+        card.target = None
+        if card.targetable and card.targets:
+            card.target = self.current_player.agent.choose_target(card.targets)
 
         if card.is_spell():
             self.last_spell = card

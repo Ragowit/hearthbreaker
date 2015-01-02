@@ -158,7 +158,7 @@ class Spellbender(SecretCard):
         self.player = None
 
     def _reveal(self, card):
-        if len(self.player.minions) < 7 and card.targetable:
+        if len(self.player.minions) < 7 and isinstance(card.target, Minion):
             class SpellbenderMinion(MinionCard):
                 def __init__(self):
                     super().__init__("Spellbender", 0, CHARACTER_CLASS.MAGE, CARD_RARITY.SPECIAL)
@@ -166,22 +166,12 @@ class Spellbender(SecretCard):
                 def create_minion(self, p):
                     return Minion(1, 3)
 
-            def choose_bender(targets):
-                target = old_target(targets)
-                if isinstance(target, Minion):
-                    spell_bender = SpellbenderMinion()
-                    # According to http://us.battle.net/hearthstone/en/forum/topic/10070927066, Spellbender
-                    # will not activate if there are too many minions
-                    spell_bender.summon(self.player, self.player.game, len(self.player.minions))
-                    self.player.game.current_player.agent.choose_target = old_target
-                    bender = self.player.minions[-1]
-                    super(Spellbender, self).reveal()
-                    return bender
-                else:
-                    return target
-
-            old_target = self.player.game.current_player.agent.choose_target
-            self.player.game.current_player.agent.choose_target = choose_bender
+            spell_bender = SpellbenderMinion()
+            # According to http://us.battle.net/hearthstone/en/forum/topic/10070927066, Spellbender
+            # will not activate if there are too many minions
+            spell_bender.summon(self.player, self.player.game, len(self.player.minions))
+            card.target = self.player.minions[-1]
+            super().reveal()
 
     def activate(self, player):
         player.game.current_player.bind("spell_cast", self._reveal)
@@ -218,15 +208,14 @@ class IceBlock(SecretCard):
         if isinstance(character, Hero):
             if character.health - amount <= 0:
                 character.add_buff(BuffUntil(Immune(), TurnEnded(player=CurrentPlayer())))
-                character.health += amount
                 # TODO Check if this spell will also prevent damage to armor.
                 super().reveal()
 
     def activate(self, player):
-        player.bind("character_damaged", self._reveal)
+        player.bind("pre_damage", self._reveal)
 
     def deactivate(self, player):
-        player.unbind("character_damaged", self._reveal)
+        player.unbind("pre_damage", self._reveal)
 
 
 class ConeOfCold(Card):
