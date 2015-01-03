@@ -53,8 +53,8 @@ class HearthState:
         deck1 = Deck(card_set1, class1)
         deck2 = Deck(card_set2, class2)
         game = Game([deck1, deck2], [DoNothingAgent(), DoNothingAgent()])
-        game.current_player = game.players[1]
-        game.other_player = game.players[0]
+        game.current_player = game.players[0]
+        game.other_player = game.players[1]
 
         self.game = game
 
@@ -106,12 +106,10 @@ class HearthState:
             card = move[1] #copy.deepcopy(move[1])
             card.drawn = False
             self.game.current_player.deck.cards.append(card)
-            if self.game.current_player == self.game.players[0]:
+            
+            if len(self.game.current_player.deck.cards) == 30:
                 self.game.current_player = self.game.players[1]
                 self.game.other_player = self.game.players[0]
-            else:
-                self.game.current_player = self.game.players[0]
-                self.game.other_player = self.game.players[1]
         elif move[0] == "end_turn":
             try:
                 self.game._end_turn()
@@ -536,13 +534,13 @@ def UCTPlayGame():
     state = HearthState()
     while (state.GetMoves() != []):
         print(str(state))
-        m = UCT(rootstate = state, seconds = 480, verbose = False)
+        m = UCT(rootstate = state, seconds = 1000, verbose = False)
         print("Best Move: " + str(m) + "\n")
         state.DoMove(m)
 
-        if len(state.game.current_player.deck.cards) == 30 and len(state.game.other_player.deck.cards) == 30:
+        if len(state.game.players[0].deck.cards) == 30:
             print(state.game.players[0].deck.__str__())
-            print(state.game.players[1].deck.__str__())
+            #print(state.game.players[1].deck.__str__())
             print()
     if state.GetResult(state.playerJustMoved) == 1.0:
         print("Player " + str(state.playerJustMoved) + " wins!")
