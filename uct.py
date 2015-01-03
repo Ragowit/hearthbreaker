@@ -491,6 +491,7 @@ def UCT(rootstate, seconds, verbose = False):
         Assumes 2 alternating players (player 1 starts), with game results in the range [0.0, 1.0]."""
     rootnode = Node(state = rootstate)
 
+    iterations = 0
     future = time.time() + seconds
     while time.time() < future:
         node = rootnode
@@ -516,9 +517,13 @@ def UCT(rootstate, seconds, verbose = False):
             node.Update(state.GetResult(node.playerJustMoved)) # state is terminal. Update node with result from POV of node.playerJustMoved
             node = node.parentNode
 
+        iterations += 1
+
     # Output some information about the tree - can be omitted
     if (verbose): print(rootnode.TreeToString(0))
     else: print(rootnode.ChildrenToString())
+
+    print("Iterations: " + str(iterations) + "\n")
 
     bestmove = sorted(rootnode.childNodes, key = lambda c: c.visits)[-1].move # return the move that was most visited
     rootnode.clean()
@@ -538,10 +543,9 @@ def UCTPlayGame():
         print("Best Move: " + str(m) + "\n")
         state.DoMove(m)
 
-        if len(state.game.players[0].deck.cards) == 30:
-            print(state.game.players[0].deck.__str__())
-            #print(state.game.players[1].deck.__str__())
-            print()
+        print(state.game.players[0].deck.__str__())
+        print(state.game.players[1].deck.__str__())
+        print()
     if state.GetResult(state.playerJustMoved) == 1.0:
         print("Player " + str(state.playerJustMoved) + " wins!")
     elif state.GetResult(state.playerJustMoved) == 0.0:

@@ -1479,7 +1479,7 @@ class Deck:
 
     def __str__(self):
         card_list = []
-        for index in range(0, 30):
+        for index in range(0, len(self.cards)):
             card_list.append(self.cards[index].name)
 
         return ", ".join(card_list)
