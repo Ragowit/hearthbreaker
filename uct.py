@@ -304,10 +304,10 @@ class HearthState:
             # Warrior
             owned_cards.extend([DeathsBite()])
             # Neutral
-            owned_cards.extend([Undertaker(), ZombieChow(), HauntedCreeper(), MadScientist(), NerubarWeblord(),
-                                NerubianEgg(), UnstableGhoul(), DancingSwords(), Deathlord(), StoneskinGargoyle(),
-                                BaronRivendare(), WailingSoul(), Feugen(), Loatheb(), SludgeBelcher(), SpectralKnight(),
-                                Stalagg(), Maexxna()])
+            owned_cards.extend([Undertaker(), ZombieChow(), EchoingOoze(), HauntedCreeper(), MadScientist(),
+                                NerubarWeblord(), NerubianEgg(), UnstableGhoul(), DancingSwords(), Deathlord(),
+                                ShadeOfNaxxramas(), StoneskinGargoyle(), BaronRivendare(), WailingSoul(), Feugen(),
+                                Loatheb(), SludgeBelcher(), SpectralKnight(), Stalagg(), Maexxna(), KelThuzad()])
 
             ### GOBLINS VS GNOMES ##
             # Mage
