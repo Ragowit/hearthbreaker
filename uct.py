@@ -141,6 +141,18 @@ class HearthState:
                 print(self.game.players[1].deck.__str__())
                 traceback.print_exc()
                 sys.exit()
+        elif move[0] == "equip_weapon":
+            try:
+                self.game.current_player.agent.choose_target = _choose_target
+                self.game.play_card(self.game.current_player.hand[move[3]])
+            except:
+                print(move)
+                print(self.game.current_player.hand)
+                print(self.game.other_player.hand)
+                print(self.game.players[0].deck.__str__())
+                print(self.game.players[1].deck.__str__())
+                traceback.print_exc()
+                sys.exit()
         elif move[2] is None:  # Passing index rather than object, hopefully the game copy fix will help with this
             try:
                 self.game.play_card(self.game.current_player.hand[move[3]])
@@ -344,7 +356,11 @@ class HearthState:
                             else:
                                 valid_moves.append(["summon_minion", card, None, self.game.current_player.hand.index(card), 0, i])
                     elif card.can_use(self.game.current_player, self.game) and isinstance(card, WeaponCard):
-                        valid_moves.append(["equip_weapon", card, None, self.game.current_player.hand.index(card), 0])
+                        if card.targetable and card.targets is not None:
+                            for i in range(len(card.targets)):
+                                valid_moves.append(["equip_weapon", card, None, self.game.current_player.hand.index(card), i])
+                        else:
+                            valid_moves.append(["equip_weapon", card, None, self.game.current_player.hand.index(card), 0])                            
                     elif card.can_use(self.game.current_player, self.game) and isinstance(card, SecretCard):
                         valid_moves.append(["played_secret", card, None, self.game.current_player.hand.index(card), 0])
                     elif card.can_use(self.game.current_player, self.game) and not card.targetable:
