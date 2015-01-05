@@ -332,7 +332,7 @@ class HearthState:
         elif len(self.game.current_player.deck.cards) < 30:
             if self.game.current_player.name == "one":
                 card_list = filter(lambda c: c.character_class == hearthbreaker.constants.CHARACTER_CLASS.ALL or c.character_class == self.game.current_player.hero.character_class,
-                                   self.owned_cards)
+                                   copy.deepcopy(self.owned_cards))
             else:
                 card_list = filter(lambda c: c.character_class == hearthbreaker.constants.CHARACTER_CLASS.ALL or c.character_class == self.game.current_player.hero.character_class,
                                    get_cards())
