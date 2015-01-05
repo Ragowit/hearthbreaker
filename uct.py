@@ -292,7 +292,7 @@ class HearthState:
             # Mage
             owned_cards.extend([Duplicate()])
             # Paladin
-            #owned_cards.extend([])
+            owned_cards.extend([Avenge()])
             # Priest
             owned_cards.extend([DarkCultist()])
             # Rogue
