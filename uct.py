@@ -555,7 +555,7 @@ def UCTPlayGame():
     state = HearthState()
     while (state.GetMoves() != []):
         print(str(state))
-        m = UCT(rootstate = state, seconds = 1000, verbose = False)
+        m = UCT(rootstate = state, seconds = 2000, verbose = False)
         print("Best Move: " + str(m) + "\n")
         state.DoMove(m)
 
