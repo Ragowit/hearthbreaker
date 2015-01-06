@@ -46,114 +46,6 @@ class HearthState:
         #game = generate_game_for(deck1, deck2, DoNothingAgent, DoNothingAgent)
         #game._start_turn()
 
-        owned_cards = []
-        ### BASIC ###
-        # Druid
-        owned_cards.extend([Innervate(), Moonfire(), Claw(), MarkOfTheWild(), WildGrowth(), HealingTouch(),
-                            SavageRoar(), Swipe(), Starfire(), IronbarkProtector()])
-        # Hunter
-        owned_cards.extend([HuntersMark(), ArcaneShot(), Tracking(), TimberWolf(), AnimalCompanion(), KillCommand(),
-                            MultiShot(), Houndmaster(), StarvingBuzzard(), TundraRhino()])
-        # Mage
-        owned_cards.extend([ArcaneMissiles(), MirrorImage(), ArcaneExplosion(), Frostbolt(), ArcaneIntellect(),
-                            FrostNova(), Fireball(), Polymorph(), WaterElemental(), Flamestrike()])
-        # Paladin
-        owned_cards.extend([LightsJustice(), BlessingOfMight(), HandOfProtection(), Humility(), HolyLight(),
-                            TruesilverChampion(), BlessingOfKings(), Consecration(), HammerOfWrath(),
-                            GuardianOfKings()])
-        # Priest
-        owned_cards.extend([HolySmite(), MindVision(), PowerWordShield(), NorthshireCleric(), DivineSpirit(),
-                            MindBlast(), ShadowWordPain(), ShadowWordDeath(), HolyNova(), MindControl()])
-        # Rogue
-        owned_cards.extend([Backstab(), DeadlyPoison(), SinisterStrike(), Sap(), Shiv(), FanOfKnives(),
-                            AssassinsBlade(), Assassinate(), Vanish(), Sprint()])
-        # Shaman
-        owned_cards.extend([AncestralHealing(), TotemicMight(), FrostShock(), RockbiterWeapon(),
-                            hearthbreaker.cards.spells.shaman.Windfury(), FlametongueTotem(), Hex(), Windspeaker(),
-                            Bloodlust(), FireElemental()])
-        # Warlock
-        owned_cards.extend([SacrificialPact(), Corruption(), MortalCoil(), Soulfire(), Voidwalker(), Succubus(),
-                            DrainLife(), ShadowBolt(), Hellfire(), DreadInfernal()])
-        # Warrior
-        owned_cards.extend([Execute(), Whirlwind(), FieryWarAxe(), Cleave(), HeroicStrike(),
-                            hearthbreaker.cards.spells.warrior.Charge(), ShieldBlock(), WarsongCommander(),
-                            KorkronElite(), ArcaniteReaper()])
-        # Neutral
-        owned_cards.extend([ElvenArcher(), GoldshireFootman(), GrimscaleOracle(), MurlocRaider(), StonetuskBoar(),
-                            VoodooDoctor(), AcidicSwampOoze(), BloodfenRaptor(), BluegillWarrior(),
-                            FrostwolfGrunt(), KoboldGeomancer(), MurlocTidehunter(), NoviceEngineer(),
-                            RiverCrocolisk(), DalaranMage(), IronforgeRifleman(), IronfurGrizzly(), MagmaRager(),
-                            RaidLeader(), RazorfenHunter(), ShatteredSunCleric(), SilverbackPatriarch(),
-                            Wolfrider(), ChillwindYeti(), DragonlingMechanic(), GnomishInventor(), OasisSnapjaw(),
-                            OgreMagi(), SenjinShieldmasta(), StormwindKnight(), BootyBayBodyguard(),
-                            DarkscaleHealer(), FrostwolfWarlord(), GurubashiBerserker(), Nightblade(),
-                            StormpikeCommando(), Archmage(), BoulderfistOgre(), LordOfTheArena(),
-                            RecklessRocketeer(), CoreHound(), StormwindChampion(), WarGolem()])
-
-        ### CLASSIC ###
-        # Druid
-        owned_cards.extend([Wrath(), Starfall(), DruidOfTheClaw()])
-        # Hunter
-        owned_cards.extend([DeadlyShot()])
-        # Mage
-        owned_cards.extend([IceLance(), ManaWyrm(), SorcerersApprentice(), IceBarrier(), EtherealArcanist()])
-        # Paladin
-        owned_cards.extend([EyeForAnEye(), NobleSacrifice(), Repentance(), ArgentProtector()])
-        # Priest
-        owned_cards.extend([CircleOfHealing(), Silence(), InnerFire(), MassDispel()])
-        # Rogue
-        owned_cards.extend([ColdBlood(), Conceal(), Eviscerate()])
-        # Shaman
-        owned_cards.extend([AncestralSpirit()])
-        # Warlock
-        owned_cards.extend([FlameImp(), Demonfire(), SummoningPortal(), Doomguard()])
-        # Warrior
-        owned_cards.extend([Rampage(), Armorsmith(), MortalStrike(), Brawl()])
-        # Neutral
-        owned_cards.extend([Wisp(), ArgentSquire(), SouthseaDeckhand(), AmaniBerserker(), BloodsailRaider(),
-                            DireWolfAlpha(), FaerieDragon(), IronbeakOwl(), KnifeJuggler(), LootHoarder(),
-                            MadBomber(), MasterSwordsmith(), Demolisher(), HarvestGolem(), ImpMaster(),
-                            JunglePanther(), QuestingAdventurer(), TinkmasterOverspark(), CultMaster(),
-                            DefenderOfArgus(), SilvermoonGuardian(), AzureDrake(), FenCreeper(), SpitefulSmith(),
-                            StranglethornTiger(), FrostElemental()])
-
-        ### PROMO ###
-        owned_cards.extend([GelbinMekkatorque()])
-
-        ### NAXXRAMAS ###
-        # Druid
-        owned_cards.extend([PoisonSeeds()])
-        # Hunter
-        owned_cards.extend([Webspinner()])
-        # Mage
-        owned_cards.extend([Duplicate()])
-        # Paladin
-        owned_cards.extend([Avenge()])
-        # Priest
-        owned_cards.extend([DarkCultist()])
-        # Rogue
-        owned_cards.extend([AnubarAmbusher()])
-        # Shaman
-        owned_cards.extend([Reincarnate()])
-        # Warlock
-        owned_cards.extend([Voidcaller()])
-        # Warrior
-        owned_cards.extend([DeathsBite()])
-        # Neutral
-        owned_cards.extend([Undertaker(), ZombieChow(), EchoingOoze(), HauntedCreeper(), MadScientist(),
-                            NerubarWeblord(), NerubianEgg(), UnstableGhoul(), DancingSwords(), Deathlord(),
-                            ShadeOfNaxxramas(), StoneskinGargoyle(), BaronRivendare(), WailingSoul(), Feugen(),
-                            Loatheb(), SludgeBelcher(), SpectralKnight(), Stalagg(), Maexxna(), KelThuzad()])
-
-        ### GOBLINS VS GNOMES ##
-        # Mage
-        owned_cards.extend([Snowchugger()])
-        # Paladin
-        owned_cards.extend([SealOfLight()])
-        # Neutral
-        owned_cards.extend([Mechwarper()])
-
-        self.owned_cards = owned_cards
         card_set1 = []
         class1 = CHARACTER_CLASS.MAGE
         card_set2 = []
@@ -331,8 +223,115 @@ class HearthState:
             valid_moves.append(["pick_class", hearthbreaker.constants.CHARACTER_CLASS.WARRIOR])
         elif len(self.game.current_player.deck.cards) < 30:
             if self.game.current_player.name == "one":
+                owned_cards = []
+                ### BASIC ###
+                # Druid
+                owned_cards.extend([Innervate(), Moonfire(), Claw(), MarkOfTheWild(), WildGrowth(), HealingTouch(),
+                                    SavageRoar(), Swipe(), Starfire(), IronbarkProtector()])
+                # Hunter
+                owned_cards.extend([HuntersMark(), ArcaneShot(), Tracking(), TimberWolf(), AnimalCompanion(), KillCommand(),
+                                    MultiShot(), Houndmaster(), StarvingBuzzard(), TundraRhino()])
+                # Mage
+                owned_cards.extend([ArcaneMissiles(), MirrorImage(), ArcaneExplosion(), Frostbolt(), ArcaneIntellect(),
+                                    FrostNova(), Fireball(), Polymorph(), WaterElemental(), Flamestrike()])
+                # Paladin
+                owned_cards.extend([LightsJustice(), BlessingOfMight(), HandOfProtection(), Humility(), HolyLight(),
+                                    TruesilverChampion(), BlessingOfKings(), Consecration(), HammerOfWrath(),
+                                    GuardianOfKings()])
+                # Priest
+                owned_cards.extend([HolySmite(), MindVision(), PowerWordShield(), NorthshireCleric(), DivineSpirit(),
+                                    MindBlast(), ShadowWordPain(), ShadowWordDeath(), HolyNova(), MindControl()])
+                # Rogue
+                owned_cards.extend([Backstab(), DeadlyPoison(), SinisterStrike(), Sap(), Shiv(), FanOfKnives(),
+                                    AssassinsBlade(), Assassinate(), Vanish(), Sprint()])
+                # Shaman
+                owned_cards.extend([AncestralHealing(), TotemicMight(), FrostShock(), RockbiterWeapon(),
+                                    hearthbreaker.cards.spells.shaman.Windfury(), FlametongueTotem(), Hex(), Windspeaker(),
+                                    Bloodlust(), FireElemental()])
+                # Warlock
+                owned_cards.extend([SacrificialPact(), Corruption(), MortalCoil(), Soulfire(), Voidwalker(), Succubus(),
+                                    DrainLife(), ShadowBolt(), Hellfire(), DreadInfernal()])
+                # Warrior
+                owned_cards.extend([Execute(), Whirlwind(), FieryWarAxe(), Cleave(), HeroicStrike(),
+                                    hearthbreaker.cards.spells.warrior.Charge(), ShieldBlock(), WarsongCommander(),
+                                    KorkronElite(), ArcaniteReaper()])
+                # Neutral
+                owned_cards.extend([ElvenArcher(), GoldshireFootman(), GrimscaleOracle(), MurlocRaider(), StonetuskBoar(),
+                                    VoodooDoctor(), AcidicSwampOoze(), BloodfenRaptor(), BluegillWarrior(),
+                                    FrostwolfGrunt(), KoboldGeomancer(), MurlocTidehunter(), NoviceEngineer(),
+                                    RiverCrocolisk(), DalaranMage(), IronforgeRifleman(), IronfurGrizzly(), MagmaRager(),
+                                    RaidLeader(), RazorfenHunter(), ShatteredSunCleric(), SilverbackPatriarch(),
+                                    Wolfrider(), ChillwindYeti(), DragonlingMechanic(), GnomishInventor(), OasisSnapjaw(),
+                                    OgreMagi(), SenjinShieldmasta(), StormwindKnight(), BootyBayBodyguard(),
+                                    DarkscaleHealer(), FrostwolfWarlord(), GurubashiBerserker(), Nightblade(),
+                                    StormpikeCommando(), Archmage(), BoulderfistOgre(), LordOfTheArena(),
+                                    RecklessRocketeer(), CoreHound(), StormwindChampion(), WarGolem()])
+        
+                ### CLASSIC ###
+                # Druid
+                owned_cards.extend([Wrath(), Starfall(), DruidOfTheClaw()])
+                # Hunter
+                owned_cards.extend([DeadlyShot()])
+                # Mage
+                owned_cards.extend([IceLance(), ManaWyrm(), SorcerersApprentice(), IceBarrier(), EtherealArcanist()])
+                # Paladin
+                owned_cards.extend([EyeForAnEye(), NobleSacrifice(), Repentance(), ArgentProtector()])
+                # Priest
+                owned_cards.extend([CircleOfHealing(), Silence(), InnerFire(), MassDispel()])
+                # Rogue
+                owned_cards.extend([ColdBlood(), Conceal(), Eviscerate()])
+                # Shaman
+                owned_cards.extend([AncestralSpirit()])
+                # Warlock
+                owned_cards.extend([FlameImp(), Demonfire(), SummoningPortal(), Doomguard()])
+                # Warrior
+                owned_cards.extend([Rampage(), Armorsmith(), MortalStrike(), Brawl()])
+                # Neutral
+                owned_cards.extend([Wisp(), ArgentSquire(), SouthseaDeckhand(), AmaniBerserker(), BloodsailRaider(),
+                                    DireWolfAlpha(), FaerieDragon(), IronbeakOwl(), KnifeJuggler(), LootHoarder(),
+                                    MadBomber(), MasterSwordsmith(), Demolisher(), HarvestGolem(), ImpMaster(),
+                                    JunglePanther(), QuestingAdventurer(), TinkmasterOverspark(), CultMaster(),
+                                    DefenderOfArgus(), SilvermoonGuardian(), AzureDrake(), FenCreeper(), SpitefulSmith(),
+                                    StranglethornTiger(), FrostElemental()])
+        
+                ### PROMO ###
+                owned_cards.extend([GelbinMekkatorque()])
+        
+                ### NAXXRAMAS ###
+                # Druid
+                owned_cards.extend([PoisonSeeds()])
+                # Hunter
+                owned_cards.extend([Webspinner()])
+                # Mage
+                owned_cards.extend([Duplicate()])
+                # Paladin
+                owned_cards.extend([Avenge()])
+                # Priest
+                owned_cards.extend([DarkCultist()])
+                # Rogue
+                owned_cards.extend([AnubarAmbusher()])
+                # Shaman
+                owned_cards.extend([Reincarnate()])
+                # Warlock
+                owned_cards.extend([Voidcaller()])
+                # Warrior
+                owned_cards.extend([DeathsBite()])
+                # Neutral
+                owned_cards.extend([Undertaker(), ZombieChow(), EchoingOoze(), HauntedCreeper(), MadScientist(),
+                                    NerubarWeblord(), NerubianEgg(), UnstableGhoul(), DancingSwords(), Deathlord(),
+                                    ShadeOfNaxxramas(), StoneskinGargoyle(), BaronRivendare(), WailingSoul(), Feugen(),
+                                    Loatheb(), SludgeBelcher(), SpectralKnight(), Stalagg(), Maexxna(), KelThuzad()])
+        
+                ### GOBLINS VS GNOMES ##
+                # Mage
+                owned_cards.extend([Snowchugger()])
+                # Paladin
+                owned_cards.extend([SealOfLight()])
+                # Neutral
+                owned_cards.extend([Mechwarper()])
+
                 card_list = filter(lambda c: c.character_class == hearthbreaker.constants.CHARACTER_CLASS.ALL or c.character_class == self.game.current_player.hero.character_class,
-                                   copy.deepcopy(self.owned_cards))
+                                   owned_cards)
             else:
                 card_list = filter(lambda c: c.character_class == hearthbreaker.constants.CHARACTER_CLASS.ALL or c.character_class == self.game.current_player.hero.character_class,
                                    get_cards())
