@@ -349,12 +349,20 @@ class HearthState:
                         break
                 if not dupe:
                     if card.can_use(self.game.current_player, self.game) and isinstance(card, MinionCard):
-                        for i in range(len(self.game.current_player.minions) + 1):
+                        # It doesn't matter where the minion is placed if we have less then two minions
+                        if len(self.game.current_player.minions) < 2:
                             if card.targetable and card.targets is not None:
-                                for j in range(len(card.targets)):
-                                    valid_moves.append(["summon_minion", card, None, self.game.current_player.hand.index(card), j, i])
+                                for i in range(len(card.targets)):
+                                    valid_moves.append(["summon_minion", card, None, self.game.current_player.hand.index(card), i, 0])
                             else:
-                                valid_moves.append(["summon_minion", card, None, self.game.current_player.hand.index(card), 0, i])
+                                valid_moves.append(["summon_minion", card, None, self.game.current_player.hand.index(card), 0, 0])
+                        else: # Try every placement
+                            for i in range(len(self.game.current_player.minions) + 1):
+                                if card.targetable and card.targets is not None:
+                                    for j in range(len(card.targets)):
+                                        valid_moves.append(["summon_minion", card, None, self.game.current_player.hand.index(card), j, i])
+                                else:
+                                    valid_moves.append(["summon_minion", card, None, self.game.current_player.hand.index(card), 0, i])
                     elif card.can_use(self.game.current_player, self.game) and isinstance(card, WeaponCard):
                         if card.targetable and card.targets is not None:
                             for i in range(len(card.targets)):
