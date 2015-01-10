@@ -46,6 +46,11 @@ class HearthState:
         #game = generate_game_for(deck1, deck2, DoNothingAgent, DoNothingAgent)
         #game._start_turn()
 
+        adjacent_cards = ["Dire Wolf Alpha", "Ancient Mage", "Defender of Argus", "Sunfury Protector",
+                          "Flametongue Totem", "Explosive Shot", "Cone of Cold", "Betrayal", "Void Terror",
+                          "Unstable Portal", "Wee Spellstopper"]
+        self.adjacent_cards = adjacent_cards
+
         card_set1 = []
         class1 = CHARACTER_CLASS.MAGE
         card_set2 = []
@@ -349,20 +354,22 @@ class HearthState:
                         break
                 if not dupe:
                     if card.can_use(self.game.current_player, self.game) and isinstance(card, MinionCard):
-                        # It doesn't matter where the minion is placed if we have less then two minions
-                        if len(self.game.current_player.minions) < 2:
-                            if card.targetable and card.targets is not None:
-                                for i in range(len(card.targets)):
-                                    valid_moves.append(["summon_minion", card, None, self.game.current_player.hand.index(card), i, 0])
-                            else:
-                                valid_moves.append(["summon_minion", card, None, self.game.current_player.hand.index(card), 0, 0])
-                        else: # Try every placement
+                        # Minion placement is only important if there are cards available that matters on it
+                        if any(any(card.name == name for name in self.adjacent_cards) for card in self.game.players[0].deck.cards) or any(any(card.name == name for name in self.adjacent_cards) for card in self.game.players[1].deck.cards):
+                            # Found adjacent card, so try every possible placement
                             for i in range(len(self.game.current_player.minions) + 1):
                                 if card.targetable and card.targets is not None:
                                     for j in range(len(card.targets)):
                                         valid_moves.append(["summon_minion", card, None, self.game.current_player.hand.index(card), j, i])
                                 else:
                                     valid_moves.append(["summon_minion", card, None, self.game.current_player.hand.index(card), 0, i])
+                        else:
+                            # It doesn't matter where the minion is placed
+                            if card.targetable and card.targets is not None:
+                                for i in range(len(card.targets)):
+                                    valid_moves.append(["summon_minion", card, None, self.game.current_player.hand.index(card), i, 0])
+                            else:
+                                valid_moves.append(["summon_minion", card, None, self.game.current_player.hand.index(card), 0, 0])
                     elif card.can_use(self.game.current_player, self.game) and isinstance(card, WeaponCard):
                         if card.targetable and card.targets is not None:
                             for i in range(len(card.targets)):
