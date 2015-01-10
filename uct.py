@@ -48,7 +48,7 @@ class HearthState:
 
         adjacent_cards = ["Dire Wolf Alpha", "Ancient Mage", "Defender of Argus", "Sunfury Protector",
                           "Flametongue Totem", "Explosive Shot", "Cone of Cold", "Betrayal", "Void Terror",
-                          "Unstable Portal", "Wee Spellstopper"]
+                          "Unstable Portal", "Wee Spellstopper", "Piloted Shredder", "Piloted Sky Golem"]
         self.adjacent_cards = adjacent_cards
 
         card_set1 = []
