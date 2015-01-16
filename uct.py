@@ -332,8 +332,10 @@ class HearthState:
                 owned_cards.extend([Snowchugger()])
                 # Paladin
                 owned_cards.extend([SealOfLight(), CobaltGuardian()])
+                # Warrior
+                owned_cards.extend([Warbot()])
                 # Neutral
-                owned_cards.extend([Mechwarper(), MicroMachine()])
+                owned_cards.extend([Mechwarper(), MicroMachine(), MechanicalYeti()])
 
                 card_list = filter(lambda c: c.character_class == hearthbreaker.constants.CHARACTER_CLASS.ALL or c.character_class == self.game.current_player.hero.character_class,
                                    owned_cards)
