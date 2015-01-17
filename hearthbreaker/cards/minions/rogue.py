@@ -1,12 +1,12 @@
 from hearthbreaker.tags.action import Kill, Bounce, Summon, Give, Damage
-from hearthbreaker.tags.base import Effect, Deathrattle, Battlecry
-from hearthbreaker.tags.condition import IsMinion
-from hearthbreaker.tags.event import DidDamage
+from hearthbreaker.tags.base import Effect, Deathrattle, Battlecry, Buff
+from hearthbreaker.tags.condition import IsMinion, IsType
+from hearthbreaker.tags.event import DidDamage, MinionSummoned, TurnEnded
 from hearthbreaker.tags.selector import TargetSelector, MinionSelector, PlayerSelector, UserPicker, \
-    BothPlayer, CharacterSelector, RandomPicker
-from hearthbreaker.constants import CHARACTER_CLASS, CARD_RARITY
+    BothPlayer, CharacterSelector, RandomPicker, SelfSelector
+from hearthbreaker.constants import CHARACTER_CLASS, CARD_RARITY, MINION_TYPE
 from hearthbreaker.game_objects import MinionCard, Minion
-from hearthbreaker.tags.status import Stealth
+from hearthbreaker.tags.status import Stealth, ChangeAttack, ChangeHealth
 
 
 class DefiasBandit(MinionCard):
@@ -82,3 +82,21 @@ class AnubarAmbusher(MinionCard):
 
     def create_minion(self, player):
         return Minion(5, 5, deathrattle=Deathrattle(Bounce(), MinionSelector(picker=RandomPicker())))
+
+
+class OneeyedCheat(MinionCard):
+    def __init__(self):
+        super().__init__("One-eyed Cheat", 2, CHARACTER_CLASS.ROGUE, CARD_RARITY.RARE, MINION_TYPE.PIRATE)
+
+    def create_minion(self, player):
+        return Minion(4, 1, effects=[Effect(MinionSummoned(IsType(MINION_TYPE.PIRATE)),
+                                            Give(Stealth()), SelfSelector())])
+
+
+class IronSensei(MinionCard):
+    def __init__(self):
+        super().__init__("Iron Sensei", 3, CHARACTER_CLASS.ROGUE, CARD_RARITY.RARE, MINION_TYPE.MECH)
+
+    def create_minion(self, player):
+        return Minion(2, 2, effects=[Effect(TurnEnded(), Give([Buff(ChangeAttack(2)), Buff(ChangeHealth(2))]),
+                                            MinionSelector(IsType(MINION_TYPE.MECH), picker=RandomPicker()))])

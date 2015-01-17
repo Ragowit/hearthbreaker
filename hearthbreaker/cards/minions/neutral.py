@@ -2152,3 +2152,11 @@ class SpiderTank(MinionCard):
 
     def create_minion(self, player):
         return Minion(3, 4)
+
+
+class GilblinStalker(MinionCard):
+    def __init__(self):
+        super().__init__("Gilblin Stalker", 2, CHARACTER_CLASS.ALL, CARD_RARITY.COMMON)
+
+    def create_minion(self, player):
+        return Minion(2, 3, stealth=True)
