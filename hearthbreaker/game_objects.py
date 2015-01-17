@@ -405,8 +405,7 @@ class Character(Bindable, GameObject, metaclass=abc.ABCMeta):
         Calculates the amount of attack this :class:`Character` has, including the base attack, any temporary attack
         bonuses for this turn
         """
-
-        return self.base_attack + self.attack_delta
+        return max(0, self.base_attack + self.attack_delta)
 
     def calculate_max_health(self):
         """
