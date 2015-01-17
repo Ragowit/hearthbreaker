@@ -328,14 +328,20 @@ class HearthState:
                                     Loatheb(), SludgeBelcher(), SpectralKnight(), Stalagg(), Maexxna(), KelThuzad()])
         
                 ### GOBLINS VS GNOMES ##
+                # Hunter
+                owned_cards.extend([Glaivezooka()])
                 # Mage
                 owned_cards.extend([Snowchugger()])
                 # Paladin
                 owned_cards.extend([SealOfLight(), CobaltGuardian()])
+                # Priest
+                owned_cards.extend([Shrinkmeister()])
+                # Rogue
+                owned_cards.extend([TinkersSharpswordOil()])
                 # Warrior
                 owned_cards.extend([Warbot()])
                 # Neutral
-                owned_cards.extend([Mechwarper(), MicroMachine(), MechanicalYeti()])
+                owned_cards.extend([Mechwarper(), MicroMachine(), MechanicalYeti(), AntiqueHealbot()])
 
                 card_list = filter(lambda c: c.character_class == hearthbreaker.constants.CHARACTER_CLASS.ALL or c.character_class == self.game.current_player.hero.character_class,
                                    owned_cards)
