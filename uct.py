@@ -26,6 +26,20 @@ from hearthbreaker.game_objects import *
 from hearthbreaker.constants import CHARACTER_CLASS
 
 
+class MOVE:
+    PRE_GAME = 1
+    START_TURN = 2
+    PICK_CLASS = 3
+    PICK_CARD = 4
+    END_TURN = 5
+    HERO_POWER = 6
+    SUMMON_MINION = 7
+    EQUIP_WEAPON = 8
+    MINION_ATTACK = 9
+    HERO_ATTACK = 10
+    TARGETED_SPELL = 11
+    UNTARGETED_SPELL = 12
+
 class HearthState:
     """ A state of the game, i.e. the game board.
     """
@@ -97,18 +111,18 @@ class HearthState:
             self.playerJustMoved = 2
 
         # print(str(self.game.current_player.mana) + "/" + str(self.game.current_player.max_mana))
-        if move[0] == "pre_game":
+        if move[0] == MOVE.PRE_GAME:
             self.game.current_player = self.game.players[1]
             self.game.other_player = self.game.players[0]
             self.game.pre_game()
             #self.game._start_turn()
-        elif move[0] == "start_turn":
+        elif move[0] == MOVE.START_TURN:
             self.game._start_turn()
-        elif move[0] == "pick_class":
+        elif move[0] == MOVE.PICK_CLASS:
             self.game.current_player.deck.character_class = move[1]
             self.game.current_player.hero.character_class = move[1]
             self.game.current_player.hero.power = hearthbreaker.powers.powers(move[1])(self.game.current_player.hero)
-        elif move[0] == "pick_card":
+        elif move[0] == MOVE.PICK_CARD:
             card = move[1] #copy.deepcopy(move[1])
             card.drawn = False
             self.game.current_player.deck.cards.append(card)
@@ -116,7 +130,7 @@ class HearthState:
             if len(self.game.current_player.deck.cards) == 30:
                 self.game.current_player = self.game.players[1]
                 self.game.other_player = self.game.players[0]
-        elif move[0] == "end_turn":
+        elif move[0] == MOVE.END_TURN:
             try:
                 self.game._end_turn()
                 self.game._start_turn()
@@ -125,7 +139,7 @@ class HearthState:
                 print(self.game.players[1].deck.__str__())
                 traceback.print_exc()
                 sys.exit()
-        elif move[0] == "hero_power":
+        elif move[0] == MOVE.HERO_POWER:
             try:
                 self.game.current_player.agent.choose_target = _choose_target
                 self.game.current_player.hero.power.use()
@@ -134,7 +148,7 @@ class HearthState:
                 print(self.game.players[1].deck.__str__())
                 traceback.print_exc()
                 sys.exit()
-        elif move[0] == "summon_minion":
+        elif move[0] == MOVE.SUMMON_MINION:
             try:
                 self.game.current_player.agent.choose_target = _choose_target
                 self.game.current_player.agent.choose_index = _choose_index
@@ -147,7 +161,7 @@ class HearthState:
                 print(self.game.players[1].deck.__str__())
                 traceback.print_exc()
                 sys.exit()
-        elif move[0] == "equip_weapon":
+        elif move[0] == MOVE.EQUIP_WEAPON:
             try:
                 self.game.current_player.agent.choose_target = _choose_target
                 self.game.play_card(self.game.current_player.hand[move[3]])
@@ -170,7 +184,7 @@ class HearthState:
                 print(self.game.players[1].deck.__str__())
                 traceback.print_exc()
                 sys.exit()
-        elif move[0] == "minion_attack":
+        elif move[0] == MOVE.MINION_ATTACK:
             try:
                 self.game.current_player.agent.choose_target = _choose_target
                 self.game.current_player.minions[move[3]].attack()
@@ -182,7 +196,7 @@ class HearthState:
                 print(self.game.players[1].deck.__str__())
                 traceback.print_exc()
                 sys.exit()
-        elif move[0] == "hero_attack":
+        elif move[0] == MOVE.HERO_ATTACK:
             try:
                 self.game.current_player.agent.choose_target = _choose_target
                 self.game.current_player.hero.attack()
@@ -191,7 +205,7 @@ class HearthState:
                 print(self.game.players[1].deck.__str__())
                 traceback.print_exc()
                 sys.exit()
-        elif move[0] == "targeted_spell":
+        elif move[0] == MOVE.TARGETED_SPELL:
             try:
                 self.game.current_player.agent.choose_target = _choose_target
                 self.game.play_card(self.game.current_player.hand[move[3]])
@@ -214,19 +228,19 @@ class HearthState:
         valid_moves = []  # Move format is [string, attacker/card, target, attacker/card index, target index, summoning index]
 
         if not self.game.pre_game_run and len(self.game.current_player.deck.cards) == 30 and len(self.game.other_player.deck.cards) == 30:
-            valid_moves.append(["pre_game"])
+            valid_moves.append([MOVE.PRE_GAME])
         elif self.game.pre_game_run and len(self.game.current_player.deck.cards) == 30 and len(self.game.other_player.deck.cards) == 30 and self.game.current_player.max_mana == 0 and self.game.turn == 0:
-            valid_moves.append(["start_turn"])
+            valid_moves.append([MOVE.START_TURN])
         elif self.game.current_player.hero.character_class == hearthbreaker.constants.CHARACTER_CLASS.ALL:
-            valid_moves.append(["pick_class", hearthbreaker.constants.CHARACTER_CLASS.DRUID])
-            valid_moves.append(["pick_class", hearthbreaker.constants.CHARACTER_CLASS.HUNTER])
-            valid_moves.append(["pick_class", hearthbreaker.constants.CHARACTER_CLASS.MAGE])
-            valid_moves.append(["pick_class", hearthbreaker.constants.CHARACTER_CLASS.PALADIN])
-            valid_moves.append(["pick_class", hearthbreaker.constants.CHARACTER_CLASS.PRIEST])
-            valid_moves.append(["pick_class", hearthbreaker.constants.CHARACTER_CLASS.ROGUE])
-            valid_moves.append(["pick_class", hearthbreaker.constants.CHARACTER_CLASS.SHAMAN])
-            valid_moves.append(["pick_class", hearthbreaker.constants.CHARACTER_CLASS.WARLOCK])
-            valid_moves.append(["pick_class", hearthbreaker.constants.CHARACTER_CLASS.WARRIOR])
+            valid_moves.append([MOVE.PICK_CLASS, hearthbreaker.constants.CHARACTER_CLASS.DRUID])
+            valid_moves.append([MOVE.PICK_CLASS, hearthbreaker.constants.CHARACTER_CLASS.HUNTER])
+            valid_moves.append([MOVE.PICK_CLASS, hearthbreaker.constants.CHARACTER_CLASS.MAGE])
+            valid_moves.append([MOVE.PICK_CLASS, hearthbreaker.constants.CHARACTER_CLASS.PALADIN])
+            valid_moves.append([MOVE.PICK_CLASS, hearthbreaker.constants.CHARACTER_CLASS.PRIEST])
+            valid_moves.append([MOVE.PICK_CLASS, hearthbreaker.constants.CHARACTER_CLASS.ROGUE])
+            valid_moves.append([MOVE.PICK_CLASS, hearthbreaker.constants.CHARACTER_CLASS.SHAMAN])
+            valid_moves.append([MOVE.PICK_CLASS, hearthbreaker.constants.CHARACTER_CLASS.WARLOCK])
+            valid_moves.append([MOVE.PICK_CLASS, hearthbreaker.constants.CHARACTER_CLASS.WARRIOR])
         elif len(self.game.current_player.deck.cards) < 30:
             if self.game.current_player.name == "one":
                 owned_cards = []
@@ -342,6 +356,7 @@ class HearthState:
                 # Warrior
                 owned_cards.extend([Warbot()])
                 # Neutral
+                # TODO : Cogmaster()
                 owned_cards.extend([Mechwarper(), MicroMachine(), MechanicalYeti(), AntiqueHealbot()])
 
                 card_list = filter(lambda c: c.character_class == hearthbreaker.constants.CHARACTER_CLASS.ALL or c.character_class == self.game.current_player.hero.character_class,
@@ -353,7 +368,7 @@ class HearthState:
                 counter = [x for x in self.game.current_player.deck.cards if x.name == card.name]
                 
                 if len(counter) < 1 or (len(counter) < 2 and card.rarity != hearthbreaker.constants.CARD_RARITY.LEGENDARY):
-                    valid_moves.append(["pick_card", card])
+                    valid_moves.append([MOVE.PICK_CARD, card])
         else:
             for card in self.game.current_player.hand:
                 dupe = False
@@ -369,29 +384,29 @@ class HearthState:
                             for i in range(len(self.game.current_player.minions) + 1):
                                 if card.targetable and card.targets is not None:
                                     for j in range(len(card.targets)):
-                                        valid_moves.append(["summon_minion", card, None, self.game.current_player.hand.index(card), j, i])
+                                        valid_moves.append([MOVE.SUMMON_MINION, card, None, self.game.current_player.hand.index(card), j, i])
                                 else:
-                                    valid_moves.append(["summon_minion", card, None, self.game.current_player.hand.index(card), 0, i])
+                                    valid_moves.append([MOVE.SUMMON_MINION, card, None, self.game.current_player.hand.index(card), 0, i])
                         else:
                             # It doesn't matter where the minion is placed
                             if card.targetable and card.targets is not None:
                                 for i in range(len(card.targets)):
-                                    valid_moves.append(["summon_minion", card, None, self.game.current_player.hand.index(card), i, 0])
+                                    valid_moves.append([MOVE.SUMMON_MINION, card, None, self.game.current_player.hand.index(card), i, 0])
                             else:
-                                valid_moves.append(["summon_minion", card, None, self.game.current_player.hand.index(card), 0, 0])
+                                valid_moves.append([MOVE.SUMMON_MINION, card, None, self.game.current_player.hand.index(card), 0, 0])
                     elif card.can_use(self.game.current_player, self.game) and isinstance(card, WeaponCard):
                         if card.targetable and card.targets is not None:
                             for i in range(len(card.targets)):
-                                valid_moves.append(["equip_weapon", card, None, self.game.current_player.hand.index(card), i])
+                                valid_moves.append([MOVE.EQUIP_WEAPON, card, None, self.game.current_player.hand.index(card), i])
                         else:
-                            valid_moves.append(["equip_weapon", card, None, self.game.current_player.hand.index(card), 0])                            
+                            valid_moves.append([MOVE.EQUIP_WEAPON, card, None, self.game.current_player.hand.index(card), 0])                            
                     elif card.can_use(self.game.current_player, self.game) and isinstance(card, SecretCard):
-                        valid_moves.append(["played_secret", card, None, self.game.current_player.hand.index(card), 0])
+                        valid_moves.append([MOVE.UNTARGETED_SPELL, card, None, self.game.current_player.hand.index(card), 0])
                     elif card.can_use(self.game.current_player, self.game) and not card.targetable:
-                        valid_moves.append(["untargeted_spell", card, None, self.game.current_player.hand.index(card), 0])
+                        valid_moves.append([MOVE.UNTARGETED_SPELL, card, None, self.game.current_player.hand.index(card), 0])
                     elif card.can_use(self.game.current_player, self.game) and card.targetable:
                         for i in range(len(card.targets)):
-                            valid_moves.append(["targeted_spell", card, card.targets[i],
+                            valid_moves.append([MOVE.TARGETED_SPELL, card, card.targets[i],
                                                 self.game.current_player.hand.index(card), i])
     
             found_taunt = False
@@ -410,12 +425,12 @@ class HearthState:
             for minion in copy.copy(self.game.current_player.minions):
                 if minion.can_attack():
                     for i in range(len(targets)):
-                        valid_moves.append(["minion_attack", minion, targets[i],
+                        valid_moves.append([MOVE.MINION_ATTACK, minion, targets[i],
                                             self.game.current_player.minions.index(minion), i])
     
             if self.game.current_player.hero.can_attack():
                 for i in range(len(targets)):
-                    valid_moves.append(["hero_attack", self.game.current_player.hero, targets[i], None, i])
+                    valid_moves.append([MOVE.HERO_ATTACK, self.game.current_player.hero, targets[i], None, i])
     
             if (self.game.current_player.hero.power.__str__() == "Fireblast" or \
                self.game.current_player.hero.power.__str__() == "Mind Spike" or \
@@ -423,13 +438,13 @@ class HearthState:
                self.game.current_player.hero.power.__str__() == "Lesser Heal") and \
                self.game.current_player.hero.power.can_use():
                 for target in hearthbreaker.targeting.find_spell_target(self.game, lambda t: t.spell_targetable()):
-                    valid_moves.append(["hero_power", self.game.current_player.hero, target, 0, \
+                    valid_moves.append([MOVE.HERO_POWER, self.game.current_player.hero, target, 0, \
                                        hearthbreaker.targeting.find_spell_target(self.game, lambda t: \
                                                                                 t.spell_targetable()).index(target)])
             elif self.game.current_player.hero.power.can_use():
-                valid_moves.append(["hero_power", self.game.current_player.hero, None, None, None])
+                valid_moves.append([MOVE.HERO_POWER, self.game.current_player.hero, None, None, None])
     
-            valid_moves.append(["end_turn", None, None])
+            valid_moves.append([MOVE.END_TURN, None, None])
 
         return valid_moves
 
@@ -467,7 +482,7 @@ class Node:
         self.childNodes = []
         self.wins = 0
         self.visits = 0
-        if move and (move[0] == "end_turn" or move[0] == "pre_game" or move[0] == "start_turn"):
+        if move and (move[0] == MOVE.END_TURN or move[0] == MOVE.PRE_GAME or move[0] == MOVE.START_TURN):
             self.untriedMoves = []
         else:
             self.untriedMoves = state.GetMoves() # future child nodes
@@ -579,7 +594,7 @@ def UCTPlayGame():
     state = HearthState()
     while (state.GetMoves() != []):
         print(str(state))
-        m = UCT(rootstate = state, seconds = 2000, verbose = False)
+        m = UCT(rootstate = state, seconds = 12000, verbose = False)
         print("Best Move: " + str(m) + "\n")
         state.DoMove(m)
 
