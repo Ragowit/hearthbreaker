@@ -11,12 +11,12 @@ from hearthbreaker.tags.event import TurnEnded, CardPlayed, MinionSummoned, Turn
     SpellCast, CharacterHealed, CharacterDamaged, MinionDied, CardUsed, MinionPlaced, Damaged
 from hearthbreaker.tags.selector import MinionSelector, BothPlayer, BattlecrySelector, SelfSelector, \
     PlayerSelector, MinionCardSelector, TargetSelector, EnemyPlayer, CharacterSelector, SpellSelector, WeaponSelector, \
-    HeroSelector, OtherPlayer, UserPicker, RandomPicker
+    HeroSelector, OtherPlayer, UserPicker, RandomPicker, CurrentPlayer
 from hearthbreaker.cards.battlecries import gain_one_health_for_each_card_in_hand, deathwing
 from hearthbreaker.game_objects import Minion, MinionCard, Card
 from hearthbreaker.constants import CARD_RARITY, CHARACTER_CLASS, MINION_TYPE
 from hearthbreaker.tags.status import ChangeAttack, ChangeHealth, ManaChange, Charge, Taunt, Windfury, CantAttack, \
-    SpellDamage, DoubleDeathrattle, IncreaseWeaponAttack
+    SpellDamage, DoubleDeathrattle, IncreaseWeaponAttack, Forgetful
 import hearthbreaker.targeting
 import copy
 from hearthbreaker.cards.spells.neutral import ArmorPlating, EmergencyCoolant, FinickyCloakfield, TimeRewinder,\
@@ -556,7 +556,7 @@ class TheBlackKnight(MinionCard):
 class AbusiveSergeant(MinionCard):
     def __init__(self):
         super().__init__("Abusive Sergeant", 1, CHARACTER_CLASS.ALL, CARD_RARITY.COMMON,
-                         battlecry=Battlecry(Give(BuffUntil(ChangeAttack(2), TurnEnded())),
+                         battlecry=Battlecry(Give(BuffUntil(ChangeAttack(2), TurnEnded(player=CurrentPlayer()))),
                                              MinionSelector(players=BothPlayer(), picker=UserPicker())))
 
     def create_minion(self, player):
@@ -566,7 +566,7 @@ class AbusiveSergeant(MinionCard):
 class DarkIronDwarf(MinionCard):
     def __init__(self):
         super().__init__("Dark Iron Dwarf", 4, CHARACTER_CLASS.ALL, CARD_RARITY.COMMON,
-                         battlecry=Battlecry(Give(BuffUntil(ChangeAttack(2), TurnEnded())),
+                         battlecry=Battlecry(Give(BuffUntil(ChangeAttack(2), TurnEnded(player=CurrentPlayer()))),
                                              MinionSelector(players=BothPlayer(), picker=UserPicker())))
 
     def create_minion(self, player):
@@ -2160,3 +2160,28 @@ class GilblinStalker(MinionCard):
 
     def create_minion(self, player):
         return Minion(2, 3, stealth=True)
+
+
+class ShipsCannon(MinionCard):
+    def __init__(self):
+        super().__init__("Ship's Cannon", 2, CHARACTER_CLASS.ALL, CARD_RARITY.COMMON)
+
+    def create_minion(self, player):
+        return Minion(2, 3, effects=[Effect(MinionSummoned(IsType(MINION_TYPE.PIRATE)), Damage(2),
+                                            CharacterSelector(None, EnemyPlayer(), RandomPicker()))])
+
+
+class OgreBrute(MinionCard):
+    def __init__(self):
+        super().__init__("Ogre Brute", 3, CHARACTER_CLASS.ALL, CARD_RARITY.COMMON)
+
+    def create_minion(self, player):
+        return Minion(4, 4, forgetful=True)
+
+
+class MogorTheOgre(MinionCard):
+    def __init__(self):
+        super().__init__("Mogor the Ogre", 6, CHARACTER_CLASS.ALL, CARD_RARITY.LEGENDARY)
+
+    def create_minion(self, player):
+        return Minion(7, 6, auras=[Aura(Forgetful(), MinionSelector(None, BothPlayer()))])

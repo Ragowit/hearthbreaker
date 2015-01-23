@@ -3519,6 +3519,28 @@ class TestCommon(unittest.TestCase):
         self.assertEqual("Stonetusk Boar", game.players[0].minions[2].card.name)
         self.assertEqual(3, game.players[0].minions[2].calculate_attack())
 
+        # Now end the turn and make sure that the buff is gone
+        game._end_turn()
+        self.assertEqual(1, game.players[0].minions[2].calculate_attack())
+
+    def test_AbusiveSergeantEnemy(self):
+        game = generate_game_for(StonetuskBoar, AbusiveSergeant, CardTestingAgent, CardTestingAgent)
+
+        game.play_single_turn()
+        self.assertEqual(1, len(game.players[0].minions))
+        self.assertEqual("Stonetusk Boar", game.players[0].minions[0].card.name)
+        self.assertEqual(1, game.players[0].minions[0].calculate_attack())
+
+        game._start_turn()
+        game.current_player.agent.do_turn(game.current_player)
+
+        self.assertEqual(1, len(game.players[0].minions))
+        self.assertEqual(3, game.players[0].minions[0].calculate_attack())
+
+        # Now end the turn and make sure that the buff is gone
+        game._end_turn()
+        self.assertEqual(1, game.players[0].minions[0].calculate_attack())
+
     def test_DarkIronDwarf(self):
         game = generate_game_for([StonetuskBoar, DarkIronDwarf], StonetuskBoar, CardTestingAgent, DoNothingAgent)
 
@@ -3536,3 +3558,80 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(2, len(game.players[0].minions))
         self.assertEqual("Stonetusk Boar", game.players[0].minions[1].card.name)
         self.assertEqual(3, game.players[0].minions[1].calculate_attack())
+
+    def test_ShipsCannon(self):
+        game = generate_game_for([ShipsCannon, OneeyedCheat, ChillwindYeti], BloodsailRaider,
+                                 OneCardPlayingAgent, OneCardPlayingAgent)
+
+        for turn in range(3):
+            game.play_single_turn()
+
+        self.assertEqual(1, len(game.current_player.minions))
+        self.assertEqual(3, game.current_player.minions[0].health)
+        self.assertEqual(30, game.current_player.hero.health)
+        self.assertEqual(30, game.other_player.hero.health)
+
+        # The ship's cannon should not go off, since the pirate is summoned for the opponent
+        game.play_single_turn()
+        self.assertEqual(1, len(game.current_player.minions))
+        self.assertEqual(3, game.current_player.minions[0].health)
+        self.assertEqual(1, len(game.other_player.minions))
+        self.assertEqual(3, game.other_player.minions[0].health)
+        self.assertEqual(30, game.current_player.hero.health)
+        self.assertEqual(30, game.other_player.hero.health)
+
+        # The ship's cannon should go off, damaging the enemy hero
+        game.play_single_turn()
+
+        self.assertEqual(2, len(game.current_player.minions))
+        self.assertEqual(1, game.current_player.minions[0].health)
+        self.assertEqual(3, game.current_player.minions[1].health)
+        self.assertEqual(1, len(game.other_player.minions))
+        self.assertEqual(3, game.other_player.minions[0].health)
+        self.assertEqual(30, game.current_player.hero.health)
+        self.assertEqual(28, game.other_player.hero.health)
+
+        game.play_single_turn()
+        # The cannon should not go off, so no one's health should have changed
+        game.play_single_turn()
+
+        self.assertEqual(3, len(game.current_player.minions))
+        self.assertEqual(5, game.current_player.minions[0].health)
+        self.assertEqual(1, game.current_player.minions[1].health)
+        self.assertEqual(3, game.current_player.minions[2].health)
+        self.assertEqual(2, len(game.other_player.minions))
+        self.assertEqual(3, game.other_player.minions[0].health)
+        self.assertEqual(3, game.other_player.minions[1].health)
+        self.assertEqual(30, game.current_player.hero.health)
+        self.assertEqual(28, game.other_player.hero.health)
+
+    def test_MogorTheOrge(self):
+        game = generate_game_for([MogorTheOgre, StonetuskBoar, StonetuskBoar, StonetuskBoar, StonetuskBoar],
+                                 [Hogger, StonetuskBoar, StonetuskBoar, StonetuskBoar, StonetuskBoar],
+                                 PlayAndAttackAgent, PlayAndAttackAgent)
+
+        for turn in range(13):
+            game.play_single_turn()
+
+        # Of the the four boars played, one hits the enemy hero, one hits the gnoll and two hit hogger.
+        # Mogor hits the gnoll.
+        self.assertEqual(2, len(game.current_player.minions))
+        self.assertEqual("Stonetusk Boar", game.current_player.minions[0].card.name)
+        self.assertEqual("Mogor the Ogre", game.current_player.minions[1].card.name)
+        self.assertEqual(4, game.current_player.minions[1].health)
+        self.assertEqual(1, len(game.other_player.minions))
+        self.assertEqual("Hogger", game.other_player.minions[0].card.name)
+        self.assertEqual(2, game.other_player.minions[0].health)
+        self.assertEqual(29, game.other_player.hero.health)
+
+        # Of the four boars, two go into Mogor, one into the other boar and one into the hero.
+        # Hogger attacks the enemy hero.
+        game.play_single_turn()
+        self.assertEqual(3, len(game.current_player.minions))
+        self.assertEqual("Stonetusk Boar", game.current_player.minions[0].card.name)
+        self.assertEqual("Hogger", game.current_player.minions[1].card.name)
+        self.assertEqual("Gnoll", game.current_player.minions[2].card.name)
+
+        self.assertEqual(1, len(game.other_player.minions))
+        self.assertEqual(2, game.other_player.minions[0].health)
+        self.assertEqual(25, game.other_player.hero.health)
