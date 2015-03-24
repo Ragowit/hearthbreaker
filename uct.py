@@ -357,8 +357,8 @@ class HearthState:
                 owned_cards.extend([Warbot()])
                 # Neutral
                 # TODO: Cogmaster()
-                owned_cards.extend([Mechwarper(), MicroMachine(), Puddlestomper(), ShipsCannon(), MechanicalYeti(),
-                                    AntiqueHealbot()])
+                owned_cards.extend([ClockworkGnome(), AnnoyOTron(), Mechwarper(), MicroMachine(), Puddlestomper(),
+                                    ShipsCannon(), MechanicalYeti(), AntiqueHealbot()])
 
                 card_list = filter(lambda c: c.character_class == hearthbreaker.constants.CHARACTER_CLASS.ALL or c.character_class == self.game.current_player.hero.character_class,
                                    owned_cards)
