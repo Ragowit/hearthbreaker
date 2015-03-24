@@ -457,7 +457,7 @@ class HearthState:
         elif self.game.players[playerjm - 1].hero.health <= 0:
             return 0
         elif self.game.players[2 - playerjm].hero.health <= 0:
-            return 1
+            return 1 / (log(self.game.turn) + 0.01)
         else:  # Should not be possible to get here unless we terminate the game early.
             return 0.5
 
@@ -602,7 +602,7 @@ def UCTPlayGame():
         print(state.game.players[0].deck.__str__())
         print(state.game.players[1].deck.__str__())
         print()
-    if state.GetResult(state.playerJustMoved) == 1.0:
+    if state.GetResult(state.playerJustMoved) >= 1.0:
         print("Player " + str(state.playerJustMoved) + " wins!")
     elif state.GetResult(state.playerJustMoved) == 0.0:
         print("Player " + str(3 - state.playerJustMoved) + " wins!")
