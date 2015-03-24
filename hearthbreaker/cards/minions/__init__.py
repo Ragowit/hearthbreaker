@@ -181,7 +181,7 @@ from hearthbreaker.cards.minions.neutral import (
     PilotedSkyGolem,
     SneedsOldShredder,
     AntiqueHealbot,
-    AnnoyOTron,
+    AnnoyoTron,
     Blingtron3000,
     BombLobber,
     BurlyRockjawTrogg,
@@ -201,6 +201,34 @@ from hearthbreaker.cards.minions.neutral import (
     ShipsCannon,
     OgreBrute,
     MogorTheOgre,
+    Toshley,
+    ForceTankMAX,
+    FelReaver,
+    MadderBomber,
+    Gazlowe,
+    MiniMage,
+    SaltyDog,
+    GnomereganInfantry,
+    FlyingMachine,
+    LostTallstrider,
+    HemetNesingwary,
+    Illuminator,
+    MekgineerThermaplugg,
+    StonesplinterTrogg,
+    TroggzorTheEarthinator,
+    Hobgoblin,
+    Cogmaster,
+    GoblinSapper,
+    TinkertownTechnician,
+    Junkbot,
+    Jeeves,
+    Recombobulator,
+    LilExorcist,
+    EnhanceoMechano,
+    FoeReaper4000,
+    KezanMystic,
+    MimironsHead,
+    GnomishExperimenter,
 )
 
 from hearthbreaker.cards.minions.druid import (
@@ -211,6 +239,10 @@ from hearthbreaker.cards.minions.druid import (
     IronbarkProtector,
     Cenarius,
     AnodizedRoboCub,
+    MechBearCat,
+    DruidOfTheFang,
+    Malorne,
+    GroveTender,
 )
 
 from hearthbreaker.cards.minions.hunter import (
@@ -227,6 +259,10 @@ from hearthbreaker.cards.minions.hunter import (
     Misha,
     Leokk,
     Snake,
+    MetaltoothLeaper,
+    KingOfBeasts,
+    Gahzrilla,
+    SteamwheedleSniper,
 )
 
 from hearthbreaker.cards.minions.mage import (
@@ -238,6 +274,9 @@ from hearthbreaker.cards.minions.mage import (
     ArchmageAntonidas,
     Snowchugger,
     GoblinBlastmage,
+    SootSpewer,
+    WeeSpellstopper,
+    FlameLeviathan,
 )
 
 from hearthbreaker.cards.minions.paladin import (
@@ -248,6 +287,9 @@ from hearthbreaker.cards.minions.paladin import (
     CobaltGuardian,
     SilverHandRecruit,
     ShieldedMinibot,
+    Quartermaster,
+    ScarletPurifier,
+    BolvarFordragon,
 )
 
 from hearthbreaker.cards.minions.priest import (
@@ -260,6 +302,10 @@ from hearthbreaker.cards.minions.priest import (
     TempleEnforcer,
     DarkCultist,
     Shrinkmeister,
+    UpgradedRepairBot,
+    Shadowbomber,
+    Shadowboxer,
+    Voljin,
 )
 
 from hearthbreaker.cards.minions.rogue import (
@@ -273,6 +319,8 @@ from hearthbreaker.cards.minions.rogue import (
     OneeyedCheat,
     IronSensei,
     OgreNinja,
+    TradePrinceGallywix,
+    GoblinAutoBarber,
 )
 
 from hearthbreaker.cards.minions.shaman import (
@@ -293,6 +341,7 @@ from hearthbreaker.cards.minions.shaman import (
     SiltfinSpiritwalker,
     WhirlingZapomatic,
     DunemaulShaman,
+    Neptulon,
 )
 
 from hearthbreaker.cards.minions.warlock import (
@@ -310,7 +359,10 @@ from hearthbreaker.cards.minions.warlock import (
     Voidcaller,
     AnimaGolem,
     WorthlessImp,
-    FelCannon
+    FelCannon,
+    MalGanis,
+    FloatingWatcher,
+    MistressOfPain,
 )
 
 from hearthbreaker.cards.minions.warrior import (
@@ -323,4 +375,7 @@ from hearthbreaker.cards.minions.warrior import (
     WarsongCommander,
     Warbot,
     Shieldmaiden,
+    SiegeEngine,
+    IronJuggernaut,
+    ScrewjankClunker,
 )

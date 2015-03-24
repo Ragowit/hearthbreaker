@@ -2,9 +2,9 @@ import random
 import unittest
 
 from hearthbreaker.agents.basic_agents import PredictableAgent, DoNothingAgent
-from tests.agents.testing_agents import OneCardPlayingAgent, CardTestingAgent, PlayAndAttackAgent
+from hearthbreaker.engine import Game
+from tests.agents.testing_agents import OneCardPlayingAgent, CardTestingAgent, PlayAndAttackAgent, SelfSpellTestingAgent
 from hearthbreaker.constants import CHARACTER_CLASS
-from hearthbreaker.game_objects import Game
 from tests.testing_utils import generate_game_for, StackedDeck
 from hearthbreaker.replay import playback, Replay
 from hearthbreaker.cards import *
@@ -194,6 +194,7 @@ class TestPriest(unittest.TestCase):
         # Cheat
         for index in range(0, 30):
             game.players[1].deck.cards[index].drawn = True
+        game.players[1].deck.left = 0
 
         game.play_single_turn()
         game.play_single_turn()
@@ -456,6 +457,32 @@ class TestPriest(unittest.TestCase):
         self.assertEqual(2, game.players[0].minions[1].health)
         self.assertEqual(30, game.players[0].hero.health)
 
+    def test_Lightwell2(self):
+        game = generate_game_for([Lightwell, Deathwing], Whirlwind, OneCardPlayingAgent, OneCardPlayingAgent)
+        for turn in range(0, 4):
+            game.play_single_turn()
+
+        self.assertEqual(4, game.players[0].minions[0].health)
+
+        game.play_single_turn()
+
+        self.assertEqual(5, game.players[0].minions[0].health)
+
+        game.play_single_turn()
+        game.play_single_turn()
+
+        self.assertEqual(5, game.players[0].minions[0].health)
+
+        game.play_single_turn()
+        game.play_single_turn()
+
+        self.assertEqual(5, game.players[0].minions[0].health)
+
+        game.play_single_turn()
+        game.play_single_turn()
+
+        self.assertEqual(5, game.players[0].minions[0].health)
+
     def test_NorthshireCleric(self):
         game = generate_game_for(NorthshireCleric, StonetuskBoar, PredictableAgent, PredictableAgent)
 
@@ -642,3 +669,169 @@ class TestPriest(unittest.TestCase):
         self.assertEqual(2, len(game.players[0].minions))
         self.assertEqual("Stonetusk Boar", game.players[0].minions[1].card.name)
         self.assertEqual(0, game.players[0].minions[1].calculate_attack())
+
+    def test_UpgradedRepairBot(self):
+        game = generate_game_for(UpgradedRepairBot, MechanicalYeti, OneCardPlayingAgent, OneCardPlayingAgent)
+
+        for turn in range(0, 9):
+            game.play_single_turn()
+
+        self.assertEqual(1, len(game.current_player.minions))
+        self.assertEqual(5, game.current_player.minions[0].health)
+        self.assertEqual(1, len(game.other_player.minions))
+        self.assertEqual(5, game.other_player.minions[0].health)
+        self.assertEqual(30, game.current_player.hero.health)
+        self.assertEqual(30, game.other_player.hero.health)
+
+        game.play_single_turn()
+        game.play_single_turn()
+
+        self.assertEqual(2, len(game.current_player.minions))
+        self.assertEqual(5, game.current_player.minions[0].health)
+        self.assertEqual(9, game.current_player.minions[1].health)
+        self.assertEqual(2, len(game.other_player.minions))
+        self.assertEqual(5, game.other_player.minions[0].health)
+        self.assertEqual(5, game.other_player.minions[1].health)
+        self.assertEqual(30, game.current_player.hero.health)
+        self.assertEqual(30, game.other_player.hero.health)
+
+    def test_Shadowbomber(self):
+        game = generate_game_for(Shadowbomber, StonetuskBoar, OneCardPlayingAgent, DoNothingAgent)
+
+        game.play_single_turn()
+        # Play Shadowbomber, 3 damage to both heroes
+        self.assertEqual(1, len(game.players[0].minions))
+        self.assertEqual(27, game.players[0].hero.health)
+        self.assertEqual(27, game.players[1].hero.health)
+
+    def test_VelensChosen(self):
+        game = generate_game_for([AcidicSwampOoze, MindBlast, VelensChosen, MindBlast, MindBlast],
+                                 [SoulOfTheForest, MassDispel], OneCardPlayingAgent, OneCardPlayingAgent)
+
+        # Plays Ooze, then Mind Blasts for 5
+        for turn in range(0, 6):
+            game.play_single_turn()
+
+        self.assertEqual(25, game.players[1].hero.health)
+
+        # Velen's on Ooze
+        game.play_single_turn()
+
+        self.assertEqual(1, game.players[0].spell_damage)
+        self.assertEqual(5, game.players[0].minions[0].calculate_attack())
+        self.assertEqual(6, game.players[0].minions[0].health)
+
+        # Mind Blasts for 6
+        game.play_single_turn()
+        game.play_single_turn()
+
+        self.assertEqual(19, game.players[1].hero.health)
+
+        # Mass Dispel, then 5 damage Mind Blast
+        game.play_single_turn()
+        game.play_single_turn()
+
+        self.assertEqual(0, game.players[0].spell_damage)
+        self.assertEqual(14, game.players[1].hero.health)
+
+    def test_VelensChosenWithExistingSpellDamage(self):
+        game = generate_game_for([KoboldGeomancer, MindBlast, VelensChosen, MindBlast, MindBlast],
+                                 [SoulOfTheForest, MassDispel], OneCardPlayingAgent, OneCardPlayingAgent)
+
+        # Plays Kobold, then Mind Blasts for 6
+        for turn in range(0, 6):
+            game.play_single_turn()
+
+        self.assertEqual(24, game.players[1].hero.health)
+
+        # Velen's on Kobold
+        game.play_single_turn()
+
+        self.assertEqual(2, game.players[0].spell_damage)
+        self.assertEqual(4, game.players[0].minions[0].calculate_attack())
+        self.assertEqual(6, game.players[0].minions[0].health)
+
+        # Mind Blasts for 7
+        game.play_single_turn()
+        game.play_single_turn()
+
+        self.assertEqual(17, game.players[1].hero.health)
+
+        # Mass Dispel, then 5 damage Mind Blast
+        game.play_single_turn()
+        game.play_single_turn()
+
+        self.assertEqual(0, game.players[0].spell_damage)
+        self.assertEqual(12, game.players[1].hero.health)
+
+    def test_Shadowboxer(self):
+        game = generate_game_for([Shadowboxer, CircleOfHealing], Whirlwind, OneCardPlayingAgent, OneCardPlayingAgent)
+
+        for turn in range(0, 4):
+            game.play_single_turn()
+
+        self.assertEqual(1, len(game.players[0].minions))
+        self.assertEqual(2, game.players[0].minions[0].calculate_attack())
+        self.assertEqual(2, game.players[0].minions[0].health)
+        self.assertEqual(30, game.players[1].hero.health)
+
+        game.play_single_turn()
+
+        self.assertEqual(1, len(game.players[0].minions))
+        self.assertEqual(2, game.players[0].minions[0].calculate_attack())
+        self.assertEqual(3, game.players[0].minions[0].health)
+        self.assertEqual(29, game.players[1].hero.health)
+
+    def test_Lightbomb(self):
+        game = generate_game_for([ChillwindYeti, Lightbomb], [ArgentSquire, FaerieDragon, SpiderTank, Deathwing],
+                                 OneCardPlayingAgent, OneCardPlayingAgent)
+        for turn in range(0, 10):
+            game.play_single_turn()
+
+        self.assertEqual(1, len(game.players[0].minions))
+        self.assertEqual(3, len(game.players[1].minions))
+        self.assertEqual(5, game.players[0].minions[0].health)
+        self.assertEqual(4, game.players[1].minions[0].health)
+        self.assertEqual(2, game.players[1].minions[1].health)
+        self.assertEqual(1, game.players[1].minions[2].health)
+        self.assertTrue(game.players[1].minions[2].divine_shield)
+
+        game.play_single_turn()
+
+        self.assertEqual(1, len(game.players[0].minions))
+        self.assertEqual(2, len(game.players[1].minions))
+        self.assertEqual(1, game.players[0].minions[0].health)
+        self.assertEqual(1, game.players[1].minions[0].health)
+        self.assertEqual(1, game.players[1].minions[1].health)
+        self.assertFalse(game.players[1].minions[1].divine_shield)
+
+    def test_LightOfTheNaaru(self):
+        game = generate_game_for(MindBlast, LightOfTheNaaru, OneCardPlayingAgent, SelfSpellTestingAgent)
+        game.play_single_turn()
+        game.play_single_turn()
+
+        self.assertEqual(0, len(game.players[1].minions))
+
+        # Mind Blast
+        game.play_single_turn()
+
+        self.assertEqual(25, game.players[1].hero.health)
+
+        # Double Light of the Naaru but only 1 Lightwarden summoned, 1st Lightwarden buffed by 2nd Light of the Naaru
+        game.play_single_turn()
+
+        self.assertEqual(30, game.players[1].hero.health)
+        self.assertEqual(1, len(game.players[1].minions))
+        self.assertEqual(3, game.players[1].minions[0].calculate_attack())
+
+    def test_Voljin(self):
+        game = generate_game_for(Voljin, ChillwindYeti, OneCardPlayingAgent, OneCardPlayingAgent)
+        for turn in range(9):
+            game.play_single_turn()
+
+        self.assertEqual(1, len(game.current_player.minions))
+        self.assertEqual(1, len(game.other_player.minions))
+        self.assertEqual(5, game.current_player.minions[0].calculate_max_health())
+        self.assertEqual(5, game.current_player.minions[0].health)
+        self.assertEqual(2, game.other_player.minions[0].calculate_max_health())
+        self.assertEqual(2, game.other_player.minions[0].health)

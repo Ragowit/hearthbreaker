@@ -1,5 +1,6 @@
 import random
 import unittest
+from hearthbreaker.cards.spells.neutral import TheCoin
 
 from tests.agents.testing_agents import OneCardPlayingAgent, MinionAttackingAgent, CardTestingAgent, \
     PlayAndAttackAgent
@@ -21,8 +22,8 @@ class TestShaman(unittest.TestCase):
 
         self.assertEqual(1, len(game.players[0].minions))
         self.assertEqual("Al'Akir the Windlord", game.players[0].minions[0].card.name)
-        self.assertTrue(game.players[0].minions[0].windfury)
-        self.assertTrue(game.players[0].minions[0].charge)
+        self.assertTrue(game.players[0].minions[0].windfury())
+        self.assertTrue(game.players[0].minions[0].charge())
         self.assertTrue(game.players[0].minions[0].divine_shield)
         self.assertTrue(game.players[0].minions[0].taunt)
 
@@ -32,7 +33,7 @@ class TestShaman(unittest.TestCase):
         game.play_single_turn()
         self.assertEqual(1, len(game.players[0].minions))
         self.assertEqual("Dust Devil", game.players[0].minions[0].card.name)
-        self.assertTrue(game.players[0].minions[0].windfury)
+        self.assertTrue(game.players[0].minions[0].windfury())
         self.assertEqual(2, game.players[0].overload)
 
         game.play_single_turn()
@@ -190,13 +191,13 @@ class TestShaman(unittest.TestCase):
 
         self.assertEqual(1, len(game.players[0].minions))
         self.assertEqual("Stonetusk Boar", game.players[0].minions[0].card.name)
-        self.assertFalse(game.players[0].minions[0].windfury)
+        self.assertFalse(game.players[0].minions[0].windfury())
 
         # Windspeaker should be played, giving the boar windfury
         game.play_single_turn()
         self.assertEqual(2, len(game.players[0].minions))
         self.assertEqual("Windspeaker", game.players[0].minions[0].card.name)
-        self.assertTrue(game.players[0].minions[1].windfury)
+        self.assertTrue(game.players[0].minions[1].windfury())
 
     def test_AncestralHealing(self):
         game = generate_game_for([FlametongueTotem, AncestralHealing], StonetuskBoar,
@@ -471,11 +472,11 @@ class TestShaman(unittest.TestCase):
         for turn in range(0, 2):
             game.play_single_turn()
 
-        self.assertFalse(game.players[1].minions[0].windfury)
+        self.assertFalse(game.players[1].minions[0].windfury())
 
         # Windfury should be played
         game.play_single_turn()
-        self.assertTrue(game.players[1].minions[0].windfury)
+        self.assertTrue(game.players[1].minions[0].windfury())
 
     def test_Doomhammer(self):
         game = generate_game_for(Doomhammer, StonetuskBoar, PlayAndAttackAgent, DoNothingAgent)
@@ -484,11 +485,11 @@ class TestShaman(unittest.TestCase):
             game.play_single_turn()
 
         self.assertEqual(30, game.players[1].hero.health)
-        self.assertFalse(game.players[0].hero.windfury)
+        self.assertFalse(game.players[0].hero.windfury())
 
         # Doomhammer should be played
         game.play_single_turn()
-        self.assertTrue(game.players[0].hero.windfury)
+        self.assertTrue(game.players[0].hero.windfury())
         self.assertEqual(2, game.players[0].hero.weapon.base_attack)
         self.assertEqual(6, game.players[0].hero.weapon.durability)
         self.assertEqual(2, game.players[0].overload)
@@ -541,13 +542,6 @@ class TestShaman(unittest.TestCase):
         self.assertEqual(0, len(game.current_player.minions))
         self.assertEqual(7, len(game.current_player.hand))
 
-        game.play_single_turn()
-        # Bane of Doom will kill off the Siltfin, but should not draw a card
-        game.play_single_turn()
-
-        self.assertEqual(0, len(game.other_player.minions))
-        self.assertEqual(8, len(game.other_player.hand))
-
     def test_WhirlingZapOMatic(self):
         game = generate_game_for(WhirlingZapomatic, StonetuskBoar, OneCardPlayingAgent, DoNothingAgent)
 
@@ -556,7 +550,7 @@ class TestShaman(unittest.TestCase):
 
         self.assertEqual(1, len(game.players[0].minions))
         self.assertEqual("Whirling Zap-o-matic", game.players[0].minions[0].card.name)
-        self.assertTrue(game.players[0].minions[0].windfury)
+        self.assertTrue(game.players[0].minions[0].windfury())
 
     def test_DunemaulShaman(self):
         game = generate_game_for(DunemaulShaman,
@@ -580,3 +574,54 @@ class TestShaman(unittest.TestCase):
         self.assertEqual("Silverback Patriarch", game.other_player.minions[1].card.name)
         self.assertEqual("Stonetusk Boar", game.other_player.minions[2].card.name)
         self.assertEqual(30, game.other_player.hero.health)
+
+    def test_Powermace(self):
+        game = generate_game_for([Powermace, SpiderTank, SpiderTank], Wisp, PlayAndAttackAgent, DoNothingAgent)
+        for turn in range(0, 6):
+            game.play_single_turn()
+
+        self.assertEqual(0, len(game.players[0].minions))
+        self.assertEqual(27, game.players[1].hero.health)
+        self.assertEqual(3, game.players[0].hero.weapon.base_attack)
+        self.assertEqual(1, game.players[0].hero.weapon.durability)
+
+        game.play_single_turn()
+
+        self.assertEqual(1, len(game.players[0].minions))
+        self.assertEqual(24, game.players[1].hero.health)
+        self.assertEqual(5, game.players[0].minions[0].calculate_attack())
+        self.assertEqual(6, game.players[0].minions[0].health)
+
+    def test_Neptulon(self):
+        game = generate_game_for([TheCoin, TheCoin, TheCoin, TheCoin, TheCoin, TheCoin, TheCoin, TheCoin, TheCoin,
+                                  Neptulon], Wisp, CardTestingAgent, DoNothingAgent)
+
+        for turn in range(0, 12):
+            game.play_single_turn()
+
+        self.assertEqual(0, len(game.players[0].minions))
+        self.assertEqual(0, len(game.players[0].hand))
+
+        game.play_single_turn()
+
+        self.assertEqual(1, len(game.players[0].minions))
+        self.assertEqual(4, len(game.players[0].hand))
+        self.assertEqual("Siltfin Spiritwalker", game.players[0].hand[0].name)
+        self.assertEqual("Murloc Tidecaller", game.players[0].hand[1].name)
+        self.assertEqual("Grimscale Oracle", game.players[0].hand[2].name)
+        self.assertEqual("Coldlight Seer", game.players[0].hand[3].name)
+
+    def test_AncestorsCall(self):
+        game = generate_game_for([AncestorsCall, StonetuskBoar], [Doomguard, Soulfire],
+                                 OneCardPlayingAgent, OneCardPlayingAgent)
+
+        for turn in range(6):
+            game.play_single_turn()
+        game.play_single_turn()
+
+        self.assertEqual(1, len(game.current_player.minions))
+        self.assertEqual("Stonetusk Boar", game.current_player.minions[0].card.name)
+        self.assertEqual(1, len(game.other_player.minions))
+        self.assertEqual("Doomguard", game.other_player.minions[0].card.name)
+        self.assertEqual(5, len(game.current_player.hand))
+        self.assertEqual(7, len(game.other_player.hand))

@@ -1,18 +1,19 @@
 import copy
+from hearthbreaker.cards.base import SpellCard
+from hearthbreaker.game_objects import Minion
 from hearthbreaker.tags.action import Kill
-from hearthbreaker.tags.base import Effect
+from hearthbreaker.tags.base import Effect, ActionTag
 from hearthbreaker.tags.event import TurnStarted, TurnEnded
 from hearthbreaker.tags.selector import SelfSelector, EnemyPlayer
 import hearthbreaker.targeting
 from hearthbreaker.constants import CHARACTER_CLASS, CARD_RARITY, MINION_TYPE
-from hearthbreaker.game_objects import Card, Minion, MinionCard, Hero
-from hearthbreaker.cards.minions.warlock import Voidwalker, FlameImp, DreadInfernal, Succubus, Felguard, BloodImp
+from hearthbreaker.cards.minions.warlock import Voidwalker, FlameImp, DreadInfernal, Succubus, Felguard, BloodImp, Imp
 
 
-class MortalCoil(Card):
+class MortalCoil(SpellCard):
     def __init__(self):
         super().__init__("Mortal Coil", 1, CHARACTER_CLASS.WARLOCK, CARD_RARITY.COMMON,
-                         hearthbreaker.targeting.find_minion_spell_target)
+                         target_func=hearthbreaker.targeting.find_minion_spell_target)
 
     def use(self, player, game):
         super().use(player, game)
@@ -25,7 +26,7 @@ class MortalCoil(Card):
             # draw but need to compare health before dealing damage
 
 
-class Hellfire(Card):
+class Hellfire(SpellCard):
     def __init__(self):
         super().__init__("Hellfire", 4, CHARACTER_CLASS.WARLOCK, CARD_RARITY.FREE)
 
@@ -39,20 +40,20 @@ class Hellfire(Card):
             minion.damage(player.effective_spell_damage(3), self)
 
 
-class ShadowBolt(Card):
+class ShadowBolt(SpellCard):
     def __init__(self):
         super().__init__("Shadow Bolt", 3, CHARACTER_CLASS.WARLOCK, CARD_RARITY.FREE,
-                         hearthbreaker.targeting.find_minion_spell_target)
+                         target_func=hearthbreaker.targeting.find_minion_spell_target)
 
     def use(self, player, game):
         super().use(player, game)
         self.target.damage(player.effective_spell_damage(4), self)
 
 
-class DrainLife(Card):
+class DrainLife(SpellCard):
     def __init__(self):
         super().__init__("Drain Life", 3, CHARACTER_CLASS.WARLOCK,
-                         CARD_RARITY.FREE, hearthbreaker.targeting.find_spell_target)
+                         CARD_RARITY.FREE, target_func=hearthbreaker.targeting.find_spell_target)
 
     def use(self, player, game):
         super().use(player, game)
@@ -60,10 +61,10 @@ class DrainLife(Card):
         player.hero.heal(player.effective_heal_power(2), self)
 
 
-class Soulfire(Card):
+class Soulfire(SpellCard):
     def __init__(self):
         super().__init__("Soulfire", 1, CHARACTER_CLASS.WARLOCK, CARD_RARITY.COMMON,
-                         hearthbreaker.targeting.find_spell_target)
+                         target_func=hearthbreaker.targeting.find_spell_target)
 
     def use(self, player, game):
         super().use(player, game)
@@ -71,7 +72,7 @@ class Soulfire(Card):
         player.discard()
 
 
-class TwistingNether(Card):
+class TwistingNether(SpellCard):
     def __init__(self):
         super().__init__("Twisting Nether", 8, CHARACTER_CLASS.WARLOCK, CARD_RARITY.EPIC)
 
@@ -83,10 +84,10 @@ class TwistingNether(Card):
             minion.die(self)
 
 
-class Demonfire(Card):
+class Demonfire(SpellCard):
     def __init__(self):
         super().__init__("Demonfire", 2, CHARACTER_CLASS.WARLOCK, CARD_RARITY.COMMON,
-                         hearthbreaker.targeting.find_minion_spell_target)
+                         target_func=hearthbreaker.targeting.find_minion_spell_target)
 
     def use(self, player, game):
         super().use(player, game)
@@ -98,14 +99,11 @@ class Demonfire(Card):
             self.target.damage(player.effective_spell_damage(2), self)
 
 
-class SacrificialPact(Card):
+class SacrificialPact(SpellCard):
     def __init__(self):
         super().__init__("Sacrificial Pact", 0, CHARACTER_CLASS.WARLOCK, CARD_RARITY.COMMON,
-                         hearthbreaker.targeting.find_spell_target,
-                         lambda character: (isinstance(character, Minion)
-                                            and character.card.minion_type is MINION_TYPE.DEMON)
-                         or (isinstance(character, Hero)
-                             and character.character_class is CHARACTER_CLASS.LORD_JARAXXUS))
+                         target_func=hearthbreaker.targeting.find_spell_target,
+                         filter_func=lambda character: character.card.minion_type == MINION_TYPE.DEMON)
 
     def use(self, player, game):
         super().use(player, game)
@@ -113,10 +111,10 @@ class SacrificialPact(Card):
         player.hero.heal(player.effective_heal_power(5), self)
 
 
-class SiphonSoul(Card):
+class SiphonSoul(SpellCard):
     def __init__(self):
         super().__init__("Siphon Soul", 6, CHARACTER_CLASS.WARLOCK, CARD_RARITY.RARE,
-                         hearthbreaker.targeting.find_minion_spell_target)
+                         target_func=hearthbreaker.targeting.find_minion_spell_target)
 
     def use(self, player, game):
         super().use(player, game)
@@ -124,7 +122,7 @@ class SiphonSoul(Card):
         player.hero.heal(player.effective_heal_power(3), self)
 
 
-class SenseDemons(Card):
+class SenseDemons(SpellCard):
     def __init__(self):
         super().__init__("Sense Demons", 3, CHARACTER_CLASS.WARLOCK, CARD_RARITY.COMMON)
 
@@ -134,26 +132,28 @@ class SenseDemons(Card):
         for i in range(0, 2):
             demon_card = game.random_draw(game.current_player.deck.cards,
                                           lambda c: not c.drawn and
-                                          isinstance(c, MinionCard) and
+                                          c.is_minion() and
                                           c.minion_type == MINION_TYPE.DEMON)
             if demon_card:
                 demon_card.drawn = True
                 player.deck.left -= 1
                 if len(player.hand) < 10:
                     player.hand.append(demon_card)
+                    demon_card.player = player
                     self.trigger("card_drawn", demon_card)
                 else:
                     player.trigger("card_destroyed", demon_card)
             else:
                 if len(player.hand) < 10:
                     player.hand.append(hearthbreaker.cards.minions.warlock.WorthlessImp())
+                    player.hand[-1].player = player
                     self.trigger("card_drawn", hearthbreaker.cards.minions.warlock.WorthlessImp())
 
 
-class BaneOfDoom(Card):
+class BaneOfDoom(SpellCard):
     def __init__(self):
         super().__init__("Bane of Doom", 5, CHARACTER_CLASS.WARLOCK, CARD_RARITY.EPIC,
-                         hearthbreaker.targeting.find_spell_target)
+                         target_func=hearthbreaker.targeting.find_spell_target)
 
     def use(self, player, game):
         super().use(player, game)
@@ -167,10 +167,10 @@ class BaneOfDoom(Card):
             self.target.damage(player.effective_spell_damage(2), self)
 
 
-class Shadowflame(Card):
+class Shadowflame(SpellCard):
     def __init__(self):
         super().__init__("Shadowflame", 4, CHARACTER_CLASS.WARLOCK, CARD_RARITY.RARE,
-                         hearthbreaker.targeting.find_friendly_minion_spell_target)
+                         target_func=hearthbreaker.targeting.find_friendly_minion_spell_target)
 
     def use(self, player, game):
         super().use(player, game)
@@ -181,43 +181,43 @@ class Shadowflame(Card):
                           self)
 
 
-class Corruption(Card):
+class Corruption(SpellCard):
     def __init__(self):
         super().__init__("Corruption", 1, CHARACTER_CLASS.WARLOCK, CARD_RARITY.COMMON,
-                         hearthbreaker.targeting.find_enemy_minion_spell_target)
+                         target_func=hearthbreaker.targeting.find_enemy_minion_spell_target)
 
     def use(self, player, game):
         super().use(player, game)
-        self.target.add_effect(Effect(TurnStarted(player=EnemyPlayer()), Kill(), SelfSelector()))
+        self.target.add_effect(Effect(TurnStarted(player=EnemyPlayer()), ActionTag(Kill(), SelfSelector())))
 
 
-class PowerOverwhelming(Card):
+class PowerOverwhelming(SpellCard):
     def __init__(self):
         super().__init__("Power Overwhelming", 1, CHARACTER_CLASS.WARLOCK, CARD_RARITY.COMMON,
-                         hearthbreaker.targeting.find_friendly_minion_spell_target)
+                         target_func=hearthbreaker.targeting.find_friendly_minion_spell_target)
 
     def use(self, player, game):
         super().use(player, game)
 
-        self.target.add_effect(Effect(TurnEnded(), Kill(), SelfSelector()))
+        self.target.add_effect(Effect(TurnEnded(), ActionTag(Kill(), SelfSelector())))
         self.target.change_attack(4)
         self.target.increase_health(4)
 
 
-class Darkbomb(Card):
+class Darkbomb(SpellCard):
     def __init__(self):
         super().__init__("Darkbomb", 2, CHARACTER_CLASS.WARLOCK, CARD_RARITY.COMMON,
-                         hearthbreaker.targeting.find_spell_target)
+                         target_func=hearthbreaker.targeting.find_spell_target)
 
     def use(self, player, game):
         super().use(player, game)
         self.target.damage(player.effective_spell_damage(3), self)
 
 
-class Demonheart(Card):
+class Demonheart(SpellCard):
     def __init__(self):
         super().__init__("Demonheart", 5, CHARACTER_CLASS.WARLOCK, CARD_RARITY.EPIC,
-                         hearthbreaker.targeting.find_minion_spell_target)
+                         target_func=hearthbreaker.targeting.find_minion_spell_target)
 
     def use(self, player, game):
         super().use(player, game)
@@ -227,3 +227,23 @@ class Demonheart(Card):
             self.target.increase_health(5)
         else:
             self.target.damage(player.effective_spell_damage(5), self)
+
+
+class Implosion(SpellCard):
+    def __init__(self):
+        super().__init__("Imp-losion", 4, CHARACTER_CLASS.WARLOCK, CARD_RARITY.RARE,
+                         target_func=hearthbreaker.targeting.find_spell_target)
+
+    def use(self, player, game):
+        super().use(player, game)
+
+        # This is to get around the case where you kill your own spell damage minion
+        amount = player.effective_spell_damage(game.random_amount(2, 4))
+        had_shield = self.target.divine_shield
+
+        self.target.damage(amount, self)
+
+        if not had_shield:
+            for i in range(0, amount):
+                imp = Imp()
+                imp.summon(player, game, len(player.minions))

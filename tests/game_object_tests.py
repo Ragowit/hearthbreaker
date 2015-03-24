@@ -2,12 +2,14 @@ import random
 import unittest
 
 from hearthbreaker.agents.basic_agents import DoNothingAgent, PredictableAgent
+from hearthbreaker.cards.base import SecretCard
+from hearthbreaker.cards.heroes import Malfurion, Jaina
 from hearthbreaker.cards.minions.rogue import AnubarAmbusher
+from hearthbreaker.engine import Game, Deck, card_lookup
 from tests.agents.testing_agents import CardTestingAgent, OneCardPlayingAgent, PlayAndAttackAgent
-from hearthbreaker.constants import CHARACTER_CLASS
 from tests.testing_utils import generate_game_for, mock
 from hearthbreaker.cards import StonetuskBoar, ArcaneIntellect, Naturalize, Abomination, NerubianEgg, SylvanasWindrunner
-from hearthbreaker.game_objects import Game, Deck, Bindable, card_lookup, SecretCard
+from hearthbreaker.game_objects import Bindable
 
 
 class TestGame(unittest.TestCase):
@@ -23,8 +25,8 @@ class TestGame(unittest.TestCase):
             card_set1.append(card_lookup("Stonetusk Boar"))
             card_set2.append(card_lookup("Novice Engineer"))
 
-        deck1 = Deck(card_set1, CHARACTER_CLASS.DRUID)
-        deck2 = Deck(card_set2, CHARACTER_CLASS.MAGE)
+        deck1 = Deck(card_set1, Malfurion())
+        deck2 = Deck(card_set2, Jaina())
         checked_cards = []
 
         class MockAgent1:
@@ -59,8 +61,8 @@ class TestGame(unittest.TestCase):
         self.assertTrue(game.players[0].agent == agent1, "Agent not stored in the hearthbreaker")
         self.assertTrue(game.players[1].agent == agent2, "Agent not stored in the hearthbreaker")
 
-        self.assertListEqual(checked_cards[0][1:], game.players[0].hand[:-1], "Cards not retained after request")
-        self.assertListEqual(checked_cards[1][1:2], game.players[1].hand[:-4], "Cards not retained after request")
+        self.assertListEqual(checked_cards[0][1:], game.players[0].hand[1:], "Cards not retained after request")
+        self.assertListEqual(checked_cards[1][1:2], game.players[1].hand[1:2], "Cards not retained after request")
 
     def test_first_turn(self):
         card_set1 = []
@@ -70,8 +72,8 @@ class TestGame(unittest.TestCase):
             card_set1.append(card_lookup("Stonetusk Boar"))
             card_set2.append(card_lookup("Novice Engineer"))
 
-        deck1 = Deck(card_set1, CHARACTER_CLASS.DRUID)
-        deck2 = Deck(card_set2, CHARACTER_CLASS.MAGE)
+        deck1 = Deck(card_set1, Malfurion())
+        deck2 = Deck(card_set2, Jaina())
 
         agent1 = mock.Mock(spec=DoNothingAgent(), wraps=DoNothingAgent())
         agent2 = mock.Mock(spec=DoNothingAgent(), wraps=DoNothingAgent())

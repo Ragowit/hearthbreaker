@@ -1,11 +1,12 @@
-from hearthbreaker.tags.action import Heal, Draw, Steal, Give
-from hearthbreaker.tags.base import Aura, Deathrattle, Effect, Battlecry, Buff, BuffUntil
-from hearthbreaker.tags.condition import IsMinion, AttackLessThanOrEqualTo
+from hearthbreaker.cards.base import MinionCard
+from hearthbreaker.game_objects import Minion
+from hearthbreaker.tags.action import Heal, Draw, Steal, Give, Damage, SwapStats
+from hearthbreaker.tags.base import Aura, Deathrattle, Effect, Battlecry, Buff, BuffUntil, ActionTag
+from hearthbreaker.tags.condition import IsMinion, AttackLessThanOrEqualTo, IsType, IsDamaged
 from hearthbreaker.tags.event import TurnStarted, CharacterHealed, TurnEnded
 from hearthbreaker.tags.selector import PlayerSelector, MinionSelector, CharacterSelector, BothPlayer, \
-    EnemyPlayer, UserPicker, RandomPicker, CurrentPlayer
-from hearthbreaker.constants import CHARACTER_CLASS, CARD_RARITY
-from hearthbreaker.game_objects import MinionCard, Minion
+    EnemyPlayer, UserPicker, RandomPicker, CurrentPlayer, HeroSelector
+from hearthbreaker.constants import CHARACTER_CLASS, CARD_RARITY, MINION_TYPE
 from hearthbreaker.tags.status import ChangeHealth, HealAsDamage, AttackEqualsHealth, MultiplySpellDamage, \
     MultiplyHealAmount, ChangeAttack
 
@@ -43,7 +44,9 @@ class Lightwell(MinionCard):
         super().__init__("Lightwell", 2, CHARACTER_CLASS.PRIEST, CARD_RARITY.RARE)
 
     def create_minion(self, player):
-        return Minion(0, 5, effects=[Effect(TurnStarted(), Heal(3), CharacterSelector(picker=RandomPicker()))])
+        return Minion(0, 5, effects=[Effect(TurnStarted(), ActionTag(Heal(3),
+                                                                     CharacterSelector(condition=IsDamaged(),
+                                                                                       picker=RandomPicker())))])
 
 
 class NorthshireCleric(MinionCard):
@@ -53,7 +56,7 @@ class NorthshireCleric(MinionCard):
 
     def create_minion(self, player):
         return Minion(1, 3, effects=[Effect(CharacterHealed(condition=IsMinion(),
-                                                            player=BothPlayer()), Draw(), PlayerSelector())])
+                                                            player=BothPlayer()), ActionTag(Draw(), PlayerSelector()))])
 
 
 class ProphetVelen(MinionCard):
@@ -74,6 +77,14 @@ class TempleEnforcer(MinionCard):
         return Minion(6, 6)
 
 
+class ShadowOfNothing(MinionCard):
+    def __init__(self):
+        super().__init__("Shadow of Nothing", 0, CHARACTER_CLASS.PRIEST, CARD_RARITY.EPIC, False)
+
+    def create_minion(self, p):
+        return Minion(0, 1)
+
+
 class DarkCultist(MinionCard):
     def __init__(self):
         super().__init__("Dark Cultist", 3, CHARACTER_CLASS.PRIEST, CARD_RARITY.COMMON)
@@ -90,3 +101,43 @@ class Shrinkmeister(MinionCard):
 
     def create_minion(self, player):
         return Minion(3, 2)
+
+
+class UpgradedRepairBot(MinionCard):
+    def __init__(self):
+        super().__init__("Upgraded Repair Bot", 5, CHARACTER_CLASS.PRIEST, CARD_RARITY.RARE,
+                         minion_type=MINION_TYPE.MECH,
+                         battlecry=Battlecry(Give(ChangeHealth(4)), MinionSelector(IsType(MINION_TYPE.MECH),
+                                                                                   picker=UserPicker())))
+
+    def create_minion(self, player):
+        return Minion(5, 5)
+
+
+class Shadowbomber(MinionCard):
+    def __init__(self):
+        super().__init__("Shadowbomber", 1, CHARACTER_CLASS.PRIEST, CARD_RARITY.EPIC,
+                         battlecry=Battlecry(Damage(3), HeroSelector(players=BothPlayer())))
+
+    def create_minion(self, player):
+        return Minion(2, 1)
+
+
+class Shadowboxer(MinionCard):
+    def __init__(self):
+        super().__init__("Shadowboxer", 2, CHARACTER_CLASS.PRIEST, CARD_RARITY.RARE, minion_type=MINION_TYPE.MECH)
+
+    def create_minion(self, player):
+        return Minion(2, 3, effects=[Effect(CharacterHealed(player=BothPlayer()), ActionTag(Damage(1),
+                                            CharacterSelector(players=EnemyPlayer(), picker=RandomPicker(),
+                                                              condition=None)))])
+
+
+class Voljin(MinionCard):
+    def __init__(self):
+        super().__init__("Vol'jin", 5, CHARACTER_CLASS.PRIEST, CARD_RARITY.LEGENDARY,
+                         battlecry=Battlecry(SwapStats("health", "health", True), MinionSelector(players=BothPlayer(),
+                                                                                                 picker=UserPicker())))
+
+    def create_minion(self, player):
+        return Minion(6, 2)

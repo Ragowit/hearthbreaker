@@ -1,20 +1,12 @@
+import copy
 from hearthbreaker.tags.base import Status, Action, Aura, Condition, AuraUntil, CardQuery, \
-    CARD_SOURCE, Effect, Buff, BuffUntil, Amount
+    CARD_SOURCE, Effect, Buff, BuffUntil, Amount, Picker, Selector
 from hearthbreaker.tags.condition import IsSecret
-
-
-class Freeze(Action):
-    def act(self, actor, target):
-        target.freeze()
-
-    def __to_json__(self):
-        return {
-            "name": "freeze"
-        }
+from hearthbreaker.tags.selector import AllPicker, ConstantSelector
 
 
 class Give(Action):
-    def __init__(self, buffs):
+    def __init__(self, buffs, picker=AllPicker()):
 
         if isinstance(buffs, Status):
             self.buffs = [Buff(buffs)]
@@ -26,23 +18,26 @@ class Give(Action):
             raise TypeError("Aura passed where buff was expected")
         else:
             self.buffs = [buffs]
+        self.picker = picker
 
-    def act(self, actor, target):
-        for buff in self.buffs:
-            target.add_buff(buff)
-
-    def unact(self, actor, target):
-        for buff in self.buffs:
-            buff.set_owner(target)
-            target.remove_buff(buff)
+    def act(self, actor, target, other=None):
+        buffs = self.picker.pick(actor, self.buffs)
+        for buff in buffs:
+            target.add_buff(buff.to_instance(target))
 
     def __to_json__(self):
+        if isinstance(self.picker, AllPicker):
+            return {
+                'name': 'give',
+                'buffs': self.buffs
+            }
         return {
             'name': 'give',
-            'buffs': self.buffs
+            'buffs': self.buffs,
+            'picker': self.picker,
         }
 
-    def __from_json__(self, buffs=None, effects=None, auras=None):
+    def __from_json__(self, buffs=None, effects=None, auras=None, picker=None):
         if effects:  # To allow for give to work with effects as well, we check at load time
             return GiveEffect.__new__(GiveEffect).__from_json__(effects)
 
@@ -55,28 +50,24 @@ class Give(Action):
                 self.buffs.append(BuffUntil.from_json(**buff))
             else:
                 self.buffs.append(Buff.from_json(**buff))
+
+        if not picker:
+            self.picker = AllPicker()
+        else:
+            self.picker = Picker.from_json(**picker)
         return self
 
 
 class GiveAura(Action):
     def __init__(self, auras):
-
-        if isinstance(auras, Status):
-            from hearthbreaker.tags.selector import SelfSelector
-            self.auras = [Aura(auras, SelfSelector())]
-        elif isinstance(auras, list):
+        if isinstance(auras, list):
             self.auras = auras
         else:
             self.auras = [auras]
 
-    def act(self, actor, target):
+    def act(self, actor, target, other=None):
         for aura in self.auras:
             target.add_aura(aura)
-
-    def unact(self, actor, target):
-        for aura in self.auras:
-            aura.target = target
-            target.remove_aura(aura)
 
     def __to_json__(self):
         return {
@@ -102,8 +93,13 @@ class GiveEffect(Action):
         else:
             self.effects = effects
 
-    def act(self, actor, target):
+    def act(self, actor, target, other=None):
         for effect in self.effects:
+            for tag in effect.tags:
+                for action in tag.actions:
+                    if hasattr(action, "selector"):
+                        action.selector = ConstantSelector([obj.born for obj in
+                                                            action.selector.choose_targets(actor, target)])
             target.add_effect(effect)
 
     def __to_json__(self):
@@ -117,32 +113,6 @@ class GiveEffect(Action):
         return self
 
 
-class Take(Action):
-    def __init__(self, aura):
-        if isinstance(aura, Action):
-            from hearthbreaker.tags.selector import SelfSelector
-            self.aura = Aura(aura, SelfSelector())
-        else:
-            self.aura = aura
-
-    def act(self, actor, target):
-        aura_json = str(self.aura)
-        for aura in target.auras:
-            if str(aura) == aura_json:
-                target.remove_aura(aura)
-                break
-
-    def __to_json__(self):
-        return {
-            'name': 'take',
-            'aura': self.aura
-        }
-
-    def __from_json__(self, aura):
-        self.aura = Aura.from_json(**aura)
-        return self
-
-
 class Summon(Action):
     def __init__(self, card, count=1):
         if isinstance(card, CardQuery):
@@ -151,24 +121,23 @@ class Summon(Action):
             self.card = CardQuery(card.ref_name)
         self.count = count
 
-    def act(self, actor, target):
-        card = self.card.get_card(target)
+    def act(self, actor, target, other=None):
+        card = self.card.get_card(target, actor)
         if card is None:
             return
 
         if actor.is_minion() and actor.player is target:
-            # Cenaurius and Dr. Boom are special snowflakes that summon minions on either side of themselves
-            if self.count == 2:
-                card.summon(target, target.game, actor.index)
-                card.summon(target, target.game, actor.index + 1)
+            # When a minion is summoned around another minion, they alternate between left and right,
+            # starting on the right
+            if actor.removed:
+                c = 0
             else:
-                if actor.removed:
-                    index = actor.index
-                else:
-                    index = actor.index + 1
-                for summon in range(self.count):
-                    card.summon(target, target.game, index)
-                    index += 1
+                c = 1
+            for summon in range(self.count):
+                index = actor.index + (c % 2)
+                card.summon(target, target.game, index)
+                if not actor.removed:
+                    c += 1
         else:
             for summon in range(self.count):
                 card.summon(target, target.game, len(target.minions))
@@ -198,11 +167,23 @@ class Transform(Action):
         else:
             self.card = CardQuery(card.ref_name)
 
-    def act(self, actor, target):
-        card = self.card.get_card(target)
-        minion = card.create_minion(target.player)
-        minion.card = card
-        target.replace(minion)
+    def act(self, actor, target, other=None):
+        card = self.card.get_card(target, actor)
+        if target.is_card():
+            target.replace(card)
+        elif target.is_minion():
+            minion = card.create_minion(target.player)
+            minion.card = card
+            target.replace(minion)
+        elif target.is_hero():
+            hero = card.create_hero(target.player)
+            hero.card = card
+            target.player.trigger("minion_played", actor)
+            hero.buffs = copy.deepcopy(actor.buffs)
+            hero.health = actor.health
+            target.replace(hero)
+            if hero.health <= 0:
+                hero.die(None)
 
     def __to_json__(self):
         return {
@@ -216,7 +197,7 @@ class Transform(Action):
 
 
 class Kill(Action):
-    def act(self, actor, target):
+    def act(self, actor, target, other=None):
         target.die(None)
 
     def __to_json__(self):
@@ -225,18 +206,16 @@ class Kill(Action):
         }
 
 
-class Heal(Action):
-    def __init__(self, amount):
+class Heal(Action, metaclass=Amount):
+    def __init__(self):
         super().__init__()
-        self.amount = amount
 
-    def act(self, actor, target):
-        target.heal(actor.player.effective_heal_power(self.amount), actor)
+    def act(self, actor, target, other=None):
+        target.heal(actor.player.effective_heal_power(self.get_amount(actor, target, other)), actor)
 
     def __to_json__(self):
         return {
             'name': 'heal',
-            'amount': self.amount
         }
 
 
@@ -244,8 +223,8 @@ class SetHealth(Action, metaclass=Amount):
     def __init__(self):
         super().__init__()
 
-    def act(self, actor, target):
-        target.health = self.get_amount(actor, target)
+    def act(self, actor, target, other=None):
+        target.health = self.get_amount(actor, target, other)
 
     def __to_json__(self):
         return {
@@ -253,58 +232,61 @@ class SetHealth(Action, metaclass=Amount):
         }
 
 
-class Damage(Action):
-    def __init__(self, amount):
+class Damage(Action, metaclass=Amount):
+    def __init__(self):
         super().__init__()
-        self.amount = amount
 
-    def act(self, actor, target):
-        target.damage(self.amount, actor)
+    def act(self, actor, target, other=None):
+        target.damage(self.get_amount(actor, target, other), actor)
 
     def __to_json__(self):
         return {
             'name': 'damage',
-            'amount': self.amount
         }
 
 
-class Draw(Action):
-    def __init__(self, amount=1):
-        self.amount = amount
+class Draw(Action, metaclass=Amount):
+    def __init__(self):
+        super().__init__()
 
-    def act(self, actor, target):
-        for draw in range(0, self.amount):
+    def act(self, actor, target, other=None):
+        for draw in range(0, self.get_amount(actor, target, other)):
             target.draw()
 
     def __to_json__(self):
         return {
             'name': 'draw',
-            'amount': self.amount
         }
 
 
-class Discard(Action):
-    def __init__(self, amount=1):
-        self.amount = amount
+class Discard(Action, metaclass=Amount):
+    def __init__(self, query=CardQuery(source=CARD_SOURCE.MY_HAND)):
+        super().__init__()
+        self.query = query
 
-    def act(self, actor, target):
-        for index in range(0, self.amount):
-            target.discard()
+    def act(self, actor, target, other=None):
+        for index in range(0, self.get_amount(actor, target, other)):
+            card = self.query.get_card(actor.player, actor)
+            if card:
+                actor.player.trigger("discard", card)
 
     def __to_json__(self):
         return {
             'name': 'discard',
-            'amount': self.amount
+            'query': self.query,
         }
 
+    def __from_json__(self, query):
+        self.query = CardQuery.from_json(**query)
+        return self
 
-class IncreaseArmor(Action):
-    def __init__(self, amount=1):
+
+class IncreaseArmor(Action, metaclass=Amount):
+    def __init__(self):
         super().__init__()
-        self.amount = amount
 
-    def act(self, actor, target):
-        target.armor += self.amount
+    def act(self, actor, target, other=None):
+        target.armor += self.get_amount(actor, target, other)
 
     def __to_json__(self):
         return {
@@ -316,8 +298,8 @@ class ChangeTarget(Action):
     def __init__(self, selector):
         self.selector = selector
 
-    def act(self, actor, target):
-        possible_targets = [t for t in self.selector.get_targets(target, target.current_target)]
+    def act(self, actor, target, other=None):
+        possible_targets = [t for t in self.selector.choose_targets(target, target.current_target)]
         if len(possible_targets) > 0:
             target.current_target = possible_targets[0]
 
@@ -334,28 +316,45 @@ class ChangeTarget(Action):
 
 
 class AddCard(Action):
-    def __init__(self, card, count=1):
+    def __init__(self, card, count=1, add_to_deck=False):
         if isinstance(card, CardQuery):
             self.card = card
         else:
             self.card = CardQuery(card.ref_name)
+        self.add_to_deck = add_to_deck
         self.count = count
 
-    def act(self, actor, target):
-        for i in range(self.count):
-            if len(target.hand) < 10:
-                target.hand.append(self.card.get_card(target))
+    def act(self, actor, target, other=None):
+        if self.add_to_deck:
+            for i in range(self.count):
+                target.deck.put_back(self.card.get_card(target, actor))
+
+        else:
+            for i in range(self.count):
+                if len(target.hand) < 10:
+                    card = self.card.get_card(target, actor)
+                    if card:
+                        card.attach(card, target)
+                        target.hand.append(card)
 
     def __to_json__(self):
+        if self.add_to_deck:
+            return {
+                'name': 'add_card',
+                'card': self.card,
+                'count': self.count,
+                'add_to_deck': self.add_to_deck,
+            }
         return {
             'name': 'add_card',
             'card': self.card,
             'count': self.count
         }
 
-    def __from_json__(self, card, count=1):
+    def __from_json__(self, card, count=1, add_to_deck=False):
         self.card = CardQuery.from_json(**card)
         self.count = count
+        self.add_to_deck = add_to_deck
         return self
 
 
@@ -365,7 +364,7 @@ class ResurrectFriendly(Action):
             'name': 'resurrect_friendly'
         }
 
-    def act(self, actor, target):
+    def act(self, actor, target, other=None):
         # Will be called once per Kel'Thuzad on the board
         # http://www.hearthhead.com/card=1794/kelthuzad#comments
         for minion in sorted(target.dead_this_turn, key=lambda m: m.born):
@@ -373,10 +372,18 @@ class ResurrectFriendly(Action):
 
 
 class Bounce(Action):
-    def act(self, actor, target):
-        target.bounce()
+    def __init__(self, bounce_to_deck=False):
+        self.bounce_to_deck = bounce_to_deck
+
+    def act(self, actor, target, other=None):
+        target.bounce(self.bounce_to_deck)
 
     def __to_json__(self):
+        if self.bounce_to_deck:
+            return {
+                'name': 'bounce',
+                'bounce_to_deck': True,
+            }
         return {
             'name': 'bounce'
         }
@@ -386,7 +393,7 @@ class SwapWithHand(Action):
     def __init__(self, condition=None):
         self.condition = condition
 
-    def act(self, actor, target):
+    def act(self, actor, target, other=None):
         if actor.is_valid():
             if self.condition:
                 chosen_card = target.game.random_draw(target.hand,
@@ -395,6 +402,7 @@ class SwapWithHand(Action):
                 chosen_card = target.game.random_draw(target.hand, lambda c: c.is_minion())
             if chosen_card:
                 chosen_card.summon(target, target.game, len(target.minions))
+                chosen_card.unattach()
                 target.hand.remove(chosen_card)
                 actor.bounce()
 
@@ -422,14 +430,20 @@ class ApplySecret(Action):
         self.source = source
         self._query = CardQuery(conditions=[IsSecret()], source=source)
 
-    def act(self, actor, target):
-        secret = self._query.get_card(target)
+    def act(self, actor, target, other=None):
+        secret = self._query.get_card(target, actor)
         if secret:
             target.secrets.append(secret)
             secret.player = target
             if target is target.game.other_player:
                 secret.player = target
-                secret.activate(target)
+                # To allow for Mad Scientist not to be redeemed or duplicated as a result of its death,
+                # but still allow other minions that die during the same cycle to be duplicated.
+                # Based on testing for patch 2.1.0.7785
+                if actor.dead:
+                    target.bind_once("after_death", secret.activate)
+                else:
+                    secret.activate(target)
 
     def __to_json__(self):
         return {
@@ -450,9 +464,10 @@ class Equip(Action):
         else:
             self.weapon = CardQuery(weapon.ref_name)
 
-    def act(self, actor, target):
-        card = self.weapon.get_card(target)
+    def act(self, actor, target, other=None):
+        card = self.weapon.get_card(target, actor)
         weapon = card.create_weapon(target)
+        weapon.card = card
         weapon.equip(target)
 
     def __to_json__(self):
@@ -466,8 +481,18 @@ class Equip(Action):
         return self
 
 
+class Destroy(Action):
+    def act(self, actor, target, other=None):
+        target.destroy()
+
+    def __to_json__(self):
+        return {
+            'name': 'destroy'
+        }
+
+
 class Steal(Action):
-    def act(self, actor, target):
+    def act(self, actor, target, other=None):
         new_minion = target.copy(actor.player)
         target.unattach()
         target.remove_from_board()
@@ -480,33 +505,29 @@ class Steal(Action):
 
 
 class Duplicate(Action):
-    def __init__(self, minion):
+    def __init__(self, selector):
         super().__init__()
-        self.minion = minion.born
+        self.selector = selector
 
-    def act(self, actor, target):
-        minion = None
-        for player in target.game.players:
-            for m in player.minions:
-                if m.born == self.minion:
-                    minion = m
-        if minion:
-            dup = minion.copy(minion.player)
-            dup.add_to_board(minion.index + 1)
+    def act(self, actor, target, other=None):
+        for minion in self.selector.choose_targets(actor, target):
+            if len(minion.player.minions) < 7:
+                dup = minion.copy(minion.player)
+                dup.add_to_board(minion.index + 1)
 
     def __to_json__(self):
         return {
             "name": "duplicate",
-            "minion": self.minion
+            "selector": self.selector,
         }
 
-    def __from_json__(self, minion):
-        self.minion = minion
+    def __from_json__(self, selector):
+        self.selector = Selector.from_json(**selector)
         return self
 
 
 class Replace(Action):
-    def act(self, actor, target):
+    def act(self, actor, target, other=None):
         new_minion = target.copy(actor.player)
         actor.replace(new_minion)
 
@@ -517,7 +538,7 @@ class Replace(Action):
 
 
 class Silence(Action):
-    def act(self, actor, target):
+    def act(self, actor, target, other=None):
         target.silence()
 
     def __to_json__(self):
@@ -527,7 +548,7 @@ class Silence(Action):
 
 
 class DestroyManaCrystal(Action):
-    def act(self, actor, target):
+    def act(self, actor, target, other=None):
         target.max_mana -= 1
         if target.mana > 0:
             target.mana -= 1
@@ -543,7 +564,7 @@ class GiveManaCrystal(Action):
         self.count = count
         self.empty = empty
 
-    def act(self, actor, target):
+    def act(self, actor, target, other=None):
         target.max_mana = min(self.count + target.max_mana, 10)
         if not self.empty:
             target.mana += self.count
@@ -557,8 +578,9 @@ class GiveManaCrystal(Action):
 
 
 class IncreaseDurability(Action):
-    def act(self, actor, target):
-        target.weapon.durability += 1
+    def act(self, actor, target, other=None):
+        if target.weapon:
+            target.weapon.durability += 1
 
     def __to_json__(self):
         return {
@@ -567,12 +589,124 @@ class IncreaseDurability(Action):
 
 
 class DecreaseDurability(Action):
-    def act(self, actor, target):
-        target.weapon.durability -= 1
-        if target.weapon.durability <= 0:
-            target.weapon.destroy()
+    def act(self, actor, target, other=None):
+        if target.weapon:
+            target.weapon.durability -= 1
+            if target.weapon.durability <= 0:
+                target.weapon.destroy()
 
     def __to_json__(self):
         return {
             'name': 'decrease_durability',
+        }
+
+
+class IncreaseWeaponAttack(Action, metaclass=Amount):
+    def __init__(self):
+        pass
+
+    def act(self, actor, target, other=None):
+        if target.weapon:
+            target.weapon.base_attack += self.get_amount(actor, target, other)
+
+    def __to_json__(self):
+        return {
+            'name': 'increase_weapon_attack'
+        }
+
+
+class RemoveDivineShields(Action):
+    def act(self, actor, target, other=None):
+        from hearthbreaker.tags.status import DivineShield
+        if target.divine_shield:
+            target.buffs = [buff for buff in target.buffs if not isinstance(buff.status, DivineShield)]
+            target.divine_shield = 0
+
+    def __to_json__(self):
+        return {
+            "name": "remove_divine_shields"
+        }
+
+
+# class SwapStats(Action):
+#     def act(self, actor, target, other=None):
+#         temp_attack = target.calculate_attack()
+#         temp_health = target.health
+#         if temp_attack == 0:
+#             target.die(None)
+#         else:
+#             target.set_attack_to(temp_health)
+#             target.set_health_to(temp_attack)
+#
+#     def __to_json__(self):
+#         return {
+#             'name': 'swap_stats',
+#         }
+
+
+class Remove(Action):
+    def act(self, actor, target, other=None):
+        target.unattach()
+        target.remove_from_board()
+
+    def __to_json__(self):
+        return {
+            'name': 'remove'
+        }
+
+
+class SwapStats(Action):
+    def __init__(self, source_stat, dest_stat, swap_with_owner):
+        self.source_stat = source_stat
+        self.dest_stat = dest_stat
+        self.swap_with_owner = swap_with_owner
+
+    def act(self, actor, target, other=None):
+        if self.swap_with_owner:
+            source = actor
+        else:
+            source = target
+        temp = self.get_attribute(source, self.source_stat)
+        self.set_attribute(source, self.source_stat, self.get_attribute(target, self.dest_stat))
+        self.set_attribute(target, self.dest_stat, temp)
+        if source.health == 0:
+            source.die(None)
+        if target is not source and target.health == 0:
+            target.die(None)
+        actor.player.game.check_delayed()
+
+    @staticmethod
+    def get_attribute(obj, attribute):
+        if attribute == "damage":
+            return obj.calculate_max_health() - obj.health
+        elif attribute == 'mana':
+            return obj.card.mana
+        elif attribute == "attack":
+            return obj.calculate_attack()
+        elif attribute == "health":
+            return obj.health
+
+    @staticmethod
+    def set_attribute(obj, attribute, value):
+        from hearthbreaker.tags.status import ManaChange, SetAttack
+        if attribute == "damage":
+            was_enraged = obj.enraged
+            obj.health = max(0, obj.clculate_max_health() - value)
+            if value > 0:
+                obj.enraged = True
+                if not was_enraged:
+                    obj._do_enrage()
+        elif attribute == 'mana':
+            obj.add_buff(Buff(ManaChange(value - obj.mana_cost(None))))
+        elif attribute == "attack":
+            obj.add_buff(Buff(SetAttack(value)))
+        elif attribute == "health":
+            obj.set_health_to(value)
+
+    def __to_json__(self):
+        return {
+            'name': 'swap_stats',
+            'source_stat': self.source_stat,
+            'dest_stat': self.dest_stat,
+            'swap_with_owner': self.swap_with_owner,
         }

@@ -14,11 +14,13 @@ from hearthbreaker.cards.weapons.paladin import (
 from hearthbreaker.cards.weapons.rogue import (
     AssassinsBlade,
     PerditionsBlade,
+    CogmastersWrench,
 )
 
 from hearthbreaker.cards.weapons.shaman import (
     Doomhammer,
     StormforgedAxe,
+    Powermace,
 )
 
 from hearthbreaker.cards.weapons.warrior import (

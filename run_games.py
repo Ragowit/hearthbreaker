@@ -1,7 +1,8 @@
 import json
 from hearthbreaker.agents.basic_agents import RandomAgent
+from hearthbreaker.cards.heroes import hero_for_class
 from hearthbreaker.constants import CHARACTER_CLASS
-from hearthbreaker.game_objects import Game, card_lookup, Deck
+from hearthbreaker.engine import Game, Deck, card_lookup
 from hearthbreaker.cards import *
 import timeit
 
@@ -25,7 +26,7 @@ def load_deck(filename):
     if len(cards) > 30:
         pass
 
-    return Deck(cards, character_class)
+    return Deck(cards, hero_for_class(character_class))
 
 
 def do_stuff():

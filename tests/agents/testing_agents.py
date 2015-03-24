@@ -50,6 +50,18 @@ class OneCardPlayingAgent(DoNothingAgent):
             player.game.play_card(player.hand[0])
 
 
+class HeroPowerAndCardPlayingAgent(DoNothingAgent):
+    def __init__(self):
+        super().__init__()
+
+    def do_turn(self, player):
+        if player.hero.power.can_use():
+            player.hero.power.use()
+
+        while len(player.hand) > 0 and player.hand[0].can_use(player, player.game):
+            player.game.play_card(player.hand[0])
+
+
 class MinionAttackingAgent(OneCardPlayingAgent):
     def do_turn(self, player):
         super().do_turn(player)

@@ -5,7 +5,8 @@ from os import listdir
 from os.path import isdir
 import re
 import random
-from hearthbreaker.game_objects import Game, Deck
+from hearthbreaker.cards.heroes import Malfurion, Jaina
+from hearthbreaker.engine import Game, Deck
 
 from hearthbreaker.replay import Replay, record, playback
 from hearthbreaker.agents.basic_agents import PredictableAgent, RandomAgent
@@ -93,8 +94,8 @@ class TestReplay(unittest.TestCase):
 
         game.start()
 
-        self.assertEqual(game.current_player.deck.character_class, CHARACTER_CLASS.DRUID)
-        self.assertEqual(game.other_player.deck.character_class, CHARACTER_CLASS.MAGE)
+        self.assertEqual(game.current_player.deck.hero.name, "Malfurion Stormrage")
+        self.assertEqual(game.other_player.deck.hero.name, "Jaina Proudmoore")
 
         self.assertEqual(game.current_player.hero.health, 29)
         self.assertTrue(game.current_player.hero.dead)
@@ -102,8 +103,8 @@ class TestReplay(unittest.TestCase):
     def test_recording_game(self):
         self.maxDiff = None
         random.seed(9876)
-        deck1 = hearthbreaker.game_objects.Deck([StonetuskBoar() for i in range(0, 30)], CHARACTER_CLASS.MAGE)
-        deck2 = hearthbreaker.game_objects.Deck([Naturalize() for i in range(0, 30)], CHARACTER_CLASS.DRUID)
+        deck1 = hearthbreaker.engine.Deck([StonetuskBoar() for i in range(0, 30)], Jaina())
+        deck2 = hearthbreaker.engine.Deck([Naturalize() for i in range(0, 30)], Malfurion())
         agent1 = PredictableAgent()
         agent2 = PredictableAgent()
 
@@ -128,8 +129,8 @@ class TestReplay(unittest.TestCase):
         self.assertEqual(panther.index, 0)
 
     def test_random_character_saving(self):
-        deck1 = hearthbreaker.game_objects.Deck([RagnarosTheFirelord() for i in range(0, 30)], CHARACTER_CLASS.MAGE)
-        deck2 = hearthbreaker.game_objects.Deck([StonetuskBoar() for i in range(0, 30)], CHARACTER_CLASS.DRUID)
+        deck1 = hearthbreaker.engine.Deck([RagnarosTheFirelord() for i in range(0, 30)], Jaina())
+        deck2 = hearthbreaker.engine.Deck([StonetuskBoar() for i in range(0, 30)], Malfurion())
         agent1 = PlayAndAttackAgent()
         agent2 = OneCardPlayingAgent()
         random.seed(4879)
@@ -153,8 +154,8 @@ class TestReplay(unittest.TestCase):
 
     def test_json_saving(self):
         self.maxDiff = 6000
-        deck1 = hearthbreaker.game_objects.Deck([RagnarosTheFirelord() for i in range(0, 30)], CHARACTER_CLASS.MAGE)
-        deck2 = hearthbreaker.game_objects.Deck([StonetuskBoar() for i in range(0, 30)], CHARACTER_CLASS.DRUID)
+        deck1 = hearthbreaker.engine.Deck([RagnarosTheFirelord() for i in range(0, 30)], Jaina())
+        deck2 = hearthbreaker.engine.Deck([StonetuskBoar() for i in range(0, 30)], Malfurion())
         agent1 = PlayAndAttackAgent()
         agent2 = OneCardPlayingAgent()
         random.seed(4879)
@@ -183,9 +184,28 @@ class TestReplay(unittest.TestCase):
                       RagnarosTheFirelord(), RagnarosTheFirelord(), RagnarosTheFirelord(), RagnarosTheFirelord(),
                       RagnarosTheFirelord(), RagnarosTheFirelord(), RagnarosTheFirelord(), RagnarosTheFirelord(),
                       RagnarosTheFirelord(), RagnarosTheFirelord(), RagnarosTheFirelord(), RagnarosTheFirelord(),
-                      GoldshireFootman(), GoldshireFootman()], CHARACTER_CLASS.DRUID)
+                      GoldshireFootman(), GoldshireFootman()], Malfurion())
         deck2 = StackedDeck([StonetuskBoar()], CHARACTER_CLASS.HUNTER)
         game = Game([deck1, deck2], [RandomAgent(), RandomAgent()])
         replay = record(game)
         game.start()
         replay.write(StringIO())
+
+    def test_replay_validation(self):
+        from jsonschema import validate
+        file_match = re.compile(r'.*\.hsreplay')
+        files = []
+
+        def get_files_from(folder_name):
+            for file in listdir(folder_name):
+                if file_match.match(file):
+                    files.append(folder_name + "/" + file)
+                elif isdir(folder_name + "/" + file):
+                    get_files_from(folder_name + "/" + file)
+        with open("replay.schema.json", "r") as schema_file:
+            schema = json.load(schema_file)
+            get_files_from("tests/replays")
+            for rfile in files:
+                with open(rfile, "r") as replay_file:
+                    replay_json = json.load(replay_file)
+                    validate(replay_json, schema)

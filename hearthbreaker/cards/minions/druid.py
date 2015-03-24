@@ -1,21 +1,25 @@
+from hearthbreaker.cards.base import MinionCard, ChoiceCard
+from hearthbreaker.game_objects import Minion
 from hearthbreaker.tags.action import Give, Damage, Silence, Transform, Draw, Heal, \
-    Summon
-from hearthbreaker.tags.base import Choice, Buff
+    Summon, AddCard, GiveManaCrystal, Remove, Kill
+from hearthbreaker.tags.base import Choice, Buff, Effect, CardQuery, CARD_SOURCE, Battlecry, Deathrattle, ActionTag
+from hearthbreaker.tags.condition import IsType, GreaterThan
+from hearthbreaker.tags.event import Damaged, TurnEnded
 from hearthbreaker.tags.selector import CharacterSelector, MinionSelector, SelfSelector, UserPicker, BothPlayer, \
-    PlayerSelector, HeroSelector
+    PlayerSelector, HeroSelector, Count
 from hearthbreaker.constants import CHARACTER_CLASS, CARD_RARITY, MINION_TYPE
-from hearthbreaker.game_objects import MinionCard, Minion, Card
 from hearthbreaker.tags.status import ChangeAttack, ChangeHealth, Taunt
+from hearthbreaker.cards.spells.neutral import spare_part_list
 
 
-class Moonfire(Card):
+class Moonfire(ChoiceCard):
     def __init__(self):
-        super().__init__("Moonfire", 0, CHARACTER_CLASS.DRUID, CARD_RARITY.SPECIAL, ref_name="moonfire_keeper")
+        super().__init__("Moonfire", 0, CHARACTER_CLASS.DRUID, CARD_RARITY.COMMON, ref_name="moonfire_keeper")
 
 
-class Dispel(Card):
+class Dispel(ChoiceCard):
     def __init__(self):
-        super().__init__("Dispel", 0, CHARACTER_CLASS.DRUID, CARD_RARITY.SPECIAL)
+        super().__init__("Dispel", 0, CHARACTER_CLASS.DRUID, CARD_RARITY.COMMON)
 
 
 class KeeperOfTheGrove(MinionCard):
@@ -31,7 +35,7 @@ class KeeperOfTheGrove(MinionCard):
 
 class CatDruid(MinionCard):
     def __init__(self):
-        super().__init__("Druid of the Claw", 5, CHARACTER_CLASS.DRUID, CARD_RARITY.SPECIAL,
+        super().__init__("Druid of the Claw", 5, CHARACTER_CLASS.DRUID, CARD_RARITY.COMMON, False, MINION_TYPE.BEAST,
                          ref_name="Druid of the Claw (cat)")
 
     def create_minion(self, p):
@@ -40,21 +44,21 @@ class CatDruid(MinionCard):
 
 class BearDruid(MinionCard):
     def __init__(self):
-        super().__init__("Druid of the Claw", 5, CHARACTER_CLASS.DRUID, CARD_RARITY.SPECIAL,
+        super().__init__("Druid of the Claw", 5, CHARACTER_CLASS.DRUID, CARD_RARITY.COMMON, False, MINION_TYPE.BEAST,
                          ref_name="Druid of the Claw (bear)")
 
     def create_minion(self, p):
         return Minion(4, 6, taunt=True)
 
 
-class CatForm(Card):
+class CatForm(ChoiceCard):
     def __init__(self):
-        super().__init__("Cat Form", 0, CHARACTER_CLASS.DRUID, CARD_RARITY.SPECIAL)
+        super().__init__("Cat Form", 0, CHARACTER_CLASS.DRUID, CARD_RARITY.COMMON)
 
 
-class BearForm(Card):
+class BearForm(ChoiceCard):
     def __init__(self):
-        super().__init__("Bear Form", 0, CHARACTER_CLASS.DRUID, CARD_RARITY.SPECIAL)
+        super().__init__("Bear Form", 0, CHARACTER_CLASS.DRUID, CARD_RARITY.COMMON)
 
 
 class DruidOfTheClaw(MinionCard):
@@ -68,15 +72,14 @@ class DruidOfTheClaw(MinionCard):
         return Minion(4, 4)
 
 
-class AncientSecrets(Card):
+class AncientSecrets(ChoiceCard):
     def __init__(self):
-        super().__init__("Ancient Secrets", 0, CHARACTER_CLASS.DRUID,
-                         CARD_RARITY.SPECIAL)
+        super().__init__("Ancient Secrets", 0, CHARACTER_CLASS.DRUID, CARD_RARITY.COMMON)
 
 
-class AncientTeachings(Card):
+class AncientTeachings(ChoiceCard):
     def __init__(self):
-        super().__init__("Ancient  Teachings", 0, CHARACTER_CLASS.DRUID, CARD_RARITY.SPECIAL)
+        super().__init__("Ancient Teachings", 0, CHARACTER_CLASS.DRUID, CARD_RARITY.COMMON)
 
 
 class AncientOfLore(MinionCard):
@@ -91,14 +94,14 @@ class AncientOfLore(MinionCard):
         return Minion(5, 5)
 
 
-class Health(Card):
+class Health(ChoiceCard):
     def __init__(self):
-        super().__init__("+5 Health and Taunt", 0, CHARACTER_CLASS.DRUID, CARD_RARITY.SPECIAL)
+        super().__init__("Rooted", 0, CHARACTER_CLASS.DRUID, CARD_RARITY.COMMON)
 
 
-class Attack(Card):
+class Attack(ChoiceCard):
     def __init__(self):
-        super().__init__("+5 Attack", 0, CHARACTER_CLASS.DRUID, CARD_RARITY.SPECIAL)
+        super().__init__("Uproot", 0, CHARACTER_CLASS.DRUID, CARD_RARITY.COMMON)
 
 
 class AncientOfWar(MinionCard):
@@ -122,7 +125,7 @@ class IronbarkProtector(MinionCard):
         return Minion(8, 8, taunt=True)
 
 
-class Treant(MinionCard):
+class TauntTreant(MinionCard):
     def __init__(self):
         super().__init__("Treant", 1, CHARACTER_CLASS.DRUID, CARD_RARITY.COMMON, ref_name="Treant (taunt)")
 
@@ -130,16 +133,49 @@ class Treant(MinionCard):
         return Minion(2, 2, taunt=True)
 
 
-class IncreaseStats(Card):
+class Treant(MinionCard):
+    def __init__(self):
+        super().__init__("Treant", 1, CHARACTER_CLASS.DRUID, CARD_RARITY.COMMON)
+
+    def create_minion(self, _):
+        return Minion(2, 2)
+
+
+class ChargeTreant(MinionCard):
+    def __init__(self):
+        super().__init__("Treant", 1, CHARACTER_CLASS.DRUID, CARD_RARITY.COMMON, False, ref_name="Treant (charge)")
+
+    def create_minion(self, player):
+        return Minion(2, 2, charge=True, effects=[Effect(TurnEnded(), ActionTag(Kill(), SelfSelector()))])
+
+
+class PoisonSeedsTreant(MinionCard):
+    def __init__(self):
+        super().__init__("Treant", 1, CHARACTER_CLASS.DRUID, CARD_RARITY.COMMON, False,
+                         ref_name="Treant (poison seeds)")
+
+    def create_minion(self, player):
+        return Minion(2, 2)
+
+
+class Panther(MinionCard):
+    def __init__(self):
+        super().__init__("Panther", 2, CHARACTER_CLASS.DRUID, CARD_RARITY.COMMON, False, MINION_TYPE.BEAST)
+
+    def create_minion(self, _):
+        return Minion(3, 2, MINION_TYPE.BEAST)
+
+
+class IncreaseStats(ChoiceCard):
     def __init__(self):
         super().__init__("Give your other minions +2/+2 and taunt", 0,
-                         CHARACTER_CLASS.DRUID, CARD_RARITY.SPECIAL)
+                         CHARACTER_CLASS.DRUID, CARD_RARITY.LEGENDARY, False)
 
 
-class SummonTreants(Card):
+class SummonTreants(ChoiceCard):
     def __init__(self):
         super().__init__("Summon two 2/2 Treants with taunt", 0,
-                         CHARACTER_CLASS.DRUID, CARD_RARITY.SPECIAL)
+                         CHARACTER_CLASS.DRUID, CARD_RARITY.LEGENDARY, False)
 
 
 class Cenarius(MinionCard):
@@ -148,21 +184,21 @@ class Cenarius(MinionCard):
             Choice(IncreaseStats(), Give([Buff(ChangeAttack(2)),
                                           Buff(ChangeHealth(2)),
                                           Buff(Taunt())]), MinionSelector()),
-            Choice(SummonTreants(), Summon(Treant(), 2), PlayerSelector())
+            Choice(SummonTreants(), Summon(TauntTreant(), 2), PlayerSelector())
         ])
 
     def create_minion(self, player):
         return Minion(5, 8)
 
 
-class AttackMode(Card):
+class AttackMode(ChoiceCard):
     def __init__(self):
-        super().__init__("Attack Mode", 0, CHARACTER_CLASS.DRUID, CARD_RARITY.SPECIAL)
+        super().__init__("Attack Mode", 0, CHARACTER_CLASS.DRUID, CARD_RARITY.COMMON)
 
 
-class TankMode(Card):
+class TankMode(ChoiceCard):
     def __init__(self):
-        super().__init__("Tank Mode", 0, CHARACTER_CLASS.DRUID, CARD_RARITY.SPECIAL)
+        super().__init__("Tank Mode", 0, CHARACTER_CLASS.DRUID, CARD_RARITY.COMMON)
 
 
 class AnodizedRoboCub(MinionCard):
@@ -174,3 +210,64 @@ class AnodizedRoboCub(MinionCard):
 
     def create_minion(self, player):
         return Minion(2, 2, taunt=True)
+
+
+class MechBearCat(MinionCard):
+    def __init__(self):
+        super().__init__("Mech-Bear-Cat", 6, CHARACTER_CLASS.DRUID, CARD_RARITY.RARE, minion_type=MINION_TYPE.MECH)
+
+    def create_minion(self, player):
+        return Minion(7, 6, effects=[Effect(Damaged(),
+                                     ActionTag(AddCard(CardQuery(source=CARD_SOURCE.LIST, source_list=spare_part_list)),
+                                     PlayerSelector()))])
+
+
+class CobraForm(MinionCard):
+    def __init__(self):
+        super().__init__("Druid of the Fang", 5, CHARACTER_CLASS.DRUID, CARD_RARITY.COMMON, False, MINION_TYPE.BEAST,
+                         ref_name="Druid of the Fang (cobra)")
+
+    def create_minion(self, player):
+        return Minion(7, 7)
+
+
+class DruidOfTheFang(MinionCard):
+    def __init__(self):
+        super().__init__("Druid of the Fang", 5, CHARACTER_CLASS.DRUID, CARD_RARITY.COMMON,
+                         battlecry=Battlecry(Transform(CobraForm()), SelfSelector(),
+                                             GreaterThan(Count(MinionSelector(IsType(MINION_TYPE.BEAST))), value=0)))
+
+    def create_minion(self, player):
+        return Minion(4, 4)
+
+
+class Malorne(MinionCard):
+    def __init__(self):
+        super().__init__("Malorne", 7, CHARACTER_CLASS.DRUID, CARD_RARITY.LEGENDARY, minion_type=MINION_TYPE.BEAST)
+
+    def create_minion(self, player):
+        return Minion(9, 7, deathrattle=[Deathrattle(AddCard(CardQuery(source=CARD_SOURCE.MINION,
+                                                                       minion=SelfSelector()),
+                                                             add_to_deck=True), PlayerSelector()),
+                                         Deathrattle(Remove(), SelfSelector())])
+
+
+class GiftOfMana(ChoiceCard):
+    def __init__(self):
+        super().__init__("Gift of Mana", 0, CHARACTER_CLASS.DRUID, CARD_RARITY.RARE)
+
+
+class GiftOfCards(ChoiceCard):
+    def __init__(self):
+        super().__init__("Gift of Cards", 0, CHARACTER_CLASS.DRUID, CARD_RARITY.RARE)
+
+
+class GroveTender(MinionCard):
+    def __init__(self):
+        super().__init__("Grove Tender", 3, CHARACTER_CLASS.DRUID, CARD_RARITY.RARE, choices=[
+            Choice(GiftOfMana(), GiveManaCrystal(), PlayerSelector(players=BothPlayer())),
+            Choice(GiftOfCards(), Draw(), PlayerSelector(players=BothPlayer()))
+        ])
+
+    def create_minion(self, player):
+        return Minion(2, 4)

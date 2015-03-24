@@ -21,8 +21,12 @@ import time
 import sys, traceback
 from tests.testing_utils import generate_game_for
 from hearthbreaker.cards import *
+from hearthbreaker.cards.base import *
+from hearthbreaker.cards.heroes import hero_for_class
 from hearthbreaker.agents.basic_agents import DoNothingAgent
 from hearthbreaker.game_objects import *
+from hearthbreaker.engine import *
+from hearthbreaker.powers import *
 from hearthbreaker.constants import CHARACTER_CLASS
 
 
@@ -70,8 +74,8 @@ class HearthState:
         class1 = CHARACTER_CLASS.MAGE
         card_set2 = []
         class2 = CHARACTER_CLASS.ALL
-        deck1 = Deck(card_set1, class1)
-        deck2 = Deck(card_set2, class2)
+        deck1 = Deck(card_set1, hero_for_class(class1))
+        deck2 = Deck(card_set2, hero_for_class(class2))
         game = Game([deck1, deck2], [DoNothingAgent(), DoNothingAgent()])
         game.current_player = game.players[0]
         game.other_player = game.players[1]
@@ -119,9 +123,9 @@ class HearthState:
         elif move[0] == MOVE.START_TURN:
             self.game._start_turn()
         elif move[0] == MOVE.PICK_CLASS:
-            self.game.current_player.deck.character_class = move[1]
-            self.game.current_player.hero.character_class = move[1]
-            self.game.current_player.hero.power = hearthbreaker.powers.powers(move[1])(self.game.current_player.hero)
+            self.game.current_player.deck = Deck([], hero_for_class(move[1]))
+            self.game.current_player.hero = self.game.current_player.deck.hero.create_hero(self.game.current_player)
+            self.game.current_player.hero.card = self.game.current_player.deck.hero
         elif move[0] == MOVE.PICK_CARD:
             card = move[1] #copy.deepcopy(move[1])
             card.drawn = False
@@ -357,7 +361,7 @@ class HearthState:
                 owned_cards.extend([Warbot()])
                 # Neutral
                 # TODO: Cogmaster()
-                owned_cards.extend([ClockworkGnome(), AnnoyOTron(), Mechwarper(), MicroMachine(), Puddlestomper(),
+                owned_cards.extend([ClockworkGnome(), AnnoyoTron(), Mechwarper(), MicroMachine(), Puddlestomper(),
                                     ShipsCannon(), MechanicalYeti(), AntiqueHealbot()])
 
                 card_list = filter(lambda c: c.character_class == hearthbreaker.constants.CHARACTER_CLASS.ALL or c.character_class == self.game.current_player.hero.character_class,
@@ -433,10 +437,10 @@ class HearthState:
                 for i in range(len(targets)):
                     valid_moves.append([MOVE.HERO_ATTACK, self.game.current_player.hero, targets[i], None, i])
     
-            if (self.game.current_player.hero.power.__str__() == "Fireblast" or \
-               self.game.current_player.hero.power.__str__() == "Mind Spike" or \
-               self.game.current_player.hero.power.__str__() == "Mind Shatter" or \
-               self.game.current_player.hero.power.__str__() == "Lesser Heal") and \
+            if (isinstance(self.game.current_player.hero.power, MagePower) or \
+               isinstance(self.game.current_player.hero.power, MindSpike) or \
+               isinstance(self.game.current_player.hero.power, MindShatter) or \
+               isinstance(self.game.current_player.hero.power, PriestPower)) and \
                self.game.current_player.hero.power.can_use():
                 for target in hearthbreaker.targeting.find_spell_target(self.game, lambda t: t.spell_targetable()):
                     valid_moves.append([MOVE.HERO_POWER, self.game.current_player.hero, target, 0, \

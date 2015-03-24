@@ -1,11 +1,13 @@
+from hearthbreaker.cards.base import WeaponCard
 from hearthbreaker.constants import CHARACTER_CLASS, CARD_RARITY
+from hearthbreaker.game_objects import Weapon
 from hearthbreaker.tags.action import Damage, IncreaseDurability, ChangeTarget
-from hearthbreaker.tags.base import Deathrattle, Effect
-from hearthbreaker.tags.condition import IsMinion, NotCurrentTarget, OneIn
-from hearthbreaker.tags.event import Attack
+from hearthbreaker.tags.base import Deathrattle, Effect, ActionTag
+from hearthbreaker.tags.condition import NotCurrentTarget, OneIn, OpponentMinionCountIsGreaterThan, And, \
+    IsHero, TargetIsMinion
+from hearthbreaker.tags.event import CharacterAttack
 from hearthbreaker.tags.selector import MinionSelector, BothPlayer, HeroSelector, CharacterSelector, EnemyPlayer, \
-    RandomPicker, SelfSelector
-from hearthbreaker.game_objects import WeaponCard, Weapon
+    RandomPicker
 
 
 class FieryWarAxe(WeaponCard):
@@ -29,7 +31,16 @@ class Gorehowl(WeaponCard):
         super().__init__("Gorehowl", 7, CHARACTER_CLASS.WARRIOR, CARD_RARITY.EPIC)
 
     def create_weapon(self, player):
-        return Weapon(7, 1, effects=[Effect(Attack(IsMinion()), IncreaseDurability(), HeroSelector())])
+        return Weapon(7, 1, effects=[Effect(CharacterAttack(And(IsHero(), TargetIsMinion())),
+                                            ActionTag(IncreaseDurability(), HeroSelector()))])
+
+
+class HeavyAxe(WeaponCard):
+    def __init__(self):
+        super().__init__("Heavy Axe", 1, CHARACTER_CLASS.WARRIOR, CARD_RARITY.COMMON, False)
+
+    def create_weapon(self, player):
+        return Weapon(1, 3)
 
 
 class DeathsBite(WeaponCard):
@@ -45,7 +56,7 @@ class OgreWarmaul(WeaponCard):
         super().__init__("Ogre Warmaul", 3, CHARACTER_CLASS.WARRIOR, CARD_RARITY.COMMON)
 
     def create_weapon(self, player):
-        return Weapon(4, 2, effects=[Effect(Attack(), ChangeTarget(CharacterSelector(NotCurrentTarget(),
-                                                                                     EnemyPlayer(),
+        return Weapon(4, 2, effects=[Effect(CharacterAttack(IsHero()),
+                                            ActionTag(ChangeTarget(CharacterSelector(NotCurrentTarget(), EnemyPlayer(),
                                                                                      RandomPicker())),
-                                            SelfSelector(), OneIn(2))])
+                                            HeroSelector(), And(OneIn(2), OpponentMinionCountIsGreaterThan(0))))])

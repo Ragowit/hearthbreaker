@@ -4,7 +4,7 @@ import unittest
 from hearthbreaker.agents.basic_agents import DoNothingAgent, PredictableAgent
 from hearthbreaker.constants import MINION_TYPE
 from tests.agents.testing_agents import CardTestingAgent, OneCardPlayingAgent, WeaponTestingAgent, \
-    PlayAndAttackAgent, SelfSpellTestingAgent, EnemyMinionSpellTestingAgent
+    PlayAndAttackAgent, SelfSpellTestingAgent
 from tests.testing_utils import generate_game_for, mock
 from hearthbreaker.cards import *
 
@@ -85,29 +85,34 @@ class TestHunter(unittest.TestCase):
     def test_BestialWrath(self):
 
         def verify_bwrath():
-            self.assertEqual(3, game.other_player.minions[0].calculate_attack())
-            self.assertTrue(game.other_player.minions[0].immune)
+            self.assertEqual(5, game.players[0].minions[0].calculate_attack())
+            self.assertTrue(game.players[0].minions[0].immune)
 
         def verify_silence():
-            self.assertFalse(game.other_player.minions[0].immune)
-            self.assertEqual(1, game.other_player.minions[0].calculate_attack())
+            self.assertFalse(game.players[0].minions[0].immune)
+            self.assertEqual(1, game.players[0].minions[0].calculate_attack())
 
-        game = generate_game_for(StonetuskBoar, [BestialWrath, BestialWrath, BestialWrath, Silence, BoulderfistOgre],
-                                 OneCardPlayingAgent, EnemyMinionSpellTestingAgent)
+        game = generate_game_for([StonetuskBoar, BestialWrath, BestialWrath, BestialWrath, Silence, Archmage], Wisp,
+                                 CardTestingAgent, DoNothingAgent)
         game.play_single_turn()
-        game.other_player.bind_once("turn_ended", verify_bwrath)
         game.play_single_turn()
-        self.assertEqual(1, len(game.other_player.minions))
-        self.assertFalse(game.other_player.minions[0].immune)
-        self.assertEqual(1, game.other_player.minions[0].calculate_attack())
+
+        game.players[0].bind_once("turn_ended", verify_bwrath)
 
         game.play_single_turn()
-        game.other_player.bind_once("turn_ended", verify_silence)
+
+        self.assertEqual(1, len(game.players[0].minions))
+        self.assertFalse(game.players[0].minions[0].immune)
+        self.assertEqual(1, game.players[0].minions[0].calculate_attack())
+
         game.play_single_turn()
-        self.assertEqual(2, len(game.other_player.minions))
-        self.assertFalse(game.other_player.minions[0].immune)
-        self.assertEqual(1, game.other_player.minions[0].calculate_attack())
-        self.assertEqual(2, len(game.players[1].hand))
+        game.players[0].bind_once("turn_ended", verify_silence)
+        game.play_single_turn()
+
+        self.assertEqual(1, len(game.players[0].minions))
+        self.assertFalse(game.players[0].minions[0].immune)
+        self.assertEqual(1, game.players[0].minions[0].calculate_attack())
+        self.assertEqual(1, len(game.players[0].hand))
 
     def test_Flare(self):
 
@@ -184,6 +189,7 @@ class TestHunter(unittest.TestCase):
                                   StonetuskBoar, BloodfenRaptor, KoboldGeomancer],
                                  StonetuskBoar, CardTestingAgent, DoNothingAgent)
 
+        game.players[0].agent.choose_option = lambda options, player: options[0]
         game.play_single_turn()
         self.assertEqual(4, len(game.current_player.hand))
         self.assertEqual("Stonetusk Boar", game.current_player.hand[3].name)
@@ -272,6 +278,16 @@ class TestHunter(unittest.TestCase):
         self.assertEqual(28, game.other_player.hero.health)
         self.assertEqual(1, len(game.current_player.minions))  # The boar has been misdirected into another boar
         self.assertEqual(30, game.current_player.hero.health)
+
+    def test_MisdirectionToHero(self):
+        game = generate_game_for(Misdirection, BluegillWarrior, CardTestingAgent, PlayAndAttackAgent)
+
+        for turn in range(0, 4):
+            game.play_single_turn()
+
+        self.assertEqual(30, game.other_player.hero.health)  # The murloc should be misdirected
+        self.assertEqual(1, len(game.current_player.minions))
+        self.assertEqual(28, game.current_player.hero.health)
 
     def test_FreezingTrapAndMisdirection(self):
         game = generate_game_for([Misdirection, FreezingTrap], Wolfrider,
@@ -484,12 +500,12 @@ class TestHunter(unittest.TestCase):
 
         self.assertEqual(3, len(game.players[0].minions))
         self.assertEqual(21, game.players[1].hero.health)
-        self.assertTrue(game.players[0].minions[0].charge)
-        self.assertTrue(game.players[0].minions[1].charge)
-        self.assertTrue(game.players[0].minions[2].charge)
+        self.assertTrue(game.players[0].minions[0].charge())
+        self.assertTrue(game.players[0].minions[1].charge())
+        self.assertTrue(game.players[0].minions[2].charge())
 
         game.players[0].minions[2].silence()
-        self.assertTrue(game.players[0].minions[2].charge)
+        self.assertTrue(game.players[0].minions[2].charge())
 
     def test_TundraRhino_with_silence(self):
         game = generate_game_for([StonetuskBoar, OasisSnapjaw, TundraRhino, Silence], StonetuskBoar,
@@ -505,9 +521,9 @@ class TestHunter(unittest.TestCase):
         self.assertEqual(3, len(game.players[0].minions))
         self.assertEqual(23, game.players[1].hero.health)
 
-        self.assertFalse(game.players[0].minions[0].charge)
-        self.assertFalse(game.players[0].minions[1].charge)
-        self.assertTrue(game.players[0].minions[2].charge)
+        self.assertFalse(game.players[0].minions[0].charge())
+        self.assertFalse(game.players[0].minions[1].charge())
+        self.assertTrue(game.players[0].minions[2].charge())
 
     def test_AnimalCompanion(self):
         game = generate_game_for(AnimalCompanion, StonetuskBoar, CardTestingAgent, DoNothingAgent)
@@ -623,3 +639,124 @@ class TestHunter(unittest.TestCase):
         self.assertEqual(2, game.players[0].hero.weapon.durability)
         self.assertEqual(1, len(game.players[0].minions))
         self.assertEqual(2, game.players[0].minions[0].calculate_attack())
+
+    def test_MetaltoothLeaper(self):
+        game = generate_game_for([MetaltoothLeaper, Wisp], SpiderTank, OneCardPlayingAgent, OneCardPlayingAgent)
+        for turn in range(0, 8):
+            game.play_single_turn()
+
+        self.assertEqual(2, len(game.players[0].minions))
+        self.assertEqual(3, game.players[0].minions[1].calculate_attack())
+        self.assertEqual(1, game.players[0].minions[0].calculate_attack())
+        self.assertEqual(2, len(game.players[1].minions))
+        self.assertEqual(3, game.players[1].minions[1].calculate_attack())
+        self.assertEqual(3, game.players[1].minions[0].calculate_attack())
+
+        # The second leaper will buff the first, but won't be buffed by anything
+        game.play_single_turn()
+
+        self.assertEqual(3, len(game.players[0].minions))
+        self.assertEqual(3, game.players[0].minions[0].calculate_attack())
+        self.assertEqual(1, game.players[0].minions[1].calculate_attack())
+        self.assertEqual(5, game.players[0].minions[2].calculate_attack())
+
+    def test_KingOfBeasts(self):
+        game = generate_game_for([StonetuskBoar, StonetuskBoar, StonetuskBoar, KingOfBeasts], StonetuskBoar,
+                                 OneCardPlayingAgent, OneCardPlayingAgent)
+        for turn in range(9):
+            game.play_single_turn()
+
+        self.assertEqual(4, len(game.current_player.minions))
+        self.assertEqual(5, game.current_player.minions[0].calculate_attack())
+
+        game.play_single_turn()
+        game.play_single_turn()
+
+        self.assertEqual(5, len(game.current_player.minions))
+        self.assertEqual(5, game.current_player.minions[1].calculate_attack())
+
+    def test_Gahzrilla(self):
+        game = generate_game_for([Gahzrilla, ShatteredSunCleric, RaidLeader], ArcaneExplosion,
+                                 OneCardPlayingAgent, OneCardPlayingAgent)
+        for turn in range(13):
+            game.play_single_turn()
+
+        self.assertEqual(6, game.current_player.minions[0].calculate_attack())
+
+        game.play_single_turn()
+
+        # Arcane explosion damages the Gahz'rilla, doubling its attack
+        self.assertEqual(12, game.other_player.minions[0].calculate_attack())
+
+        # The buff from the cleric is applies after the double, increases by 1
+        game.play_single_turn()
+        self.assertEqual(13, game.current_player.minions[1].calculate_attack())
+
+        # Should double exactly the current attack
+        game.play_single_turn()
+        self.assertEqual(26, game.other_player.minions[1].calculate_attack())
+
+        # Raid leader gives a +1 Bonus
+        game.play_single_turn()
+        self.assertEqual(27, game.current_player.minions[2].calculate_attack())
+
+        # The raid leader's aura is not included in the double, but is applied afterwards
+        # Tested by @jleclanche for patch 2.1.0.7785
+        game.play_single_turn()
+        self.assertEqual(53, game.other_player.minions[1].calculate_attack())
+
+    def testGahzrilla_temp_buff(self):
+        env = self
+
+        class TestAgent(CardTestingAgent):
+            def do_turn(self, player):
+                super().do_turn(player)
+                if turn == 14:
+                    # Gahz'rilla's double comes after the buff from abusive, so total attack is
+                    # (6 + 2) * 2 = 16
+                    env.assertEqual(16, game.current_player.minions[0].calculate_attack())
+
+        game = generate_game_for([Gahzrilla, AbusiveSergeant, Hellfire], StonetuskBoar,
+                                 TestAgent, DoNothingAgent)
+
+        for turn in range(15):
+            game.play_single_turn()
+
+        # After the buff wears off, the double no longer includes it, so the total attack is
+        # 6 * 2 = 12
+        # Tested by @jleclanche for patch 2.1.0.7785
+        self.assertEqual(12, game.current_player.minions[0].calculate_attack())
+
+    def test_ogre_misdirection(self):
+        game = generate_game_for(OgreBrute, Misdirection, PlayAndAttackAgent, OneCardPlayingAgent)
+        random.seed(1850)
+
+        for turn in range(0, 7):
+            game.play_single_turn()
+
+        self.assertEqual(26, game.players[0].hero.health)
+        self.assertEqual(30, game.players[1].hero.health)
+
+    def test_FeignDeath(self):
+        game = generate_game_for([HauntedCreeper, LootHoarder, Malorne, FeignDeath], StonetuskBoar,
+                                 OneCardPlayingAgent, DoNothingAgent)
+
+        for turn in range(14):
+            game.play_single_turn()
+
+        self.assertEqual(3, len(game.other_player.minions))
+        self.assertEqual(7, len(game.other_player.hand))
+
+        game.play_single_turn()
+        self.assertEqual(4, len(game.current_player.minions))
+        self.assertEqual(8, len(game.current_player.hand))
+
+    def test_SteamwheedleSniper(self):
+        game = generate_game_for(SteamwheedleSniper, StonetuskBoar, PredictableAgent, DoNothingAgent)
+        for turn in range(9):
+            game.play_single_turn()
+
+        self.assertEqual(2, len(game.current_player.minions))
+        self.assertEqual(22, game.other_player.hero.health)
+        self.assertEqual(1, game.current_player.minions[1].health)
+        self.assertEqual(3, game.current_player.minions[0].health)

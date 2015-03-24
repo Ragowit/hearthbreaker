@@ -1,4 +1,3 @@
-import copy
 from hearthbreaker.tags.base import Status, Amount
 
 
@@ -7,11 +6,13 @@ class ChangeAttack(Status, metaclass=Amount):
         super().__init__()
 
     def act(self, actor, target):
-        self.amount = self.get_amount(actor, target)
-        target.attack_delta += self.amount
+        pass
 
     def unact(self, actor, target):
-        target.attack_delta -= self.amount
+        pass
+
+    def update(self, owner, prev_atk):
+        return prev_atk + self.get_amount(owner, owner)
 
     def __to_json__(self):
         return {
@@ -52,24 +53,15 @@ class ChangeHealth(Status, metaclass=Amount):
 class MinimumHealth(Status):
     def __init__(self, min_health):
         self.min_health = min_health
-        self.__keep_funcs = {}
 
     def act(self, actor, target):
-        def keep_above_one():
-            if target.health < self.min_health:
-                target.health = self.min_health
-
-        target.bind("health_changed", keep_above_one)
-        self.__keep_funcs[target] = keep_above_one
+        pass
 
     def unact(self, actor, target):
-        target.unbind("health_changed", self.__keep_funcs[target])
+        pass
 
-    def __deep_copy__(self, memo):
-        return MinimumHealth(self.min_health)
-
-    def __copy__(self):
-        return MinimumHealth(self.min_health)
+    def update(self, owner, prev_health):
+        return self.min_health
 
     def __to_json__(self):
         return {
@@ -78,76 +70,77 @@ class MinimumHealth(Status):
         }
 
 
-class SetAttack(Status):
-    def __init__(self, attack):
-        self.attack = attack
+class SetAttack(ChangeAttack, metaclass=Amount):
+    def __init__(self):
         self._diff = 0
 
     def act(self, actor, target):
-        self._diff = self.attack - target.calculate_attack()
-        target.attack_delta += self._diff
+        pass
 
     def unact(self, actor, target):
-        target.attack_delta -= self._diff
+        pass
+
+    def update(self, owner, prev_atk):
+        return self.get_amount(owner, owner)
 
     def __to_json__(self):
         return {
             'name': 'set_attack',
-            'attack': self.attack
         }
 
 
-class ManaChange(Status):
-    def __init__(self, amount, minimum, card_selector):
-        self.amount = amount
-        self.minimum = minimum
-        self.card_selector = card_selector
-        self.filters = {}
+class DoubleAttack(ChangeAttack):
 
     def act(self, actor, target):
-        class Filter:
-            def __init__(self, amount, minimum, filter):
-                self.amount = amount
-                self.min = minimum
-                self.filter = filter
-
-        self.card_selector.track_cards(target)
-        self.filters[target] = Filter(self.amount, self.minimum, lambda c: self.card_selector.match(target, c))
-        target.mana_filters.append(self.filters[target])
+        pass
 
     def unact(self, actor, target):
-        target.mana_filters.remove(self.filters[target])
-        self.card_selector.untrack_cards(target)
+        pass
 
-    def __deep_copy__(self, memo):
-        return ManaChange(self.amount, self.minimum, copy.deepcopy(self.card_selector, memo))
-
-    def __copy__(self):
-        return ManaChange(self.amount, self.minimum, self.card_selector)
+    def update(self, owner, prev_atk):
+        return prev_atk * 2
 
     def __to_json__(self):
         return {
-            'name': 'mana_change',
-            'amount': self.amount,
-            'minimum': self.minimum,
-            'card_selector': self.card_selector,
+            'name': 'double_attack',
         }
 
-    def __from_json__(self, amount, minimum, card_selector):
-        from hearthbreaker.tags.base import Selector
-        self.amount = amount
+
+class ManaChange(Status, metaclass=Amount):
+    def __init__(self, minimum=0):
+        super().__init__()
         self.minimum = minimum
-        self.card_selector = Selector.from_json(**card_selector)
-        self.filters = {}
-        return self
+
+    def act(self, actor, target):
+        pass
+
+    def unact(self, actor, target):
+        pass
+
+    def update(self, owner, prev_mana):
+        minimum = min(prev_mana, self.minimum)
+        return max(minimum, prev_mana + self.get_amount(owner, owner))
+
+    def __to_json__(self):
+        if self.minimum:
+            return {
+                "name": "mana_change",
+                "minimum": self.minimum
+            }
+        return {
+            'name': 'mana_change',
+        }
 
 
 class Charge(Status):
     def act(self, actor, target):
-        target.charge += 1
+        pass
 
     def unact(self, actor, target):
-        target.charge -= 1
+        pass
+
+    def update(self, owner, prev_charge):
+        return True
 
     def __to_json__(self):
         return {
@@ -194,6 +187,19 @@ class DivineShield(Status):
         }
 
 
+class Frozen(Status):
+    def act(self, actor, target):
+        target.frozen += 1
+
+    def unact(self, actor, target):
+        target.frozen -= 1
+
+    def __to_json__(self):
+        return {
+            "name": "frozen"
+        }
+
+
 class Immune(Status):
     def act(self, actor, target):
         target.immune += 1
@@ -209,14 +215,33 @@ class Immune(Status):
 
 class Windfury(Status):
     def act(self, actor, target):
-        target.windfury += 1
+        pass
 
     def unact(self, actor, target):
-        target.windfury -= 1
+        pass
+
+    def update(self, owner, prev_charge):
+        return prev_charge if prev_charge > 2 else 2
 
     def __to_json__(self):
         return {
             'name': 'windfury'
+        }
+
+
+class MegaWindfury(Windfury):
+    def act(self, actor, target):
+        pass
+
+    def unact(self, actor, target):
+        pass
+
+    def update(self, owner, prev_charge):
+        return prev_charge if prev_charge > 4 else 4
+
+    def __to_json__(self):
+        return {
+            'name': 'mega_windfury'
         }
 
 
@@ -286,6 +311,19 @@ class DoubleDeathrattle(Status):
         }
 
 
+class PowerTargetsMinions(Status):
+    def act(self, actor, target):
+        target.power_targets_minions += 1
+
+    def unact(self, actor, target):
+        target.power_targets_minions -= 1
+
+    def __to_json__(self):
+        return {
+            'name': 'power_targets_minions'
+        }
+
+
 class HealAsDamage(Status):
     def act(self, actor, target):
         target.heal_does_damage += 1
@@ -331,9 +369,10 @@ class Stolen(Status):
         pass
 
     def unact(self, actor, target):
-        minion = target.copy(target.player.opponent)
-        target.remove_from_board()
-        minion.add_to_board(len(target.player.opponent.minions))
+        if not target.removed:
+            minion = target.copy(target.player.opponent)
+            target.remove_from_board()
+            minion.add_to_board(len(target.player.opponent.minions))
 
     def __to_json__(self):
         return {
@@ -375,7 +414,7 @@ class MultiplyHealAmount(Status):
         }
 
 
-class IncreaseWeaponAttack(Status):
+class IncreaseWeaponBonus(Status):
     def __init__(self, amount):
         self.amount = amount
 
@@ -387,6 +426,6 @@ class IncreaseWeaponAttack(Status):
 
     def __to_json__(self):
         return {
-            'name': 'increase_weapon_attack',
+            'name': 'increase_weapon_bonus',
             'amount': self.amount
         }

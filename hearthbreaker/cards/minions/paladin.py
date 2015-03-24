@@ -1,11 +1,13 @@
-from hearthbreaker.tags.action import Equip, Give, Heal
-from hearthbreaker.tags.base import Deathrattle, Battlecry, Effect
-from hearthbreaker.tags.selector import PlayerSelector, MinionSelector, SelfSelector, EnemyPlayer, HeroSelector
+from hearthbreaker.cards.base import MinionCard, WeaponCard
+from hearthbreaker.game_objects import Weapon, Minion
+from hearthbreaker.tags.action import Equip, Give, Heal, Damage
+from hearthbreaker.tags.base import Deathrattle, Battlecry, Effect, Buff, ActionTag
+from hearthbreaker.tags.selector import PlayerSelector, MinionSelector, SelfSelector, EnemyPlayer, HeroSelector, \
+    BothPlayer
 from hearthbreaker.constants import CHARACTER_CLASS, CARD_RARITY, MINION_TYPE
-from hearthbreaker.game_objects import MinionCard, Minion, WeaponCard, Weapon
-from hearthbreaker.tags.status import SetAttack, DivineShield
-from hearthbreaker.tags.condition import IsType
-from hearthbreaker.tags.event import MinionSummoned
+from hearthbreaker.tags.status import SetAttack, DivineShield, ChangeHealth, ChangeAttack
+from hearthbreaker.tags.condition import IsType, HasCardName, MinionHasDeathrattle
+from hearthbreaker.tags.event import MinionSummoned, MinionDied
 
 
 class AldorPeacekeeper(MinionCard):
@@ -26,6 +28,14 @@ class ArgentProtector(MinionCard):
         return Minion(2, 2)
 
 
+class DefenderMinion(MinionCard):
+    def __init__(self):
+        super().__init__("Defender", 1, CHARACTER_CLASS.PALADIN, CARD_RARITY.COMMON)
+
+    def create_minion(self, p):
+        return Minion(2, 1)
+
+
 class GuardianOfKings(MinionCard):
     def __init__(self):
         super().__init__("Guardian of Kings", 7, CHARACTER_CLASS.PALADIN, CARD_RARITY.COMMON,
@@ -37,7 +47,7 @@ class GuardianOfKings(MinionCard):
 
 class Ashbringer(WeaponCard):
     def __init__(self):
-        super().__init__("Ashbringer", 5, CHARACTER_CLASS.PALADIN, CARD_RARITY.LEGENDARY)
+        super().__init__("Ashbringer", 5, CHARACTER_CLASS.PALADIN, CARD_RARITY.LEGENDARY, False)
 
     def create_weapon(self, player):
         weapon = Weapon(5, 3)
@@ -55,16 +65,16 @@ class TirionFordring(MinionCard):
 
 class CobaltGuardian(MinionCard):
     def __init__(self):
-        super().__init__("Cobalt Guardian", 5, CHARACTER_CLASS.PALADIN, CARD_RARITY.RARE, MINION_TYPE.MECH)
+        super().__init__("Cobalt Guardian", 5, CHARACTER_CLASS.PALADIN, CARD_RARITY.RARE, minion_type=MINION_TYPE.MECH)
 
     def create_minion(self, player):
-        return Minion(6, 3, effects=[Effect(MinionSummoned(IsType(MINION_TYPE.MECH)), Give(DivineShield()),
-                                            SelfSelector())])
+        return Minion(6, 3, effects=[Effect(MinionSummoned(IsType(MINION_TYPE.MECH)), ActionTag(Give(DivineShield()),
+                                            SelfSelector()))])
 
 
 class SilverHandRecruit(MinionCard):
     def __init__(self):
-        super().__init__("Silver Hand Recruit", 1, CHARACTER_CLASS.PALADIN, CARD_RARITY.SPECIAL)
+        super().__init__("Silver Hand Recruit", 1, CHARACTER_CLASS.PALADIN, CARD_RARITY.FREE, False)
 
     def create_minion(self, player):
         return Minion(1, 1)
@@ -77,3 +87,31 @@ class ShieldedMinibot(MinionCard):
 
     def create_minion(self, player):
         return Minion(2, 2, divine_shield=True)
+
+
+class Quartermaster(MinionCard):
+    def __init__(self):
+        super().__init__("Quartermaster", 5, CHARACTER_CLASS.PALADIN, CARD_RARITY.EPIC,
+                         battlecry=Battlecry(Give([Buff(ChangeAttack(2)), Buff(ChangeHealth(2))]),
+                                             MinionSelector(HasCardName("Silver Hand Recruit"))))
+
+    def create_minion(self, player):
+        return Minion(2, 5)
+
+
+class ScarletPurifier(MinionCard):
+    def __init__(self):
+        super().__init__("Scarlet Purifier", 3, CHARACTER_CLASS.PALADIN, CARD_RARITY.RARE,
+                         battlecry=Battlecry(Damage(2), MinionSelector(MinionHasDeathrattle(), BothPlayer())))
+
+    def create_minion(self, player):
+        return Minion(4, 3)
+
+
+class BolvarFordragon(MinionCard):
+    def __init__(self):
+        super().__init__("Bolvar Fordragon", 5, CHARACTER_CLASS.PALADIN, CARD_RARITY.LEGENDARY,
+                         effects=[Effect(MinionDied(), ActionTag(Give(ChangeAttack(1)), SelfSelector()))])
+
+    def create_minion(self, player):
+        return Minion(1, 7)

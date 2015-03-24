@@ -29,6 +29,9 @@ from hearthbreaker.cards.spells.druid import (
     ForceOfNature,
     Starfire,
     PoisonSeeds,
+    DarkWispers,
+    Recycle,
+    TreeOfLife,
 )
 
 from hearthbreaker.cards.spells.hunter import (
@@ -50,6 +53,7 @@ from hearthbreaker.cards.spells.hunter import (
     SnakeTrap,
     CallPet,
     CobraShot,
+    FeignDeath,
 )
 
 from hearthbreaker.cards.spells.mage import (
@@ -74,6 +78,8 @@ from hearthbreaker.cards.spells.mage import (
     Pyroblast,
     Duplicate,
     Flamecannon,
+    EchoOfMedivh,
+    UnstablePortal,
 )
 
 from hearthbreaker.cards.spells.paladin import (
@@ -97,6 +103,7 @@ from hearthbreaker.cards.spells.paladin import (
     Repentance,
     Avenge,
     SealOfLight,
+    MusterForBattle,
 )
 
 from hearthbreaker.cards.spells.priest import (
@@ -117,7 +124,10 @@ from hearthbreaker.cards.spells.priest import (
     ShadowWordPain,
     Shadowform,
     Silence,
-    Thoughtsteal
+    Thoughtsteal,
+    VelensChosen,
+    Lightbomb,
+    LightOfTheNaaru,
 )
 
 from hearthbreaker.cards.spells.rogue import (
@@ -139,6 +149,7 @@ from hearthbreaker.cards.spells.rogue import (
     Sprint,
     Vanish,
     TinkersSharpswordOil,
+    Sabotage,
 )
 
 from hearthbreaker.cards.spells.shaman import (
@@ -159,6 +170,7 @@ from hearthbreaker.cards.spells.shaman import (
     Windfury,
     Reincarnate,
     Crackle,
+    AncestorsCall,
 )
 
 from hearthbreaker.cards.spells.warlock import (
@@ -178,6 +190,7 @@ from hearthbreaker.cards.spells.warlock import (
     PowerOverwhelming,
     Darkbomb,
     Demonheart,
+    Implosion,
 )
 
 from hearthbreaker.cards.spells.warrior import (
@@ -196,5 +209,7 @@ from hearthbreaker.cards.spells.warrior import (
     Slam,
     Upgrade,
     Whirlwind,
-    BouncingBlade
+    BouncingBlade,
+    Crush,
+    BurrowingMine,
 )

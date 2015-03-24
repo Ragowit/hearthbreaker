@@ -1,8 +1,9 @@
 import copy
 import collections
 import sys
+from hearthbreaker.cards.heroes import hero_for_class
 from hearthbreaker.constants import CHARACTER_CLASS
-from hearthbreaker.game_objects import Deck, Game
+from hearthbreaker.engine import Game, Deck
 
 if sys.version_info.major is 3:
     if sys.version_info.minor <= 2:
@@ -20,7 +21,8 @@ class StackedDeck(Deck):
             cards.extend(copy.deepcopy(card_pattern))
 
         cards.extend(card_pattern[:30 - len(cards)])
-        super().__init__(cards, character_class)
+        hero = hero_for_class(character_class)
+        super().__init__(cards, hero)
 
     def draw(self, random_func):
         for card_index in range(0, 30):

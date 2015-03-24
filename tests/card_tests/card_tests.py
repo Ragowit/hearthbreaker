@@ -4,10 +4,23 @@ import re
 
 from hearthbreaker.agents.basic_agents import DoNothingAgent
 from hearthbreaker.constants import CHARACTER_CLASS, MINION_TYPE, CARD_RARITY
-from hearthbreaker.game_objects import card_lookup
+from hearthbreaker.engine import card_lookup
 from tests.agents.testing_agents import PlayAndAttackAgent
+from tests.card_tests.id_mapping import id_mappings
 from tests.testing_utils import generate_game_for
 from hearthbreaker.cards import *
+
+
+class TestUtilities:
+    def assertSparePart(self, card):
+        self.assertIn(card.name, ["Finicky Cloakfield", "Emergency Coolant", "Rusty Horn", "Armor Plating",
+                                  "Reversing Switch", "Time Rewinder", "Whirling Blades"],
+                      "'{}' was not a spare part card".format(card.name))
+
+    def assertNotSparePart(self, card):
+        self.assertNotIn(card.name, ["Finicky Cloakfield", "Emergency Coolant", "Rusty Horn", "Armor Plating",
+                                     "Reversing Switch", "Time Rewinder", "Whirling Blades"],
+                         "'{}' was a spare part card".format(card.name))
 
 
 class CardTest(unittest.TestCase):
@@ -24,18 +37,19 @@ class CardTest(unittest.TestCase):
         card_dict = json.load(file)
         not_implemented = []
         total_cards = 0
-        for card_set in ['Expert', "Basic", "Curse of Naxxramas", "Goblins vs Gnomes"]:
+        for card_set in ['Expert', "Basic", "Curse of Naxxramas", "Goblins vs Gnomes", "Reward", "Promotion"]:
             for card_info in card_dict[card_set]:
-                if 'collectible' in card_info and card_info['collectible'] and card_info["type"] != "Hero":
+                if card_info["type"] in ['Minion', 'Spell', 'Weapon', 'Secret']:
                     total_cards += 1
                     try:
-                        card = card_lookup(card_info["name"])
+                        card = card_lookup(id_mappings[card_info["id"]])
                     except KeyError:
-                        not_implemented.append(card_info["name"])
+                        not_implemented.append("{}: ({})".format(card_info["name"], card_info['id']))
                         continue
-                    self.assertEqual(int(card_info["cost"]), card.mana,
-                                     "Expected {} to have cost {}.  Got {}".format(
-                                     card_info["name"], card_info["cost"], card.mana))
+                    if "cost" in card_info:
+                        self.assertEqual(int(card_info["cost"]), card.mana,
+                                         "Expected {} to have cost {}.  Got {}".format(
+                                         card_info["name"], card_info["cost"], card.mana))
                     if "playerClass" in card_info:
                         self.assertEqual(CHARACTER_CLASS.from_str(card_info["playerClass"]), card.character_class,
                                          "Expected {} to have class {}.  Got {}".format(
@@ -45,9 +59,17 @@ class CardTest(unittest.TestCase):
                         self.assertEqual(CHARACTER_CLASS.ALL, card.character_class,
                                          "Expected {} to have no class.  Got {}".format(
                                              card_info["name"], CHARACTER_CLASS.to_str(card.character_class)))
-                    self.assertEqual(CARD_RARITY.from_str(card_info["rarity"]), card.rarity,
-                                     "Expected card {} to have rarity {}.  Got {}".format(
-                                         card_info["name"], card_info["rarity"], CARD_RARITY.to_str(card.rarity)))
+                    if "rarity" in card_info:
+                        self.assertEqual(CARD_RARITY.from_str(card_info["rarity"]), card.rarity,
+                                         "Expected card {} to have rarity {}.  Got {}".format(
+                                             card_info["name"], card_info["rarity"], CARD_RARITY.to_str(card.rarity)))
+                    if "collectible" in card_info:
+                        if card_info['collectible']:
+                            self.assertTrue(card.collectible, "Expected card {} to be collectible".format(
+                                card_info['name']))
+                        else:
+                            self.assertFalse(card.collectible, "Expected card {} not to be collectible".format(
+                                card_info['name']))
                     if card_info["type"] == "Minion":
                         minion = card.create_minion(fake_game.current_player)
                         minion.player = fake_game.current_player
@@ -66,13 +88,13 @@ class CardTest(unittest.TestCase):
                                     self.assertTrue(minion.stealth,
                                                     "Expected {:s} to have stealth".format(card_info["name"]))
                                 elif effect == "Windfury":
-                                    self.assertTrue(minion.windfury,
+                                    self.assertTrue(minion.windfury(),
                                                     "Expected {:s} to have windfury".format(card_info["name"]))
                                 elif effect == "Charge":
-                                    self.assertTrue(minion.charge,
+                                    self.assertTrue(minion.charge(),
                                                     "Expected {:s} to have charge".format(card_info["name"]))
                                 elif battlecry_re.match(effect):
-                                    self.assertTrue(minion.battlecry is not None or card.battlecry is not None,
+                                    self.assertTrue(card.battlecry is not None,
                                                     "Expected {:s} to have a battlecry".format
                                                     (card_info["name"]))
                                 elif deathrattle_re.match(effect):
@@ -136,7 +158,10 @@ class CardTest(unittest.TestCase):
                     except KeyError:
                         continue
                     game = generate_game_for(type(card), StonetuskBoar, PlayAndAttackAgent, DoNothingAgent)
-
-                    while not game.game_ended:
-                        game.play_single_turn()
+                    try:
+                        while not game.game_ended:
+                            game.play_single_turn()
+                    except Exception as e:
+                        print(card)
+                        raise e
             file.close()

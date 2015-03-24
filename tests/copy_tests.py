@@ -3,10 +3,12 @@ import random
 import unittest
 
 from hearthbreaker.agents.basic_agents import DoNothingAgent, PredictableAgent
+from hearthbreaker.cards.base import MinionCard
 from hearthbreaker.constants import MINION_TYPE, CARD_RARITY
-from hearthbreaker.game_objects import MinionCard
+from hearthbreaker.tags.status import ChangeAttack
 from tests.agents.testing_agents import CardTestingAgent, OneCardPlayingAgent, PlayAndAttackAgent, \
-    EnemyMinionSpellTestingAgent
+    EnemyMinionSpellTestingAgent, HeroPowerAndCardPlayingAgent
+from tests.card_tests.card_tests import TestUtilities
 from tests.testing_utils import generate_game_for
 from hearthbreaker.cards import *
 
@@ -89,7 +91,7 @@ class TestGameCopying(unittest.TestCase):
             game.play_single_turn()
 
 
-class TestMinionCopying(unittest.TestCase):
+class TestMinionCopying(unittest.TestCase, TestUtilities):
     def setUp(self):
         random.seed(1857)
 
@@ -119,7 +121,7 @@ class TestMinionCopying(unittest.TestCase):
                 self.assertEqual(2, minion.calculate_attack())
                 self.assertEqual(2, minion.health)
                 self.assertEqual(2, minion.calculate_max_health())
-                self.assertTrue(minion.charge)
+                self.assertTrue(minion.charge())
                 self.assertEqual("Treant", minion.card.name)
 
         game.other_player.bind_once("turn_ended", check_minions)
@@ -297,8 +299,8 @@ class TestMinionCopying(unittest.TestCase):
             game.play_single_turn()
 
         self.assertEqual(2, len(game.current_player.minions))
-        self.assertTrue(game.current_player.minions[0].charge)
-        self.assertTrue(game.current_player.minions[1].charge)
+        self.assertTrue(game.current_player.minions[0].charge())
+        self.assertTrue(game.current_player.minions[1].charge())
 
     def test_StarvingBuzzard(self):
         game = generate_game_for(StarvingBuzzard, [StonetuskBoar, FacelessManipulator, Maexxna, CoreHound],
@@ -677,7 +679,6 @@ class TestMinionCopying(unittest.TestCase):
             game.play_single_turn()
 
         self.assertEqual(25, game.other_player.hero.health)
-        self.assertFalse(game.other_player.hero.frozen_this_turn)
         self.assertFalse(game.other_player.hero.frozen)
         self.assertEqual(1, len(game.current_player.minions))
         self.assertEqual(3, game.current_player.minions[0].calculate_attack())
@@ -692,7 +693,6 @@ class TestMinionCopying(unittest.TestCase):
         self.assertEqual(22, game.other_player.hero.health)
 
         # Always false after the end of a turn
-        self.assertFalse(game.other_player.hero.frozen_this_turn)
         self.assertTrue(game.other_player.hero.frozen)
 
         # Now make sure that attacking the Water Elemental directly will freeze a character
@@ -779,7 +779,7 @@ class TestMinionCopying(unittest.TestCase):
         self.assertEqual("Goldshire Footman", new_game.current_player.minions[1].card.name)
         self.assertEqual("Undertaker", new_game.current_player.minions[2].card.name)
         self.assertEqual(2, new_game.current_player.minions[2].calculate_attack())
-        self.assertEqual(3, new_game.current_player.minions[2].calculate_max_health())
+        self.assertEqual(2, new_game.current_player.minions[2].calculate_max_health())
 
         self.assertEqual("Undertaker", game.current_player.minions[1].card.name)
         self.assertEqual(1, game.current_player.minions[1].calculate_attack())
@@ -798,7 +798,7 @@ class TestMinionCopying(unittest.TestCase):
 
         self.assertEqual("Undertaker", game.current_player.minions[2].card.name)
         self.assertEqual(2, game.current_player.minions[2].calculate_attack())
-        self.assertEqual(3, game.current_player.minions[2].calculate_max_health())
+        self.assertEqual(2, game.current_player.minions[2].calculate_max_health())
 
     def test_ZombieChow(self):
         game = generate_game_for([ZombieChow, ZombieChow, ZombieChow, AuchenaiSoulpriest], StonetuskBoar,
@@ -1504,30 +1504,32 @@ class TestMinionCopying(unittest.TestCase):
 
         # Play the Warsong Commander
         commander = WarsongCommander()
+        commander.player = game.players[0]
         commander.use(game.players[0], game)
-        self.assertFalse(game.players[0].minions[0].charge)  # Should not give charge to itself
+        self.assertFalse(game.players[0].minions[0].charge())  # Should not give charge to itself
         game = game.copy()
         # Test so that enrage doesn't remove the charge
         worgen = RagingWorgen()
+        worgen.player = game.players[0]
         worgen.use(game.players[0], game)
         game.players[0].minions[0].damage(1, None)  # Trigger enrage, charge should still be active
         self.assertEqual(4, game.players[0].minions[0].calculate_attack())
-        self.assertTrue(game.players[0].minions[0].charge)
+        self.assertTrue(game.players[0].minions[0].charge())
 
         # Remove the Warsong Commander
         game.players[0].minions[-1].die(None)
         game.check_delayed()
         game = game.copy()
         # The previous charged minions should still have charge
-        self.assertTrue(game.players[0].minions[0].charge)
-        self.assertTrue(game.players[0].minions[-1].charge)
+        self.assertTrue(game.players[0].minions[0].charge())
+        self.assertTrue(game.players[0].minions[-1].charge())
 
         # Test so that a minion played before Warsong doesn't get charge
         shield = Shieldbearer()
         shield.summon(game.players[0], game, 0)
-        self.assertFalse(game.players[0].minions[0].charge)
+        self.assertFalse(game.players[0].minions[0].charge())
         commander.use(game.players[0], game)
-        self.assertFalse(game.players[0].minions[1].charge)
+        self.assertFalse(game.players[0].minions[1].charge())
         # Remove the Warsong again
         game.players[0].minions[0].die(None)
         game.players[0].minions[0].activate_delayed()
@@ -1536,10 +1538,11 @@ class TestMinionCopying(unittest.TestCase):
         # Play Warsong, the buffed minion should not get charge
         game = game.copy()
         commander.use(game.players[0], game)
-        self.assertFalse(game.players[0].minions[1].charge)
+        self.assertFalse(game.players[0].minions[1].charge())
 
         # Auras!
         stormwind = StormwindChampion()
+        stormwind.player = game.players[0]
         stormwind.use(game.players[0], game)
         self.assertEqual(3, game.players[0].minions[1].calculate_attack())
         self.assertEqual(4, game.players[0].minions[1].health)
@@ -1549,7 +1552,7 @@ class TestMinionCopying(unittest.TestCase):
         game = game.copy()
         # And play it again. It should get the aura FIRST, making it a 4/4 minion, and thus DOES NOT gain charge!
         worgen.use(game.players[0], game)
-        self.assertFalse(game.players[0].minions[0].charge)
+        self.assertFalse(game.players[0].minions[0].charge())
 
     def test_CommandingShout(self):
         game = generate_game_for([StonetuskBoar, StonetuskBoar, StonetuskBoar, BoulderfistOgre,
@@ -1774,6 +1777,7 @@ class TestMinionCopying(unittest.TestCase):
         self.assertEqual(29, game.players[1].hero.health)  # No enrage, only LJ
 
         game.play_single_turn()
+        self.assertEqual(3, game.players[0].hero.calculate_attack())
         self.assertEqual(22, game.players[1].hero.health)  # Enrage LJ for 3 + Smith for 4
 
         game = game.copy()
@@ -2217,13 +2221,9 @@ class TestMinionCopying(unittest.TestCase):
         game.play_single_turn()
         self.assertEqual(0, len(game.players[0].minions))
         self.assertEqual(7, len(game.players[0].hand))
-        self.assertIn(game.players[0].hand[-1].name, ["Finicky Cloakfield", "Emergency Coolant", "Rusty Horn",
-                                                      "Armour Plating", "Reversing Switch", "Time Rewinder",
-                                                      "Whirling Blades"])
+        self.assertSparePart(game.players[0].hand[-1])
         self.assertEqual(9, len(game.players[1].hand))
-        self.assertIn(game.players[1].hand[-1].name, ["Finicky Cloakfield", "Emergency Coolant", "Rusty Horn",
-                                                      "Armour Plating", "Reversing Switch", "Time Rewinder",
-                                                      "Whirling Blades"])
+        self.assertSparePart(game.players[1].hand[-1])
 
     def test_FelCannon(self):
         game = generate_game_for([FelCannon, BoulderfistOgre], [BloodfenRaptor, HarvestGolem, Deathwing],
@@ -2318,3 +2318,270 @@ class TestMinionCopying(unittest.TestCase):
         self.assertEqual("Mogu'shan Warden", game.other_player.minions[0].card.name)
         self.assertEqual("Silverback Patriarch", game.other_player.minions[1].card.name)
         self.assertEqual(25, game.other_player.hero.health)
+
+    def test_Toshley(self):
+        game = generate_game_for(Toshley, Assassinate, OneCardPlayingAgent, OneCardPlayingAgent)
+
+        for turn in range(11):
+            game.play_single_turn()
+
+        # The last card in the player's hand should be a spare part.
+
+        self.assertSparePart(game.current_player.hand[-1])
+        self.assertNotSparePart(game.other_player.hand[-1])
+
+        # The assassinate should kill Toshley, resulting in yet another spare part.
+        game = game.copy()
+        game.play_single_turn()
+        self.assertSparePart(game.other_player.hand[-1])
+        self.assertSparePart(game.other_player.hand[-2])
+        self.assertNotSparePart(game.current_player.hand[-1])
+
+    def test_FelReaver(self):
+        game = generate_game_for(FelReaver, [ShadowBolt, Wisp, LightsJustice], OneCardPlayingAgent, CardTestingAgent)
+
+        for turn in range(9):
+            game.play_single_turn()
+
+        self.assertEqual(1, len(game.current_player.minions))
+        self.assertEqual(22, game.current_player.deck.left)
+        self.assertEqual(7, len(game.current_player.hand))
+        self.assertEqual(22, game.other_player.deck.left)
+        self.assertEqual(9, len(game.other_player.hand))
+
+        game = game.copy()
+        game.play_single_turn()
+        self.assertEqual(13, game.other_player.deck.left)
+        self.assertEqual(7, len(game.other_player.hand))
+        self.assertEqual(21, game.current_player.deck.left)
+        self.assertEqual(7, len(game.current_player.hand))
+
+        game = game.copy()
+        game.play_single_turn()
+        self.assertEqual(2, len(game.current_player.minions))
+        self.assertEqual(12, game.current_player.deck.left)
+        self.assertEqual(7, len(game.current_player.hand))
+        self.assertEqual(21, game.other_player.deck.left)
+        self.assertEqual(7, len(game.other_player.hand))
+
+    def test_Cogmaster(self):
+        game = generate_game_for([Cogmaster, Snowchugger], ClockworkGnome, OneCardPlayingAgent, OneCardPlayingAgent)
+
+        game.play_single_turn()
+
+        self.assertEqual(1, len(game.current_player.minions))
+        self.assertEqual(1, game.current_player.minions[0].calculate_attack())
+
+        game = game.copy()
+        game.play_single_turn()
+        self.assertEqual(1, len(game.current_player.minions))
+        self.assertEqual(1, game.other_player.minions[0].calculate_attack())
+
+        game = game.copy()
+        game.play_single_turn()
+        self.assertEqual(2, len(game.current_player.minions))
+        self.assertEqual(2, game.current_player.minions[0].calculate_attack())
+        self.assertEqual(3, game.current_player.minions[1].calculate_attack())
+
+    def test_KingOfBeasts(self):
+        game = generate_game_for([StonetuskBoar, StonetuskBoar, StonetuskBoar, KingOfBeasts], StonetuskBoar,
+                                 OneCardPlayingAgent, OneCardPlayingAgent)
+        for turn in range(9):
+            game.play_single_turn()
+
+        self.assertEqual(4, len(game.current_player.minions))
+        self.assertEqual(5, game.current_player.minions[0].calculate_attack())
+
+        game = game.copy()
+        game.play_single_turn()
+        game.play_single_turn()
+
+        self.assertEqual(5, len(game.current_player.minions))
+        self.assertEqual(5, game.current_player.minions[1].calculate_attack())
+
+    def test_Malorne(self):
+        game = generate_game_for(Malorne, Assassinate, OneCardPlayingAgent, OneCardPlayingAgent)
+
+        for turn in range(13):
+            game.play_single_turn()
+
+        self.assertEqual(1, len(game.current_player.minions))
+        self.assertEqual(20, game.current_player.deck.left)
+
+        game = game.copy()
+        game.play_single_turn()
+        self.assertEqual(0, len(game.other_player.minions))
+        self.assertEqual(21, game.other_player.deck.left)
+
+    def test_TradePrinceGallywix(self):
+        game = generate_game_for([Wisp, Wisp, Wisp, TradePrinceGallywix, SinisterStrike], ArcaneExplosion,
+                                 OneCardPlayingAgent, CardTestingAgent)
+
+        for turn in range(11):
+            game.play_single_turn()
+
+        game.other_player.max_mana += 2
+        game = game.copy()
+        game.play_single_turn()
+
+        # The opponent played Arcane Explosion Twice, so we should have two copies of it (and none of Gallywix's coin)
+        self.assertEqual("Arcane Explosion", game.other_player.hand[-1].name)
+        self.assertEqual("Arcane Explosion", game.other_player.hand[-2].name)
+        self.assertEqual("Arcane Explosion", game.other_player.hand[-3].name)
+        self.assertEqual("Arcane Explosion", game.other_player.hand[-4].name)
+        self.assertEqual("Trade Prince Gallywix", game.other_player.hand[-5].name)
+
+        self.assertEqual(0, len(game.current_player.hand))
+
+        game.play_single_turn()
+
+        # The other player should not recieve anything for my spell_cast
+        self.assertEqual(0, len(game.other_player.hand))
+
+    def test_MalGanis(self):
+        game = generate_game_for([FlameImp, MalGanis], FlameImp, OneCardPlayingAgent, OneCardPlayingAgent)
+
+        for turn in range(17):
+            game.play_single_turn()
+
+        game = game.copy()
+        self.assertEqual(2, len(game.current_player.minions))
+        self.assertTrue(game.current_player.hero.immune)
+        self.assertFalse(game.other_player.hero.immune)
+        self.assertEqual(5, game.current_player.minions[1].calculate_attack())
+        self.assertEqual(4, game.current_player.minions[1].calculate_max_health())
+        self.assertEqual(9, game.current_player.minions[0].calculate_attack())
+        self.assertEqual(7, game.current_player.minions[0].calculate_max_health())
+
+        for minion in game.other_player.minions:
+            self.assertEqual(3, minion.calculate_attack())
+            self.assertEqual(2, minion.calculate_max_health())
+
+    def test_FloatingWatcher(self):
+        game = generate_game_for(FloatingWatcher, Hellfire, HeroPowerAndCardPlayingAgent, OneCardPlayingAgent)
+
+        for turn in range(13):
+            game.play_single_turn()
+
+        self.assertEqual(1, len(game.current_player.minions))
+        self.assertEqual(9, game.current_player.hero.health)
+        self.assertEqual(4, game.current_player.minions[0].calculate_attack())
+        self.assertEqual(4, game.current_player.minions[0].calculate_max_health())
+
+        game = game.copy()
+        game.play_single_turn()
+        self.assertEqual(1, len(game.other_player.minions))
+        self.assertEqual(6, game.other_player.hero.health)
+        self.assertEqual(4, game.other_player.minions[0].calculate_attack())
+        self.assertEqual(4, game.other_player.minions[0].calculate_max_health())
+
+        game = game.copy()
+        game.play_single_turn()
+        self.assertEqual(2, len(game.current_player.minions))
+        self.assertEqual(4, game.current_player.hero.health)
+        self.assertEqual(4, game.current_player.minions[0].calculate_attack())
+        self.assertEqual(4, game.current_player.minions[0].calculate_max_health())
+        self.assertEqual(6, game.current_player.minions[1].calculate_attack())
+        self.assertEqual(6, game.current_player.minions[1].calculate_max_health())
+
+    def test_SouthseaDeckhand(self):
+        game = generate_game_for([SouthseaDeckhand, LightsJustice], AcidicSwampOoze,
+                                 PlayAndAttackAgent, OneCardPlayingAgent)
+        for turn in range(0, 2):
+            game.play_single_turn()
+
+        self.assertEqual(30, game.players[1].hero.health)
+        self.assertEqual(1, len(game.players[0].minions))
+        self.assertFalse(game.players[0].minions[0].charge())
+
+        game = game.copy()
+        game.play_single_turn()
+        # Old minion attacks, equip weapon and attack, new minion gets charge and attacks
+        self.assertEqual(25, game.players[1].hero.health)
+        self.assertEqual(2, len(game.players[0].minions))
+        self.assertTrue(game.players[0].minions[0].charge())
+        self.assertTrue(game.players[0].minions[1].charge())
+
+        # Ooze destroys weapon, the deckhands no longer have charge
+        game = game.copy()
+        game.play_single_turn()
+
+        self.assertFalse(game.players[0].minions[0].charge())
+        self.assertFalse(game.players[0].minions[1].charge())
+
+    def test_BolvarFordragon(self):
+        game = generate_game_for([MusterForBattle, BolvarFordragon], [FanOfKnives],
+                                 OneCardPlayingAgent, OneCardPlayingAgent)
+        game = game.copy()
+        for turn in range(8):
+            game.play_single_turn()
+
+        game = game.copy()
+        game.play_single_turn()
+        self.assertEqual(1, len(game.current_player.minions))
+        self.assertEqual(4, game.current_player.minions[0].calculate_attack())
+        self.assertEqual(0, game.current_player.minions[0].card.calculate_stat(ChangeAttack, 0))
+
+    def test_FoeReaper4000(self):
+        game = generate_game_for(FoeReaper4000, [StonetuskBoar, AncientOfWar, AncientOfWar],
+                                 PlayAndAttackAgent, OneCardPlayingAgent)
+
+        for turn in range(16):
+            game.play_single_turn()
+        game = game.copy()
+        game.players[0].agent.choose_target = lambda targets: targets[1]
+        game.play_single_turn()
+        self.assertEqual(2, len(game.current_player.minions))
+        self.assertEqual(2, len(game.other_player.minions))
+        self.assertEqual(4, game.other_player.minions[0].health)
+        self.assertEqual(4, game.other_player.minions[1].health)
+        self.assertEqual(4, game.current_player.minions[1].health)
+        self.assertEqual(30, game.current_player.hero.health)
+        self.assertEqual(30, game.other_player.hero.health)
+
+    def test_SteamwheedleSniper(self):
+        game = generate_game_for(SteamwheedleSniper, StonetuskBoar, PredictableAgent, DoNothingAgent)
+        for turn in range(8):
+            game.play_single_turn()
+
+        game = game.copy()
+        game.play_single_turn()
+        self.assertEqual(2, len(game.current_player.minions))
+        self.assertEqual(22, game.other_player.hero.health)
+        self.assertEqual(1, game.current_player.minions[1].health)
+        self.assertEqual(3, game.current_player.minions[0].health)
+
+    def test_UnstablePortal(self):
+        game = generate_game_for(UnstablePortal, StonetuskBoar, CardTestingAgent, DoNothingAgent)
+
+        for turn in range(3):
+            game.play_single_turn()
+        game = game.copy()
+        self.assertEqual(5, len(game.current_player.hand))
+        self.assertTrue(game.current_player.hand[-1].is_minion())
+        if game.current_player.hand[-1].mana >= 3:
+            self.assertEqual(3, game.current_player.hand[-1].mana - game.current_player.hand[-1].mana_cost(None))
+
+    def test_MimironsHead(self):
+        game = generate_game_for([Mechwarper, SpiderTank, ChillwindYeti, MimironsHead, Deathwing], StonetuskBoar,
+                                 OneCardPlayingAgent, DoNothingAgent)
+
+        for turn in range(10):
+            game.play_single_turn()
+
+        game = game.copy()
+        game.play_single_turn()
+        self.assertEqual(2, len(game.current_player.minions))
+        self.assertEqual("V-07-TR-0N", game.current_player.minions[0].card.name)
+        self.assertEqual("Chillwind Yeti", game.current_player.minions[1].card.name)
+
+    def test_MistressOfPain(self):
+        game = generate_game_for([MistressOfPain, AbusiveSergeant], SinisterStrike,
+                                 PlayAndAttackAgent, OneCardPlayingAgent)
+
+        for turn in range(4):
+            game.play_single_turn()
+
+        game = game.copy()
+        game.play_single_turn()
+        self.assertEqual(27, game.current_player.hero.health)

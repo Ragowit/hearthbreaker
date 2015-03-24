@@ -1,33 +1,6 @@
-import hearthbreaker.constants
-import hearthbreaker.game_objects
-
-
-def powers(character_class):
-    if character_class == hearthbreaker.constants.CHARACTER_CLASS.DRUID:
-        return DruidPower
-    elif character_class == hearthbreaker.constants.CHARACTER_CLASS.HUNTER:
-        return HunterPower
-    elif character_class == hearthbreaker.constants.CHARACTER_CLASS.MAGE:
-        return MagePower
-    elif character_class == hearthbreaker.constants.CHARACTER_CLASS.PRIEST:
-        return PriestPower
-    elif character_class == hearthbreaker.constants.CHARACTER_CLASS.PALADIN:
-        return PaladinPower
-    elif character_class == hearthbreaker.constants.CHARACTER_CLASS.ROGUE:
-        return RoguePower
-    elif character_class == hearthbreaker.constants.CHARACTER_CLASS.SHAMAN:
-        return ShamanPower
-    elif character_class == hearthbreaker.constants.CHARACTER_CLASS.WARLOCK:
-        return WarlockPower
-    elif character_class == hearthbreaker.constants.CHARACTER_CLASS.WARRIOR:
-        return WarriorPower
-    else:
-        return Power
-
-
 class Power:
-    def __init__(self, hero):
-        self.hero = hero
+    def __init__(self):
+        self.hero = None
         self.used = False
 
     def can_use(self):
@@ -44,9 +17,6 @@ class Power:
 
 
 class DruidPower(Power):
-    def __init__(self, hero):
-        super().__init__(hero)
-
     def use(self):
         super().use()
         self.hero.change_temp_attack(1)
@@ -54,18 +24,18 @@ class DruidPower(Power):
 
 
 class HunterPower(Power):
-    def __init__(self, hero):
-        super().__init__(hero)
-
     def use(self):
         super().use()
-        self.hero.player.game.other_player.hero.damage(2, None)
+        if self.hero.power_targets_minions:
+            target = self.hero.find_power_target()
+            super().use()
+            target.damage(2 * self.hero.player.spell_multiplier, None)
+            self.hero.player.game.check_delayed()
+        else:
+            self.hero.player.game.other_player.hero.damage(2 * self.hero.player.spell_multiplier, None)
 
 
 class MagePower(Power):
-    def __init__(self, hero):
-        super().__init__(hero)
-
     def use(self):
         target = self.hero.find_power_target()
         super().use()
@@ -77,9 +47,6 @@ class MagePower(Power):
 
 
 class PriestPower(Power):
-    def __init__(self, hero):
-        super().__init__(hero)
-
     def use(self):
         target = self.hero.find_power_target()
         super().use()
@@ -94,13 +61,10 @@ class PriestPower(Power):
 
 # Special power the priest can obtain via the card Shadowform
 class MindSpike(Power):
-    def __init__(self, hero):
-        super().__init__(hero)
-
     def use(self):
         super().use()
         target = self.hero.find_power_target()
-        target.damage(2, None)
+        target.damage(2 * self.hero.player.spell_multiplier, None)
 
     def __str__(self):
         return "Mind Spike"
@@ -108,44 +72,28 @@ class MindSpike(Power):
 
 # Special power the priest can obtain via the card Shadowform
 class MindShatter(Power):
-    def __init__(self, hero):
-        super().__init__(hero)
-
     def use(self):
         super().use()
         target = self.hero.find_power_target()
-        target.damage(3, None)
+        target.damage(3 * self.hero.player.spell_multiplier, None)
 
     def __str__(self):
         return "Mind Shatter"
 
 
 class PaladinPower(Power):
-    def __init__(self, hero):
-        super().__init__(hero)
-
     def use(self):
         super().use()
+        from hearthbreaker.cards.minions.paladin import SilverHandRecruit
 
-        recruit_card = hearthbreaker.cards.minions.paladin.SilverHandRecruit()
+        recruit_card = SilverHandRecruit()
         recruit_card.summon(self.hero.player, self.hero.player.game, len(self.hero.player.minions))
 
 
 class RoguePower(Power):
-    def __init__(self, hero):
-        super().__init__(hero)
-
     def use(self):
-        class WickedKnife(hearthbreaker.game_objects.WeaponCard):
-            def __init__(self):
-                super().__init__("Wicked Knife", 1, hearthbreaker.constants.CHARACTER_CLASS.ROGUE,
-                                 hearthbreaker.constants.CARD_RARITY.SPECIAL)
-
-            def create_weapon(self, player):
-                weapon = hearthbreaker.game_objects.Weapon(1, 2)
-                return weapon
-
         super().use()
+        from hearthbreaker.cards.weapons.rogue import WickedKnife
         wicked_knife = WickedKnife()
         knife = wicked_knife.create_weapon(self.hero.player)
         knife.card = wicked_knife
@@ -153,13 +101,13 @@ class RoguePower(Power):
 
 
 class ShamanPower(Power):
-    def __init__(self, hero):
+    def __init__(self):
         self.healing_totem = False
         self.searing_totem = False
         self.stoneclaw_totem = False
         self.wrath_of_air_totem = False
 
-        super().__init__(hero)
+        super().__init__()
 
     def can_use(self):
         self.healing_totem = False
@@ -184,46 +132,39 @@ class ShamanPower(Power):
 
     def use(self):
         super().use()
+        from hearthbreaker.cards.minions.shaman import HealingTotem, SearingTotem, StoneclawTotem, WrathOfAirTotem
 
         totems = []
         if not self.healing_totem:
-            totems.append(hearthbreaker.cards.minions.shaman.HealingTotem())
+            totems.append(HealingTotem())
         if not self.searing_totem:
-            totems.append(hearthbreaker.cards.minions.shaman.SearingTotem())
+            totems.append(SearingTotem())
         if not self.stoneclaw_totem:
-            totems.append(hearthbreaker.cards.minions.shaman.StoneclawTotem())
+            totems.append(StoneclawTotem())
         if not self.wrath_of_air_totem:
-            totems.append(hearthbreaker.cards.minions.shaman.WrathOfAirTotem())
+            totems.append(WrathOfAirTotem())
 
         random_totem = self.hero.player.game.random_choice(totems)
         random_totem.summon(self.hero.player, self.hero.player.game, len(self.hero.player.minions))
 
 
 class WarlockPower(Power):
-    def __init__(self, hero):
-        super().__init__(hero)
-
     def use(self):
         super().use()
-        self.hero.player.game.current_player.hero.damage(2, None)
+        self.hero.player.game.current_player.hero.damage(2 * self.hero.player.spell_multiplier, None)
         self.hero.player.game.current_player.draw()
 
 
 class JaraxxusPower(Power):
-    def __init__(self, hero):
-        super().__init__(hero)
-
     def use(self):
         super().use()
+        from hearthbreaker.cards.minions.warlock import Infernal
 
-        infernal_card = hearthbreaker.cards.minions.warlock.Infernal()
+        infernal_card = Infernal()
         infernal_card.summon(self.hero.player, self.hero.player.game, len(self.hero.player.minions))
 
 
 class WarriorPower(Power):
-    def __init__(self, hero):
-        super().__init__(hero)
-
     def use(self):
         super().use()
         self.hero.increase_armor(2)

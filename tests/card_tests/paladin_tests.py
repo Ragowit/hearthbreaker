@@ -2,6 +2,7 @@ import random
 import unittest
 
 from hearthbreaker.agents.basic_agents import PredictableAgent, DoNothingAgent
+from hearthbreaker.tags.status import ChangeAttack
 from tests.agents.testing_agents import OneCardPlayingAgent, CardTestingAgent, EnemyMinionSpellTestingAgent, \
     PlayAndAttackAgent
 from tests.testing_utils import generate_game_for
@@ -45,6 +46,24 @@ class TestPaladin(unittest.TestCase):
         self.assertEqual(1, game.other_player.minions[0].calculate_attack())
         self.assertEqual(1, game.other_player.minions[0].health)
         self.assertEqual(1, game.other_player.minions[0].calculate_max_health())
+
+    def test_BlessedChampion_and_Cogmaster(self):
+        game = generate_game_for([Cogmaster, MechBearCat], BlessedChampion, OneCardPlayingAgent, OneCardPlayingAgent)
+
+        for turn in range(10):
+            game.play_single_turn()
+
+        # The Cogmaster's attack should be doubled, leaving it at 2 attack
+        self.assertEqual(1, len(game.other_player.minions))
+        self.assertEqual(2, game.other_player.minions[0].calculate_attack())
+
+        # based on https://www.youtube.com/watch?v=n88Ex7e7L34
+        # Patch 2.2.0.8036
+
+        # The Mech-Bear-Cat should be played, bringing the Cogmaster's attack up to 4 (= (1 * 2 + 2) )
+        game.play_single_turn()
+        self.assertEqual(2, len(game.current_player.minions))
+        self.assertEqual(4, game.current_player.minions[1].calculate_attack())
 
     def test_BlessingOfKings(self):
         game = generate_game_for(BlessingOfKings, StonetuskBoar, EnemyMinionSpellTestingAgent, OneCardPlayingAgent)
@@ -257,12 +276,14 @@ class TestPaladin(unittest.TestCase):
         game.players[0].hero.health = 20
         # Put back some cards from hand, for testing purpose
         for putback in range(0, 4):
-            game.players[1].put_back(game.players[1].hand[0])
+            card = game.players[1].hand.pop()
+            game.players[1].put_back(card)
         game.players[1].put_back(game.players[1].hand[1])
+        game.players[1].hand.remove(game.players[1].hand[1])
         self.assertEqual(5, len(game.players[1].hand))
         game.play_single_turn()  # Lay on Hands should be played
         self.assertEqual(28, game.players[0].hero.health)
-        self.assertEqual(7, len(game.players[1].hand))
+        self.assertEqual(8, len(game.players[1].hand))
         game.play_single_turn()
         game.play_single_turn()  # Lay on Hands should be played, and a card be discarded since we have 8 already
         self.assertEqual(30, game.players[0].hero.health)
@@ -443,7 +464,7 @@ class TestPaladin(unittest.TestCase):
         self.assertEqual(6, len(game.current_player.minions))
 
         game.play_single_turn()
-
+        # This has been tested locally on patch 2.1.0.7628
         self.assertEqual(7, len(game.other_player.minions))
         self.assertEqual("Spectral Spider", game.other_player.minions[0].card.name)
         self.assertEqual("Spectral Spider", game.other_player.minions[1].card.name)
@@ -655,3 +676,88 @@ class TestPaladin(unittest.TestCase):
 
         self.assertEqual(29, game.players[0].hero.health)
         self.assertEqual(28, game.players[1].hero.health)
+
+    def test_MusterForBattle(self):
+        game = generate_game_for(MusterForBattle, Counterspell, OneCardPlayingAgent, OneCardPlayingAgent)
+
+        for turn in range(0, 5):
+            game.play_single_turn()
+        self.assertEqual(1, game.players[0].hero.weapon.base_attack)
+        self.assertEqual(4, game.players[0].hero.weapon.durability)
+        self.assertEqual(3, len(game.players[0].minions))
+        self.assertEqual(1, game.players[0].minions[0].calculate_attack())
+        self.assertEqual(1, game.players[0].minions[0].health)
+        self.assertEqual("Silver Hand Recruit", game.players[0].minions[0].card.name)
+
+        # Properly gets counterspelled
+        game.play_single_turn()
+        game.play_single_turn()
+
+        self.assertEqual(3, len(game.players[0].minions))
+
+    def test_Quartermaster(self):
+        game = generate_game_for([MusterForBattle, Quartermaster], Wisp, OneCardPlayingAgent, DoNothingAgent)
+        for turn in range(0, 10):
+            game.play_single_turn()
+
+        self.assertEqual(4, len(game.players[0].minions))
+        self.assertEqual(2, game.players[0].minions[0].calculate_attack())
+        self.assertEqual(5, game.players[0].minions[0].health)
+        self.assertEqual(3, game.players[0].minions[1].calculate_attack())
+        self.assertEqual(3, game.players[0].minions[1].health)
+        self.assertEqual(3, game.players[0].minions[2].calculate_attack())
+        self.assertEqual(3, game.players[0].minions[2].health)
+        self.assertEqual(3, game.players[0].minions[3].calculate_attack())
+        self.assertEqual(3, game.players[0].minions[3].health)
+
+    def test_ScarletPurifier(self):
+        game = generate_game_for([LootHoarder, ScarletPurifier], [StonetuskBoar, NerubianEgg],
+                                 CardTestingAgent, CardTestingAgent)
+
+        for turn in range(5):
+            game.play_single_turn()
+
+        self.assertEqual(1, len(game.current_player.minions))
+        self.assertEqual(2, len(game.other_player.minions))
+
+        self.assertEqual("Scarlet Purifier", game.current_player.minions[0].card.name)
+        self.assertEqual("Nerubian", game.other_player.minions[0].card.name)
+        self.assertEqual("Stonetusk Boar", game.other_player.minions[1].card.name)
+
+    def test_BolvarFordragon(self):
+        game = generate_game_for([MusterForBattle, BolvarFordragon], [FanOfKnives],
+                                 OneCardPlayingAgent, OneCardPlayingAgent)
+
+        for turn in range(9):
+            game.play_single_turn()
+
+        self.assertEqual(1, len(game.current_player.minions))
+        self.assertEqual(4, game.current_player.minions[0].calculate_attack())
+        self.assertEqual(0, game.current_player.minions[0].card.calculate_stat(ChangeAttack))
+
+    def test_Bolvar_and_Hobgoblin(self):
+        game = generate_game_for([MusterForBattle, Hobgoblin, BolvarFordragon], [FanOfKnives],
+                                 OneCardPlayingAgent, OneCardPlayingAgent)
+
+        for turn in range(9):
+            game.play_single_turn()
+
+        # Hobgoblin should not buff Bolvar
+        # (see http://www.hearthhead.com/card=2031/bolvar-fordragon#comments:id=2057848)
+        self.assertEqual(2, len(game.current_player.minions))
+        self.assertEqual(4, game.current_player.minions[0].calculate_attack())
+        self.assertEqual(0, game.current_player.minions[0].card.calculate_stat(ChangeAttack))
+
+    def test_Bolvar_and_Warsong(self):
+        game = generate_game_for([MusterForBattle, WarsongCommander, BolvarFordragon], [FanOfKnives],
+                                 OneCardPlayingAgent, OneCardPlayingAgent)
+
+        for turn in range(9):
+            game.play_single_turn()
+
+        # Warsong should not buff Bolvar
+        # (see http://www.hearthhead.com/card=2031/bolvar-fordragon#comments:id=2057848)
+        self.assertEqual(2, len(game.current_player.minions))
+        self.assertEqual(4, game.current_player.minions[0].calculate_attack())
+        self.assertEqual(0, game.current_player.minions[0].card.calculate_stat(ChangeAttack))
+        self.assertFalse(game.current_player.minions[0].charge())

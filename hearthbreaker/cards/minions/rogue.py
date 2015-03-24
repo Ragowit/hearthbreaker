@@ -1,17 +1,20 @@
-from hearthbreaker.tags.action import Kill, Bounce, Summon, Give, Damage, ChangeTarget
-from hearthbreaker.tags.base import Effect, Deathrattle, Battlecry, Buff
-from hearthbreaker.tags.condition import IsMinion, IsType, NotCurrentTarget, OneIn
-from hearthbreaker.tags.event import DidDamage, MinionSummoned, TurnEnded, Attack
+from hearthbreaker.cards.base import MinionCard
+from hearthbreaker.cards.spells.neutral import GallywixsCoin
+from hearthbreaker.game_objects import Minion
+from hearthbreaker.tags.action import Kill, Bounce, Summon, Give, Damage, ChangeTarget, AddCard, IncreaseWeaponAttack
+from hearthbreaker.tags.base import Effect, Deathrattle, Battlecry, Buff, CardQuery, CARD_SOURCE, ActionTag
+from hearthbreaker.tags.condition import IsMinion, IsType, NotCurrentTarget, OneIn, Not, HasCardName, \
+    OpponentMinionCountIsGreaterThan, And
+from hearthbreaker.tags.event import DidDamage, MinionSummoned, TurnEnded, Attack, SpellCast
 from hearthbreaker.tags.selector import TargetSelector, MinionSelector, PlayerSelector, UserPicker, \
-    BothPlayer, CharacterSelector, RandomPicker, SelfSelector, EnemyPlayer
+    BothPlayer, CharacterSelector, RandomPicker, SelfSelector, EnemyPlayer, FriendlyPlayer, HeroSelector, Attribute
 from hearthbreaker.constants import CHARACTER_CLASS, CARD_RARITY, MINION_TYPE
-from hearthbreaker.game_objects import MinionCard, Minion
 from hearthbreaker.tags.status import Stealth, ChangeAttack, ChangeHealth
 
 
 class DefiasBandit(MinionCard):
     def __init__(self):
-        super().__init__("Defias Bandit", 1, CHARACTER_CLASS.ROGUE, CARD_RARITY.SPECIAL)
+        super().__init__("Defias Bandit", 1, CHARACTER_CLASS.ROGUE, CARD_RARITY.COMMON, False)
 
     def create_minion(self, player):
         return Minion(2, 1)
@@ -28,14 +31,13 @@ class DefiasRingleader(MinionCard):
 
 class EdwinVanCleef(MinionCard):
     def __init__(self):
-        super().__init__("Edwin VanCleef", 3, CHARACTER_CLASS.ROGUE, CARD_RARITY.LEGENDARY)
+        super().__init__("Edwin VanCleef", 3, CHARACTER_CLASS.ROGUE, CARD_RARITY.LEGENDARY,
+                         battlecry=Battlecry(Give([Buff(ChangeAttack(Attribute("cards_played", PlayerSelector()), 2)),
+                                                   Buff(ChangeHealth(Attribute("cards_played", PlayerSelector()), 2))]),
+                                             SelfSelector()))
 
     def create_minion(self, player):
-        if player.cards_played:
-            buff_amount = player.cards_played * 2
-            return Minion(2, 2, buffs=[Buff(ChangeAttack(buff_amount)), Buff(ChangeHealth(buff_amount))])
-        else:
-            return Minion(2, 2)
+        return Minion(2, 2)
 
 
 class Kidnapper(MinionCard):
@@ -61,7 +63,7 @@ class PatientAssassin(MinionCard):
         super().__init__("Patient Assassin", 2, CHARACTER_CLASS.ROGUE, CARD_RARITY.EPIC)
 
     def create_minion(self, player):
-        return Minion(1, 1, stealth=True, effects=[Effect(DidDamage(), Kill(), TargetSelector(IsMinion()))])
+        return Minion(1, 1, stealth=True, effects=[Effect(DidDamage(), ActionTag(Kill(), TargetSelector(IsMinion())))])
 
 
 class SI7Agent(MinionCard):
@@ -85,20 +87,20 @@ class AnubarAmbusher(MinionCard):
 
 class OneeyedCheat(MinionCard):
     def __init__(self):
-        super().__init__("One-eyed Cheat", 2, CHARACTER_CLASS.ROGUE, CARD_RARITY.RARE, MINION_TYPE.PIRATE)
+        super().__init__("One-eyed Cheat", 2, CHARACTER_CLASS.ROGUE, CARD_RARITY.RARE, minion_type=MINION_TYPE.PIRATE)
 
     def create_minion(self, player):
         return Minion(4, 1, effects=[Effect(MinionSummoned(IsType(MINION_TYPE.PIRATE)),
-                                            Give(Stealth()), SelfSelector())])
+                                            ActionTag(Give(Stealth()), SelfSelector()))])
 
 
 class IronSensei(MinionCard):
     def __init__(self):
-        super().__init__("Iron Sensei", 3, CHARACTER_CLASS.ROGUE, CARD_RARITY.RARE, MINION_TYPE.MECH)
+        super().__init__("Iron Sensei", 3, CHARACTER_CLASS.ROGUE, CARD_RARITY.RARE, minion_type=MINION_TYPE.MECH)
 
     def create_minion(self, player):
-        return Minion(2, 2, effects=[Effect(TurnEnded(), Give([Buff(ChangeAttack(2)), Buff(ChangeHealth(2))]),
-                                            MinionSelector(IsType(MINION_TYPE.MECH), picker=RandomPicker()))])
+        return Minion(2, 2, effects=[Effect(TurnEnded(), ActionTag(Give([Buff(ChangeAttack(2)), Buff(ChangeHealth(2))]),
+                                            MinionSelector(IsType(MINION_TYPE.MECH), picker=RandomPicker())))])
 
 
 class OgreNinja(MinionCard):
@@ -106,7 +108,33 @@ class OgreNinja(MinionCard):
         super().__init__("Ogre Ninja", 5, CHARACTER_CLASS.ROGUE, CARD_RARITY.RARE)
 
     def create_minion(self, player):
-        return Minion(6, 6, stealth=True, effects=[Effect(Attack(), ChangeTarget(CharacterSelector(NotCurrentTarget(),
-                                                                                                   EnemyPlayer(),
-                                                                                                   RandomPicker())),
-                                                          SelfSelector(), OneIn(2))])
+        return Minion(6, 6, stealth=True, effects=[Effect(Attack(),
+                                                          ActionTag(ChangeTarget(
+                                                              CharacterSelector(NotCurrentTarget(),
+                                                                                EnemyPlayer(),
+                                                                                RandomPicker())),
+                                                                    SelfSelector(),
+                                                                    And(OneIn(2),
+                                                                        OpponentMinionCountIsGreaterThan(0))))])
+
+
+class TradePrinceGallywix(MinionCard):
+    def __init__(self):
+        super().__init__("Trade Prince Gallywix", 6, CHARACTER_CLASS.ROGUE, CARD_RARITY.LEGENDARY)
+
+    def create_minion(self, player):
+        return Minion(5, 8, effects=[Effect(SpellCast(Not(HasCardName("Gallywix's Coin")), EnemyPlayer()),
+                                            ActionTag(AddCard(CardQuery(source=CARD_SOURCE.LAST_CARD)),
+                                            PlayerSelector(FriendlyPlayer()))),
+                                     Effect(SpellCast(Not(HasCardName("Gallywix's Coin")), EnemyPlayer()),
+                                            ActionTag(AddCard(GallywixsCoin()),
+                                            PlayerSelector(EnemyPlayer())))])
+
+
+class GoblinAutoBarber(MinionCard):
+    def __init__(self):
+        super().__init__("Goblin Auto-Barber", 2, CHARACTER_CLASS.ROGUE, CARD_RARITY.COMMON,
+                         minion_type=MINION_TYPE.MECH, battlecry=Battlecry(IncreaseWeaponAttack(1), HeroSelector()))
+
+    def create_minion(self, player):
+        return Minion(3, 2)

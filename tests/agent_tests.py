@@ -6,8 +6,8 @@ from hearthbreaker.cards import GoldshireFootman, MurlocRaider, BloodfenRaptor, 
     FenCreeper, BoulderfistOgre, WarGolem, Shieldbearer, FlameImp, YoungPriestess, DarkIronDwarf, DireWolfAlpha, \
     Voidwalker, HarvestGolem, KnifeJuggler, ShatteredSunCleric, ArgentSquire, Doomguard, Soulfire, DefenderOfArgus, \
     AbusiveSergeant, NerubianEgg, KeeperOfTheGrove
-from hearthbreaker.constants import CHARACTER_CLASS
-from hearthbreaker.game_objects import Deck, Game
+from hearthbreaker.cards.heroes import Guldan, Malfurion
+from hearthbreaker.engine import Game, Deck
 
 
 class TestAgents(unittest.TestCase):
@@ -47,7 +47,7 @@ class TestAgents(unittest.TestCase):
             BoulderfistOgre(),
             WarGolem(),
             WarGolem(),
-        ], CHARACTER_CLASS.DRUID)
+        ], Malfurion())
 
         deck2 = Deck([
             Shieldbearer(),
@@ -80,7 +80,7 @@ class TestAgents(unittest.TestCase):
             AbusiveSergeant(),
             NerubianEgg(),
             NerubianEgg(),
-        ], CHARACTER_CLASS.WARLOCK)
+        ], Guldan())
 
         game = Game([deck1, deck2], [RandomAgent(), RandomAgent()])
         game.pre_game()
@@ -105,13 +105,13 @@ class TestAgents(unittest.TestCase):
         self.assertEqual(3, len(game.current_player.minions))
         self.assertEqual("Dire Wolf Alpha", game.current_player.minions[2].card.name)
 
-        for turn in range(0, 21):
+        for turn in range(0, 13):
             game.play_single_turn()
             self.assertFalse(game.game_ended)
 
         game.play_single_turn()
 
-        self.assertEqual(-1, game.current_player.hero.health)
-        self.assertEqual(8, game.other_player.hero.health)
+        self.assertEqual(0, game.current_player.hero.health)
+        self.assertEqual(21, game.other_player.hero.health)
 
         self.assertTrue(game.game_ended)
