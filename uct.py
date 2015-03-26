@@ -70,6 +70,19 @@ class HearthState:
                           "Recombobulator"]
         self.adjacent_cards = adjacent_cards
 
+        #card_set1 = [ArcaneMissiles(), ArcaneMissiles(), ArcaneMissiles(), ArcaneMissiles(), ArcaneMissiles(),
+        #             ArcaneMissiles(), ArcaneMissiles(), ArcaneMissiles(), ArcaneMissiles(), ArcaneMissiles(),
+        #             ArcaneMissiles(), ArcaneMissiles(), ArcaneMissiles(), ArcaneMissiles(), ArcaneMissiles(),
+        #             ArcaneMissiles(), ArcaneMissiles(), ArcaneMissiles(), ArcaneMissiles(), ArcaneMissiles(),
+        #             ArcaneMissiles(), ArcaneMissiles(), ArcaneMissiles(), ArcaneMissiles(), ArcaneMissiles(),
+        #             ArcaneMissiles(), ArcaneMissiles(), ArcaneMissiles(), ArcaneMissiles(), ArcaneMissiles()]
+        #card_set2 = [ArcaneMissiles(), ArcaneMissiles(), ArcaneMissiles(), ArcaneMissiles(), ArcaneMissiles(),
+        #             ArcaneMissiles(), ArcaneMissiles(), ArcaneMissiles(), ArcaneMissiles(), ArcaneMissiles(),
+        #             ArcaneMissiles(), ArcaneMissiles(), ArcaneMissiles(), ArcaneMissiles(), ArcaneMissiles(),
+        #             ArcaneMissiles(), ArcaneMissiles(), ArcaneMissiles(), ArcaneMissiles(), ArcaneMissiles(),
+        #             ArcaneMissiles(), ArcaneMissiles(), ArcaneMissiles(), ArcaneMissiles(), ArcaneMissiles(),
+        #             ArcaneMissiles(), ArcaneMissiles(), ArcaneMissiles(), ArcaneMissiles(), ArcaneMissiles()]
+
         card_set1 = []
         class1 = CHARACTER_CLASS.MAGE
         card_set2 = []
@@ -79,6 +92,15 @@ class HearthState:
         game = Game([deck1, deck2], [DoNothingAgent(), DoNothingAgent()])
         game.current_player = game.players[0]
         game.other_player = game.players[1]
+
+        # Test stuff
+        #game.players[0].hero.health = 6
+        #game.players[1].hero.health = 6
+        #game.current_player = game.players[1]
+        #game.other_player = game.players[0]
+        #game.pre_game()
+        #game._start_turn()
+        #game.turn = 95
 
         self.game = game
 
@@ -460,7 +482,7 @@ class HearthState:
         elif self.game.players[playerjm - 1].hero.health <= 0:
             return 0
         elif self.game.players[2 - playerjm].hero.health <= 0:
-            return 1 / (log(self.game.turn) + 0.01)
+            return 100 - self.game.turn
         else:  # Should not be possible to get here unless we terminate the game early.
             return 0.5
 
