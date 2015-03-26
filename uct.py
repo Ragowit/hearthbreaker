@@ -378,12 +378,13 @@ class HearthState:
                 # Priest
                 owned_cards.extend([Shrinkmeister()])
                 # Rogue
-                owned_cards.extend([OneeyedCheat(), TinkersSharpswordOil()])
+                owned_cards.extend([OneeyedCheat(), TinkersSharpswordOil(), OgreNinja()])
                 # Warrior
                 owned_cards.extend([Warbot()])
                 # Neutral
                 owned_cards.extend([ClockworkGnome(), Cogmaster(), AnnoyoTron(), Mechwarper(), MicroMachine(),
-                                    Puddlestomper(), ShipsCannon(), MechanicalYeti(), AntiqueHealbot()])
+                                    Puddlestomper(), ShipsCannon(), StonesplinterTrogg(), MechanicalYeti(),
+                                    AntiqueHealbot()])
 
                 card_list = filter(lambda c: c.character_class == hearthbreaker.constants.CHARACTER_CLASS.ALL or c.character_class == self.game.current_player.hero.character_class,
                                    owned_cards)
