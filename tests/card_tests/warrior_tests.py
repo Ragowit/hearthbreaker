@@ -205,6 +205,28 @@ class TestWarrior(unittest.TestCase):
         worgen.use(game.players[0], game)
         self.assertFalse(game.players[0].minions[0].charge())
 
+        # Minions summoned by other minions
+        dragonling = DragonlingMechanic()
+        dragonling.player = game.players[0]
+        dragonling.use(game.players[0], game)
+        self.assertTrue(game.players[0].minions[0].charge())
+        self.assertEqual("Mechanical Dragonling", game.players[0].minions[1].card.name)
+        self.assertTrue(game.players[0].minions[1].charge())
+        # Kill them to make room
+        game.players[0].minions[0].die(None)
+        game.players[0].minions[0].activate_delayed()
+        game.players[0].minions[0].die(None)
+        game.players[0].minions[0].activate_delayed()
+        creeper = HauntedCreeper()
+        creeper.player = game.players[0]
+        creeper.use(game.players[0], game)
+        self.assertTrue(game.players[0].minions[0].charge())
+        game.players[0].minions[0].die(None)
+        game.players[0].minions[0].activate_delayed()
+        game.check_delayed()
+        self.assertEqual("Spectral Spider", game.players[0].minions[0].card.name)
+        self.assertTrue(game.players[0].minions[0].charge())
+
     def test_BattleRage(self):
         game = generate_game_for(BattleRage, StonetuskBoar, CardTestingAgent, DoNothingAgent)
 
@@ -628,3 +650,22 @@ class TestWarrior(unittest.TestCase):
         self.assertEqual(1, game.players[0].minions[2].health)
         self.assertEqual(1, game.players[1].minions[0].calculate_attack())
         self.assertEqual(1, game.players[1].minions[0].health)
+
+    def test_AxeFlinger(self):
+        game = generate_game_for(AxeFlinger, [MortalCoil, ShadowWordPain], OneCardPlayingAgent, OneCardPlayingAgent)
+        for turn in range(7):
+            game.play_single_turn()
+
+        self.assertEqual(1, len(game.players[0].minions))
+        self.assertEqual(30, game.players[1].hero.health)
+
+        game.play_single_turn()  # Mortal Coils the Axe Flinger
+
+        self.assertEqual(1, len(game.players[0].minions))
+        self.assertEqual(28, game.players[1].hero.health)
+
+        game.play_single_turn()  # Plays 2nd Axe Flinger
+        game.play_single_turn()  # Pains 1 Axe Flinger, no damage
+
+        self.assertEqual(1, len(game.players[0].minions))
+        self.assertEqual(28, game.players[1].hero.health)
