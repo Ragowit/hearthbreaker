@@ -397,81 +397,87 @@ class HearthState:
                 if len(counter) < 1 or (len(counter) < 2 and card.rarity != hearthbreaker.constants.CARD_RARITY.LEGENDARY):
                     valid_moves.append([MOVE.PICK_CARD, card])
         else:
-            for card in self.game.current_player.hand:
-                dupe = False
-                for i in range(len(valid_moves)):
-                    if valid_moves[i][1].name == card.name:
-                        dupe = True
-                        break
-                if not dupe:
-                    if card.can_use(self.game.current_player, self.game) and isinstance(card, MinionCard):
-                        # Minion placement is only important if there are cards available that matters on it
-                        if any(any(card.name == name for name in self.adjacent_cards) for card in self.game.players[0].deck.cards) or any(any(card.name == name for name in self.adjacent_cards) for card in self.game.players[1].deck.cards):
-                            # Found adjacent card, so try every possible placement
-                            for i in range(len(self.game.current_player.minions) + 1):
+            try:
+                for card in self.game.current_player.hand:
+                    dupe = False
+                    for i in range(len(valid_moves)):
+                        if valid_moves[i][1].name == card.name:
+                            dupe = True
+                            break
+                    if not dupe:
+                        if card.can_use(self.game.current_player, self.game) and isinstance(card, MinionCard):
+                            # Minion placement is only important if there are cards available that matters on it
+                            if any(any(card.name == name for name in self.adjacent_cards) for card in self.game.players[0].deck.cards) or any(any(card.name == name for name in self.adjacent_cards) for card in self.game.players[1].deck.cards):
+                                # Found adjacent card, so try every possible placement
+                                for i in range(len(self.game.current_player.minions) + 1):
+                                    if card.targetable and card.targets is not None:
+                                        for j in range(len(card.targets)):
+                                            valid_moves.append([MOVE.SUMMON_MINION, card, None, self.game.current_player.hand.index(card), j, i])
+                                    else:
+                                        valid_moves.append([MOVE.SUMMON_MINION, card, None, self.game.current_player.hand.index(card), 0, i])
+                            else:
+                                # It doesn't matter where the minion is placed
                                 if card.targetable and card.targets is not None:
-                                    for j in range(len(card.targets)):
-                                        valid_moves.append([MOVE.SUMMON_MINION, card, None, self.game.current_player.hand.index(card), j, i])
+                                    for i in range(len(card.targets)):
+                                        valid_moves.append([MOVE.SUMMON_MINION, card, None, self.game.current_player.hand.index(card), i, 0])
                                 else:
-                                    valid_moves.append([MOVE.SUMMON_MINION, card, None, self.game.current_player.hand.index(card), 0, i])
-                        else:
-                            # It doesn't matter where the minion is placed
+                                    valid_moves.append([MOVE.SUMMON_MINION, card, None, self.game.current_player.hand.index(card), 0, 0])
+                        elif card.can_use(self.game.current_player, self.game) and isinstance(card, WeaponCard):
                             if card.targetable and card.targets is not None:
                                 for i in range(len(card.targets)):
-                                    valid_moves.append([MOVE.SUMMON_MINION, card, None, self.game.current_player.hand.index(card), i, 0])
+                                    valid_moves.append([MOVE.EQUIP_WEAPON, card, None, self.game.current_player.hand.index(card), i])
                             else:
-                                valid_moves.append([MOVE.SUMMON_MINION, card, None, self.game.current_player.hand.index(card), 0, 0])
-                    elif card.can_use(self.game.current_player, self.game) and isinstance(card, WeaponCard):
-                        if card.targetable and card.targets is not None:
+                                valid_moves.append([MOVE.EQUIP_WEAPON, card, None, self.game.current_player.hand.index(card), 0])                            
+                        elif card.can_use(self.game.current_player, self.game) and isinstance(card, SecretCard):
+                            valid_moves.append([MOVE.UNTARGETED_SPELL, card, None, self.game.current_player.hand.index(card), 0])
+                        elif card.can_use(self.game.current_player, self.game) and not card.targetable:
+                            valid_moves.append([MOVE.UNTARGETED_SPELL, card, None, self.game.current_player.hand.index(card), 0])
+                        elif card.can_use(self.game.current_player, self.game) and card.targetable:
                             for i in range(len(card.targets)):
-                                valid_moves.append([MOVE.EQUIP_WEAPON, card, None, self.game.current_player.hand.index(card), i])
-                        else:
-                            valid_moves.append([MOVE.EQUIP_WEAPON, card, None, self.game.current_player.hand.index(card), 0])                            
-                    elif card.can_use(self.game.current_player, self.game) and isinstance(card, SecretCard):
-                        valid_moves.append([MOVE.UNTARGETED_SPELL, card, None, self.game.current_player.hand.index(card), 0])
-                    elif card.can_use(self.game.current_player, self.game) and not card.targetable:
-                        valid_moves.append([MOVE.UNTARGETED_SPELL, card, None, self.game.current_player.hand.index(card), 0])
-                    elif card.can_use(self.game.current_player, self.game) and card.targetable:
-                        for i in range(len(card.targets)):
-                            valid_moves.append([MOVE.TARGETED_SPELL, card, card.targets[i],
-                                                self.game.current_player.hand.index(card), i])
-    
-            found_taunt = False
-            targets = []
-            for enemy in copy.copy(self.game.other_player.minions):
-                if enemy.taunt and enemy.can_be_attacked():
-                    found_taunt = True
-                if enemy.can_be_attacked():
-                    targets.append(enemy)
-    
-            if found_taunt:
-                targets = [target for target in targets if target.taunt]
-            else:
-                targets.append(self.game.other_player.hero)
-    
-            for minion in copy.copy(self.game.current_player.minions):
-                if minion.can_attack():
+                                valid_moves.append([MOVE.TARGETED_SPELL, card, card.targets[i],
+                                                    self.game.current_player.hand.index(card), i])
+        
+                found_taunt = False
+                targets = []
+                for enemy in copy.copy(self.game.other_player.minions):
+                    if enemy.taunt and enemy.can_be_attacked():
+                        found_taunt = True
+                    if enemy.can_be_attacked():
+                        targets.append(enemy)
+        
+                if found_taunt:
+                    targets = [target for target in targets if target.taunt]
+                else:
+                    targets.append(self.game.other_player.hero)
+        
+                for minion in copy.copy(self.game.current_player.minions):
+                    if minion.can_attack():
+                        for i in range(len(targets)):
+                            valid_moves.append([MOVE.MINION_ATTACK, minion, targets[i],
+                                                self.game.current_player.minions.index(minion), i])
+        
+                if self.game.current_player.hero.can_attack():
                     for i in range(len(targets)):
-                        valid_moves.append([MOVE.MINION_ATTACK, minion, targets[i],
-                                            self.game.current_player.minions.index(minion), i])
-    
-            if self.game.current_player.hero.can_attack():
-                for i in range(len(targets)):
-                    valid_moves.append([MOVE.HERO_ATTACK, self.game.current_player.hero, targets[i], None, i])
-    
-            if (isinstance(self.game.current_player.hero.power, MagePower) or \
-               isinstance(self.game.current_player.hero.power, MindSpike) or \
-               isinstance(self.game.current_player.hero.power, MindShatter) or \
-               isinstance(self.game.current_player.hero.power, PriestPower)) and \
-               self.game.current_player.hero.power.can_use():
-                for target in hearthbreaker.targeting.find_spell_target(self.game, lambda t: t.spell_targetable()):
-                    valid_moves.append([MOVE.HERO_POWER, self.game.current_player.hero, target, 0, \
-                                       hearthbreaker.targeting.find_spell_target(self.game, lambda t: \
-                                                                                t.spell_targetable()).index(target)])
-            elif self.game.current_player.hero.power.can_use():
-                valid_moves.append([MOVE.HERO_POWER, self.game.current_player.hero, None, None, None])
-    
-            valid_moves.append([MOVE.END_TURN, None, None])
+                        valid_moves.append([MOVE.HERO_ATTACK, self.game.current_player.hero, targets[i], None, i])
+        
+                if (isinstance(self.game.current_player.hero.power, MagePower) or \
+                   isinstance(self.game.current_player.hero.power, MindSpike) or \
+                   isinstance(self.game.current_player.hero.power, MindShatter) or \
+                   isinstance(self.game.current_player.hero.power, PriestPower)) and \
+                   self.game.current_player.hero.power.can_use():
+                    for target in hearthbreaker.targeting.find_spell_target(self.game, lambda t: t.spell_targetable()):
+                        valid_moves.append([MOVE.HERO_POWER, self.game.current_player.hero, target, 0, \
+                                           hearthbreaker.targeting.find_spell_target(self.game, lambda t: \
+                                                                                    t.spell_targetable()).index(target)])
+                elif self.game.current_player.hero.power.can_use():
+                    valid_moves.append([MOVE.HERO_POWER, self.game.current_player.hero, None, None, None])
+        
+                valid_moves.append([MOVE.END_TURN, None, None])
+            except:
+                print(self.game.players[0].deck.__str__())
+                print(self.game.players[1].deck.__str__())
+                traceback.print_exc()
+                sys.exit()
 
         return valid_moves
 
