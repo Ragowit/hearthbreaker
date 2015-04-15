@@ -49,6 +49,7 @@ def get_cards():
 class Game(Bindable):
     def __init__(self, decks, agents):
         super().__init__()
+        self.turn = 0
         self.delayed_minions = set()
         self.first_player = self._generate_random_between(0, 1)
         if self.first_player is 0:
@@ -63,7 +64,7 @@ class Game(Bindable):
         self.other_player.opponent = self.current_player
         self.game_ended = False
         self.minion_counter = 0
-        self.__pre_game_run = False
+        self.pre_game_run = False
         self.last_card = None
         self._has_turn_ended = True
         self._all_cards_played = []
@@ -91,9 +92,9 @@ class Game(Bindable):
             minion.activate_delayed()
 
     def pre_game(self):
-        if self.__pre_game_run:
+        if self.pre_game_run:
             return
-        self.__pre_game_run = True
+        self.pre_game_run = True
 
         p1_draw = [self.players[0].deck.draw(self) for i in range(3)]
         p2_draw = [self.players[1].deck.draw(self) for i in range(4)]
@@ -141,6 +142,7 @@ class Game(Bindable):
         self._end_turn()
 
     def _start_turn(self):
+        self.turn += 1
         if not self._has_turn_ended:  # when a game is copied, the turn isn't ended before the next one starts
             self._end_turn()
         if self.current_player == self.players[0]:
@@ -521,8 +523,8 @@ class Player(Bindable):
 
 class Deck:
     def __init__(self, cards, hero):
-        if len(cards) != 30:
-            raise GameException("Deck must have exactly 30 cards in it")
+        #if len(cards) != 30:
+        #    raise GameException("Deck must have exactly 30 cards in it")
         self.cards = cards
         self.hero = hero
         for card in cards:
@@ -564,6 +566,13 @@ class Deck:
         card.drawn = False
         self.cards.append(card)
         self.left += 1
+
+    def __str__(self):
+        card_list = []
+        for index in range(0, len(self.cards)):
+            card_list.append(self.cards[index].name)
+
+        return ", ".join(card_list)
 
     def __to_json__(self):
         card_list = []

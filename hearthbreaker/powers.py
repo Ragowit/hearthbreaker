@@ -12,6 +12,9 @@ class Power:
             self.hero.player.mana -= 2
             self.used = True
 
+    def __str__(self):
+        return ""
+
 
 class DruidPower(Power):
     def use(self):
@@ -38,6 +41,9 @@ class MagePower(Power):
         super().use()
         target.damage(1 * self.hero.player.spell_multiplier, None)
         self.hero.player.game.check_delayed()
+
+    def __str__(self):
+        return "Fireblast"
 
 
 class PriestPower(Power):
