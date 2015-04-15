@@ -387,6 +387,26 @@ class HearthState:
                                     MicroMachine(), Puddlestomper(), ShipsCannon(), StonesplinterTrogg(),
                                     MechanicalYeti(), AntiqueHealbot()])
 
+                ### BLACKROCK MOUNTAIN ###
+                # Druid
+                owned_cards.extend([DruidOfTheFlame()])
+                # Hunter
+                owned_cards.extend([QuickShot()])
+                # Mage
+                owned_cards.extend([DragonsBreath()])
+                # Priest
+                #owned_cards.extend([Resurrect()])
+                # Rogue
+                #owned_cards.extend([GangUp()])
+                # Shaman
+                #owned_cards.extend([LavaShock()])
+                # Warlock
+                #owned_cards.extend([ImpGangBoss()])
+                # Warrior
+                owned_cards.extend([AxeFlinger()])
+                # Neutral
+                #owned_cards.extend([BlackwingTechnician(), GrimPatron(), EmperorThaurissan(), MajordomoExecutus()])
+
                 card_list = filter(lambda c: c.character_class == hearthbreaker.constants.CHARACTER_CLASS.ALL or c.character_class == self.game.current_player.hero.character_class,
                                    owned_cards)
             else:
