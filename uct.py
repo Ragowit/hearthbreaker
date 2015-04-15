@@ -332,14 +332,14 @@ class HearthState:
                 # Warlock
                 owned_cards.extend([FlameImp(), Demonfire(), SummoningPortal(), Doomguard()])
                 # Warrior
-                owned_cards.extend([Rampage(), Armorsmith(), MortalStrike(), Brawl()])
+                owned_cards.extend([InnerRage(), Rampage(), Armorsmith(), MortalStrike(), Brawl()])
                 # Neutral
-                owned_cards.extend([Wisp(), ArgentSquire(), SouthseaDeckhand(), AmaniBerserker(), BloodsailRaider(),
-                                    DireWolfAlpha(), FaerieDragon(), IronbeakOwl(), KnifeJuggler(), LootHoarder(),
-                                    MadBomber(), MasterSwordsmith(), Demolisher(), HarvestGolem(), ImpMaster(),
-                                    JunglePanther(), QuestingAdventurer(), TinkmasterOverspark(), CultMaster(),
-                                    DefenderOfArgus(), SilvermoonGuardian(), AzureDrake(), FenCreeper(), SpitefulSmith(),
-                                    StranglethornTiger(), FrostElemental()])
+                owned_cards.extend([Wisp(), ArgentSquire(), SouthseaDeckhand(), YoungPriestess(), AmaniBerserker(),
+                                    BloodsailRaider(), DireWolfAlpha(), FaerieDragon(), IronbeakOwl(), KnifeJuggler(),
+                                    LootHoarder(), MadBomber(), MasterSwordsmith(), Demolisher(), HarvestGolem(),
+                                    ImpMaster(), JunglePanther(), QuestingAdventurer(), TinkmasterOverspark(),
+                                    CultMaster(), DefenderOfArgus(), SilvermoonGuardian(), AzureDrake(), FenCreeper(),
+                                    SpitefulSmith(), StranglethornTiger(), FrostElemental()])
         
                 ### PROMO ###
                 owned_cards.extend([GelbinMekkatorque()])
