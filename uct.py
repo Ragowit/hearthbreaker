@@ -100,7 +100,7 @@ class HearthState:
         #game.other_player = game.players[0]
         #game.pre_game()
         #game._start_turn()
-        #game.turn = 95
+        #game._turns_passed = 47
 
         self.game = game
 
@@ -255,7 +255,7 @@ class HearthState:
 
         if not self.game.pre_game_run and len(self.game.current_player.deck.cards) == 30 and len(self.game.other_player.deck.cards) == 30:
             valid_moves.append([MOVE.PRE_GAME])
-        elif self.game.pre_game_run and len(self.game.current_player.deck.cards) == 30 and len(self.game.other_player.deck.cards) == 30 and self.game.current_player.max_mana == 0 and self.game.turn == 0:
+        elif self.game.pre_game_run and len(self.game.current_player.deck.cards) == 30 and len(self.game.other_player.deck.cards) == 30 and self.game.current_player.max_mana == 0 and self.game._turns_passed == 0:
             valid_moves.append([MOVE.START_TURN])
         elif self.game.current_player.hero.character_class == hearthbreaker.constants.CHARACTER_CLASS.ALL:
             valid_moves.append([MOVE.PICK_CLASS, hearthbreaker.constants.CHARACTER_CLASS.DRUID])
@@ -489,12 +489,12 @@ class HearthState:
         elif self.game.players[playerjm - 1].hero.health <= 0:
             return 0
         elif self.game.players[2 - playerjm].hero.health <= 0:
-            return 100 - self.game.turn
+            return 50 - self.game._turns_passed
         else:  # Should not be possible to get here unless we terminate the game early.
             return 0.5
 
     def __repr__(self):
-        s = "Turn: " + str(self.game.turn)
+        s = "Turn: " + str(self.game._turns_passed)
         s += "\n[" + str(self.game.players[0].hero.health) + " hp ~ " + str(len(self.game.players[0].hand)) + " in hand ~ " + str(self.game.players[0].deck.left) + "/" + str(len(self.game.players[0].deck.cards)) + " in deck ~ " + str(self.game.players[0].mana) + "/" + str(self.game.players[0].max_mana) + " mana] "
         for minion in copy.copy(self.game.players[0].minions):
             s += str(minion.calculate_attack()) + "/" + str(minion.health) + ":"

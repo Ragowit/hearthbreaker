@@ -49,7 +49,6 @@ def get_cards():
 class Game(Bindable):
     def __init__(self, decks, agents):
         super().__init__()
-        self.turn = 0
         self.delayed_minions = set()
         self.first_player = self._generate_random_between(0, 1)
         if self.first_player is 0:
@@ -142,7 +141,6 @@ class Game(Bindable):
         self._end_turn()
 
     def _start_turn(self):
-        self.turn += 1
         if not self._has_turn_ended:  # when a game is copied, the turn isn't ended before the next one starts
             self._end_turn()
         if self.current_player == self.players[0]:
