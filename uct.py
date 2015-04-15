@@ -19,6 +19,7 @@ from math import *
 import random
 import time
 import sys, traceback
+from enum import Enum
 from tests.testing_utils import generate_game_for
 from hearthbreaker.cards import *
 from hearthbreaker.cards.base import *
@@ -30,7 +31,7 @@ from hearthbreaker.powers import *
 from hearthbreaker.constants import CHARACTER_CLASS
 
 
-class MOVE:
+class MOVE(Enum):
     PRE_GAME = 1
     START_TURN = 2
     PICK_CLASS = 3
