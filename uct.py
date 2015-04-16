@@ -395,11 +395,11 @@ class HearthState:
                 # Mage
                 owned_cards.extend([DragonsBreath()])
                 # Priest
-                #owned_cards.extend([Resurrect()])
+                owned_cards.extend([Resurrect()])
                 # Rogue
-                #owned_cards.extend([GangUp()])
+                owned_cards.extend([GangUp()])
                 # Shaman
-                #owned_cards.extend([LavaShock()])
+                owned_cards.extend([LavaShock()])
                 # Warlock
                 #owned_cards.extend([ImpGangBoss()])
                 # Warrior
