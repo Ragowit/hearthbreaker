@@ -230,6 +230,8 @@ from hearthbreaker.cards.minions.neutral import (
     MimironsHead,
     GnomishExperimenter,
     HungryDragon,
+    GrimPatron,
+    BlackwingTechnician,
 )
 
 from hearthbreaker.cards.minions.druid import (
@@ -365,6 +367,7 @@ from hearthbreaker.cards.minions.warlock import (
     MalGanis,
     FloatingWatcher,
     MistressOfPain,
+    ImpGangBoss,
 )
 
 from hearthbreaker.cards.minions.warrior import (
