@@ -405,8 +405,8 @@ class HearthState:
                 # Warrior
                 owned_cards.extend([AxeFlinger()])
                 # Neutral
-                # , EmperorThaurissan(), MajordomoExecutus()
-                owned_cards.extend([BlackwingTechnician(), GrimPatron()])
+                # , MajordomoExecutus()
+                owned_cards.extend([BlackwingTechnician(), GrimPatron(), EmperorThaurissan()])
 
                 card_list = filter(lambda c: c.character_class == hearthbreaker.constants.CHARACTER_CLASS.ALL or c.character_class == self.game.current_player.hero.character_class,
                                    owned_cards)
