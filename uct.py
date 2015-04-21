@@ -482,10 +482,11 @@ class HearthState:
                     for i in range(len(targets)):
                         valid_moves.append([MOVE.HERO_ATTACK, self.game.current_player.hero, targets[i], None, i])
         
-                if (isinstance(self.game.current_player.hero.power, MagePower) or \
-                   isinstance(self.game.current_player.hero.power, MindSpike) or \
-                   isinstance(self.game.current_player.hero.power, MindShatter) or \
-                   isinstance(self.game.current_player.hero.power, PriestPower)) and \
+                if (self.game.current_player.hero.power_targets_minions or \
+                    isinstance(self.game.current_player.hero.power, MagePower) or \
+                    isinstance(self.game.current_player.hero.power, MindSpike) or \
+                    isinstance(self.game.current_player.hero.power, MindShatter) or \
+                    isinstance(self.game.current_player.hero.power, PriestPower)) and \
                    self.game.current_player.hero.power.can_use():
                     for target in hearthbreaker.targeting.find_spell_target(self.game, lambda t: t.spell_targetable()):
                         valid_moves.append([MOVE.HERO_POWER, self.game.current_player.hero, target, 0, \
@@ -493,7 +494,7 @@ class HearthState:
                                                                                     t.spell_targetable()).index(target)])
                 elif self.game.current_player.hero.power.can_use():
                     valid_moves.append([MOVE.HERO_POWER, self.game.current_player.hero, None, None, None])
-        
+
                 valid_moves.append([MOVE.END_TURN, None, None])
             except:
                 print(self.game.players[0].deck.__str__())
