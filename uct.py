@@ -328,7 +328,7 @@ class HearthState:
         
                 ### CLASSIC ###
                 # Druid
-                owned_cards.extend([Wrath(), Starfall(), DruidOfTheClaw()])
+                owned_cards.extend([Wrath(), MarkOfNature(), Starfall(), DruidOfTheClaw()])
                 # Hunter
                 owned_cards.extend([DeadlyShot()])
                 # Mage
@@ -351,7 +351,7 @@ class HearthState:
                                     LootHoarder(), MadBomber(), MasterSwordsmith(), Demolisher(), HarvestGolem(),
                                     ImpMaster(), JunglePanther(), QuestingAdventurer(), TinkmasterOverspark(),
                                     CultMaster(), DefenderOfArgus(), SilvermoonGuardian(), AzureDrake(), FenCreeper(),
-                                    SpitefulSmith(), StranglethornTiger(), FrostElemental()])
+                                    SilverHandKnight(), SpitefulSmith(), StranglethornTiger(), FrostElemental()])
         
                 ### PROMO ###
                 owned_cards.extend([GelbinMekkatorque()])
