@@ -29,6 +29,7 @@ from hearthbreaker.game_objects import *
 from hearthbreaker.engine import *
 from hearthbreaker.powers import *
 from hearthbreaker.constants import CHARACTER_CLASS
+from hearthbreaker.replay import record
 
 
 class MOVE(Enum):
@@ -103,6 +104,7 @@ class HearthState:
         #game._start_turn()
         #game._turns_passed = 47
 
+        self.replay = None
         self.game = game
 
     def Clone(self):
@@ -110,6 +112,7 @@ class HearthState:
         """
         st = HearthState()
         st.playerJustMoved = self.playerJustMoved
+        st.replay = self.replay
         st.game = self.game.copy()
         #st.game = copy.deepcopy(self.game)
         return st
@@ -139,6 +142,7 @@ class HearthState:
 
         # print(str(self.game.current_player.mana) + "/" + str(self.game.current_player.max_mana))
         if move[0] == MOVE.PRE_GAME:
+            self.replay = record(self.game)
             self.game.current_player = self.game.players[1]
             self.game.other_player = self.game.players[0]
             self.game.pre_game()
@@ -164,6 +168,7 @@ class HearthState:
             except:
                 print(self.game.players[0].deck.__str__())
                 print(self.game.players[1].deck.__str__())
+                self.replay.write_json("ragowit_ai.hsreplay")
                 traceback.print_exc()
                 sys.exit()
         elif move[0] == MOVE.HERO_POWER:
@@ -173,6 +178,7 @@ class HearthState:
             except:
                 print(self.game.players[0].deck.__str__())
                 print(self.game.players[1].deck.__str__())
+                self.replay.write_json("ragowit_ai.hsreplay")
                 traceback.print_exc()
                 sys.exit()
         elif move[0] == MOVE.SUMMON_MINION:
@@ -186,6 +192,7 @@ class HearthState:
                 print(self.game.other_player.hand)
                 print(self.game.players[0].deck.__str__())
                 print(self.game.players[1].deck.__str__())
+                self.replay.write_json("ragowit_ai.hsreplay")
                 traceback.print_exc()
                 sys.exit()
         elif move[0] == MOVE.EQUIP_WEAPON:
@@ -198,6 +205,7 @@ class HearthState:
                 print(self.game.other_player.hand)
                 print(self.game.players[0].deck.__str__())
                 print(self.game.players[1].deck.__str__())
+                self.replay.write_json("ragowit_ai.hsreplay")
                 traceback.print_exc()
                 sys.exit()
         elif move[2] is None:  # Passing index rather than object, hopefully the game copy fix will help with this
@@ -209,6 +217,7 @@ class HearthState:
                 print(self.game.other_player.hand)
                 print(self.game.players[0].deck.__str__())
                 print(self.game.players[1].deck.__str__())
+                self.replay.write_json("ragowit_ai.hsreplay")
                 traceback.print_exc()
                 sys.exit()
         elif move[0] == MOVE.MINION_ATTACK:
@@ -221,6 +230,7 @@ class HearthState:
                 print(self.game.other_player.minions)
                 print(self.game.players[0].deck.__str__())
                 print(self.game.players[1].deck.__str__())
+                self.replay.write_json("ragowit_ai.hsreplay")
                 traceback.print_exc()
                 sys.exit()
         elif move[0] == MOVE.HERO_ATTACK:
@@ -230,6 +240,7 @@ class HearthState:
             except:
                 print(self.game.players[0].deck.__str__())
                 print(self.game.players[1].deck.__str__())
+                self.replay.write_json("ragowit_ai.hsreplay")
                 traceback.print_exc()
                 sys.exit()
         elif move[0] == MOVE.TARGETED_SPELL:
@@ -242,6 +253,7 @@ class HearthState:
                 print(self.game.other_player.hand)
                 print(self.game.players[0].deck.__str__())
                 print(self.game.players[1].deck.__str__())
+                self.replay.write_json("ragowit_ai.hsreplay")
                 traceback.print_exc()
                 sys.exit()
         else:
@@ -499,6 +511,7 @@ class HearthState:
             except:
                 print(self.game.players[0].deck.__str__())
                 print(self.game.players[1].deck.__str__())
+                self.replay.write_json("ragowit_ai.hsreplay")
                 traceback.print_exc()
                 sys.exit()
 
@@ -510,7 +523,7 @@ class HearthState:
         if self.game.players[0].hero.health <= 0 and self.game.players[1].hero.health <= 0:
             return 0.5
         elif self.game.players[playerjm - 1].hero.health <= 0:
-            return 0
+            return (self.game._turns_passed - 50) / 10
         elif self.game.players[2 - playerjm].hero.health <= 0:
             return 50 - self.game._turns_passed
         else:  # Should not be possible to get here unless we terminate the game early.
@@ -659,7 +672,7 @@ def UCTPlayGame():
         print()
     if state.GetResult(state.playerJustMoved) >= 1.0:
         print("Player " + str(state.playerJustMoved) + " wins!")
-    elif state.GetResult(state.playerJustMoved) == 0.0:
+    elif state.GetResult(state.playerJustMoved) <= 0.0:
         print("Player " + str(3 - state.playerJustMoved) + " wins!")
     else: print("Nobody wins!")
 
