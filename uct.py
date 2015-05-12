@@ -336,7 +336,7 @@ class HearthState:
                 # Paladin
                 owned_cards.extend([EyeForAnEye(), NobleSacrifice(), Repentance(), ArgentProtector()])
                 # Priest
-                owned_cards.extend([CircleOfHealing(), Silence(), InnerFire(), MassDispel()])
+                owned_cards.extend([CircleOfHealing(), Silence(), InnerFire(), Thoughtsteal(), MassDispel()])
                 # Rogue
                 owned_cards.extend([ColdBlood(), Conceal(), Eviscerate()])
                 # Shaman
@@ -349,9 +349,10 @@ class HearthState:
                 owned_cards.extend([Wisp(), ArgentSquire(), SouthseaDeckhand(), YoungPriestess(), AmaniBerserker(),
                                     BloodsailRaider(), DireWolfAlpha(), FaerieDragon(), IronbeakOwl(), KnifeJuggler(),
                                     LootHoarder(), MadBomber(), MasterSwordsmith(), Demolisher(), HarvestGolem(),
-                                    ImpMaster(), JunglePanther(), QuestingAdventurer(), TinkmasterOverspark(),
-                                    CultMaster(), DefenderOfArgus(), SilvermoonGuardian(), AzureDrake(), FenCreeper(),
-                                    SilverHandKnight(), SpitefulSmith(), StranglethornTiger(), FrostElemental()])
+                                    ImpMaster(), JunglePanther(), QuestingAdventurer(), ScarletCrusader(),
+                                    TinkmasterOverspark(), CultMaster(), DefenderOfArgus(), SilvermoonGuardian(),
+                                    AzureDrake(), FenCreeper(), SilverHandKnight(), SpitefulSmith(),
+                                    StranglethornTiger(), FrostElemental()])
         
                 ### PROMO ###
                 owned_cards.extend([GelbinMekkatorque()])
