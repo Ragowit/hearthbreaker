@@ -330,7 +330,7 @@ class HearthState:
                 # Druid
                 owned_cards.extend([Wrath(), MarkOfNature(), Starfall(), DruidOfTheClaw()])
                 # Hunter
-                owned_cards.extend([DeadlyShot()])
+                owned_cards.extend([ScavengingHyena(), DeadlyShot()])
                 # Mage
                 owned_cards.extend([IceLance(), ManaWyrm(), SorcerersApprentice(), IceBarrier(), EtherealArcanist()])
                 # Paladin
@@ -342,7 +342,7 @@ class HearthState:
                 # Shaman
                 owned_cards.extend([AncestralSpirit()])
                 # Warlock
-                owned_cards.extend([FlameImp(), Demonfire(), SummoningPortal(), Doomguard()])
+                owned_cards.extend([FlameImp(), Demonfire(), SenseDemons(), SummoningPortal(), Doomguard()])
                 # Warrior
                 owned_cards.extend([InnerRage(), Rampage(), Armorsmith(), MortalStrike(), Brawl()])
                 # Neutral
@@ -350,9 +350,9 @@ class HearthState:
                                     BloodsailRaider(), DireWolfAlpha(), FaerieDragon(), IronbeakOwl(), KnifeJuggler(),
                                     LootHoarder(), MadBomber(), MasterSwordsmith(), Demolisher(), HarvestGolem(),
                                     ImpMaster(), JunglePanther(), QuestingAdventurer(), ScarletCrusader(),
-                                    TinkmasterOverspark(), CultMaster(), DefenderOfArgus(), SilvermoonGuardian(),
-                                    AzureDrake(), FenCreeper(), SilverHandKnight(), SpitefulSmith(),
-                                    StranglethornTiger(), FrostElemental()])
+                                    TaurenWarrior(), TinkmasterOverspark(), CultMaster(), DefenderOfArgus(),
+                                    SilvermoonGuardian(), AzureDrake(), FenCreeper(), SilverHandKnight(),
+                                    SpitefulSmith(), StranglethornTiger(), FrostElemental()])
         
                 ### PROMO ###
                 owned_cards.extend([GelbinMekkatorque()])
@@ -394,7 +394,7 @@ class HearthState:
                 # Rogue
                 owned_cards.extend([OneeyedCheat(), TinkersSharpswordOil(), OgreNinja()])
                 # Warrior
-                owned_cards.extend([Warbot()])
+                owned_cards.extend([Warbot(), OgreWarmaul()])
                 # Neutral
                 owned_cards.extend([ClockworkGnome(), Cogmaster(), AnnoyoTron(), GilblinStalker(), Mechwarper(),
                                     MicroMachine(), Puddlestomper(), ShipsCannon(), StonesplinterTrogg(),
