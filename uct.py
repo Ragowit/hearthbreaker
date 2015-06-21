@@ -330,7 +330,7 @@ class HearthState:
                 # Druid
                 owned_cards.extend([Wrath(), MarkOfNature(), Starfall(), DruidOfTheClaw()])
                 # Hunter
-                owned_cards.extend([ScavengingHyena(), DeadlyShot()])
+                owned_cards.extend([Snipe(), ScavengingHyena(), DeadlyShot()])
                 # Mage
                 owned_cards.extend([IceLance(), ManaWyrm(), SorcerersApprentice(), IceBarrier(), EtherealArcanist()])
                 # Paladin
