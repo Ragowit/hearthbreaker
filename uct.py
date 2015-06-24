@@ -344,7 +344,7 @@ class HearthState:
                 # Warlock
                 owned_cards.extend([FlameImp(), Demonfire(), SenseDemons(), SummoningPortal(), Doomguard()])
                 # Warrior
-                owned_cards.extend([InnerRage(), Rampage(), Armorsmith(), MortalStrike(), Brawl()])
+                owned_cards.extend([InnerRage(), Rampage(), Armorsmith(), CruelTaskmaster(), MortalStrike(), Brawl()])
                 # Neutral
                 owned_cards.extend([Wisp(), ArgentSquire(), SouthseaDeckhand(), YoungPriestess(), AmaniBerserker(),
                                     BloodsailRaider(), DireWolfAlpha(), FaerieDragon(), IronbeakOwl(), KnifeJuggler(),
