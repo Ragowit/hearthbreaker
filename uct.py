@@ -396,9 +396,9 @@ class HearthState:
                 # Warrior
                 owned_cards.extend([Warbot(), OgreWarmaul()])
                 # Neutral
-                owned_cards.extend([ClockworkGnome(), Cogmaster(), AnnoyoTron(), GilblinStalker(), Mechwarper(),
-                                    MicroMachine(), Puddlestomper(), ShipsCannon(), StonesplinterTrogg(),
-                                    MechanicalYeti(), AntiqueHealbot()])
+                owned_cards.extend([ClockworkGnome(), Cogmaster(), AnnoyoTron(), ExplosiveSheep(), GilblinStalker(),
+                                    Mechwarper(), MicroMachine(), Puddlestomper(), ShipsCannon(), StonesplinterTrogg(),
+                                    FlyingMachine(), MechanicalYeti(), AntiqueHealbot()])
 
                 ### BLACKROCK MOUNTAIN ###
                 # Druid
