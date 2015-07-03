@@ -328,7 +328,7 @@ class HearthState:
         
                 ### CLASSIC ###
                 # Druid
-                owned_cards.extend([Wrath(), MarkOfNature(), Starfall(), DruidOfTheClaw()])
+                owned_cards.extend([PowerOfTheWild(), Wrath(), MarkOfNature(), Starfall(), DruidOfTheClaw()])
                 # Hunter
                 owned_cards.extend([Snipe(), ScavengingHyena(), DeadlyShot()])
                 # Mage
@@ -336,9 +336,10 @@ class HearthState:
                 # Paladin
                 owned_cards.extend([EyeForAnEye(), NobleSacrifice(), Repentance(), ArgentProtector()])
                 # Priest
-                owned_cards.extend([CircleOfHealing(), Silence(), InnerFire(), Thoughtsteal(), MassDispel()])
+                owned_cards.extend([CircleOfHealing(), Silence(), InnerFire(), Thoughtsteal(), MassDispel(),
+                                    HolyFire()])
                 # Rogue
-                owned_cards.extend([ColdBlood(), Conceal(), Eviscerate()])
+                owned_cards.extend([ColdBlood(), Conceal(), Betrayal(), Eviscerate()])
                 # Shaman
                 owned_cards.extend([AncestralSpirit()])
                 # Warlock
@@ -383,6 +384,8 @@ class HearthState:
                                     Loatheb(), SludgeBelcher(), SpectralKnight(), Stalagg(), Maexxna(), KelThuzad()])
         
                 ### GOBLINS VS GNOMES ##
+                # Druid
+                owned_cards.extend([AnodizedRoboCub()])
                 # Hunter
                 owned_cards.extend([Glaivezooka()])
                 # Mage
@@ -393,12 +396,15 @@ class HearthState:
                 owned_cards.extend([Shrinkmeister()])
                 # Rogue
                 owned_cards.extend([OneeyedCheat(), TinkersSharpswordOil(), OgreNinja()])
+                # Shaman
+                owned_cards.extend([Crackle(), VitalityTotem(), SiltfinSpiritwalker()])
                 # Warrior
                 owned_cards.extend([Warbot(), OgreWarmaul()])
                 # Neutral
                 owned_cards.extend([ClockworkGnome(), Cogmaster(), AnnoyoTron(), ExplosiveSheep(), GilblinStalker(),
                                     Mechwarper(), MicroMachine(), Puddlestomper(), ShipsCannon(), StonesplinterTrogg(),
-                                    FlyingMachine(), MechanicalYeti(), AntiqueHealbot()])
+                                    FlyingMachine(), SpiderTank(), LostTallstrider(), MechanicalYeti(),
+                                    AntiqueHealbot(), ForceTankMAX()])
 
                 ### BLACKROCK MOUNTAIN ###
                 # Druid
