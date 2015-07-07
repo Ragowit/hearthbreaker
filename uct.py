@@ -391,11 +391,11 @@ class HearthState:
                 # Mage
                 owned_cards.extend([Flamecannon(), Snowchugger()])
                 # Paladin
-                owned_cards.extend([SealOfLight(), CobaltGuardian()])
+                owned_cards.extend([SealOfLight(), ScarletPurifier(), CobaltGuardian()])
                 # Priest
                 owned_cards.extend([Shrinkmeister()])
                 # Rogue
-                owned_cards.extend([OneeyedCheat(), TinkersSharpswordOil(), OgreNinja()])
+                owned_cards.extend([GoblinAutoBarber(), OneeyedCheat(), TinkersSharpswordOil(), OgreNinja()])
                 # Shaman
                 owned_cards.extend([Crackle(), VitalityTotem(), SiltfinSpiritwalker()])
                 # Warrior
