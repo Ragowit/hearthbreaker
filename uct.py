@@ -328,11 +328,13 @@ class HearthState:
         
                 ### CLASSIC ###
                 # Druid
-                owned_cards.extend([PowerOfTheWild(), Wrath(), MarkOfNature(), Starfall(), DruidOfTheClaw()])
+                owned_cards.extend([PowerOfTheWild(), Wrath(), MarkOfNature(), KeeperOfTheGrove(), Starfall(),
+                                    DruidOfTheClaw()])
                 # Hunter
                 owned_cards.extend([Snipe(), ScavengingHyena(), DeadlyShot()])
                 # Mage
-                owned_cards.extend([IceLance(), ManaWyrm(), SorcerersApprentice(), IceBarrier(), EtherealArcanist()])
+                owned_cards.extend([IceLance(), ManaWyrm(), SorcerersApprentice(), IceBarrier(), EtherealArcanist(),
+                                    Blizzard()])
                 # Paladin
                 owned_cards.extend([EyeForAnEye(), NobleSacrifice(), Repentance(), ArgentProtector()])
                 # Priest
