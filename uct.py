@@ -343,9 +343,10 @@ class HearthState:
                 # Rogue
                 owned_cards.extend([ColdBlood(), Conceal(), Betrayal(), Eviscerate()])
                 # Shaman
-                owned_cards.extend([AncestralSpirit()])
+                owned_cards.extend([ForkedLightning(), AncestralSpirit()])
                 # Warlock
-                owned_cards.extend([FlameImp(), Demonfire(), SenseDemons(), SummoningPortal(), Doomguard()])
+                owned_cards.extend([PowerOverwhelming(), FlameImp(), Demonfire(), SenseDemons(), SummoningPortal(),
+                                    Doomguard()])
                 # Warrior
                 owned_cards.extend([InnerRage(), Rampage(), Armorsmith(), CruelTaskmaster(), MortalStrike(), Brawl()])
                 # Neutral
