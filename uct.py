@@ -411,24 +411,29 @@ class HearthState:
 
                 ### BLACKROCK MOUNTAIN ###
                 # Druid
-                owned_cards.extend([DruidOfTheFlame()])
+                owned_cards.extend([DruidOfTheFlame(), VolcanicLumberer()])
                 # Hunter
-                owned_cards.extend([QuickShot()])
+                owned_cards.extend([QuickShot(), CoreRager()])
                 # Mage
-                owned_cards.extend([DragonsBreath()])
+                owned_cards.extend([Flamewaker(), DragonsBreath()])
+                # Paladin
+                owned_cards.extend([SolemnVigil()]) # SolemnVigil(), DragonConsort()
                 # Priest
-                owned_cards.extend([Resurrect()])
+                owned_cards.extend([TwilightWhelp(), Resurrect()])
                 # Rogue
-                owned_cards.extend([GangUp()])
+                owned_cards.extend([GangUp(), DarkIronSkulker()])
                 # Shaman
-                owned_cards.extend([LavaShock()])
+                owned_cards.extend([LavaShock(), FireguardDestroyer()])
                 # Warlock
-                owned_cards.extend([ImpGangBoss()])
+                owned_cards.extend([Demonwrath(), ImpGangBoss()])
                 # Warrior
-                owned_cards.extend([AxeFlinger()])
+                owned_cards.extend([Revenge(), AxeFlinger()])
                 # Neutral
-                # , MajordomoExecutus()
-                owned_cards.extend([BlackwingTechnician(), GrimPatron(), EmperorThaurissan()])
+                #owned_cards.extend([DragonEgg(), BlackwingTechnician(), DragonkinSorcerer(), HungryDragon(),
+                #                    BlackwingCorruptor(), GrimPatron(), DrakonidCrusher(), EmperorThaurissan(),
+                #                    VolcanicDrake(), RendBlackhand(), Chromaggus(), MajordomoExecutus(), Nefarian()])
+                owned_cards.extend([DragonEgg(), BlackwingTechnician(), HungryDragon(), BlackwingCorruptor(),
+                                    GrimPatron(), DrakonidCrusher(), EmperorThaurissan(), VolcanicDrake()])
 
                 card_list = filter(lambda c: c.character_class == hearthbreaker.constants.CHARACTER_CLASS.ALL or c.character_class == self.game.current_player.hero.character_class,
                                    owned_cards)
