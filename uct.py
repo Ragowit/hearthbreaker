@@ -334,7 +334,7 @@ class HearthState:
                 owned_cards.extend([Snipe(), ScavengingHyena(), DeadlyShot()])
                 # Mage
                 owned_cards.extend([IceLance(), ManaWyrm(), SorcerersApprentice(), IceBarrier(), EtherealArcanist(),
-                                    Blizzard()])
+                                    Blizzard(), ArchmageAntonidas()])
                 # Paladin
                 owned_cards.extend([EyeForAnEye(), NobleSacrifice(), Repentance(), ArgentProtector()])
                 # Priest
@@ -400,14 +400,17 @@ class HearthState:
                 # Rogue
                 owned_cards.extend([GoblinAutoBarber(), OneeyedCheat(), TinkersSharpswordOil(), OgreNinja()])
                 # Shaman
-                owned_cards.extend([Crackle(), VitalityTotem(), SiltfinSpiritwalker()])
+                owned_cards.extend([Crackle(), VitalityTotem(), WhirlingZapomatic(), SiltfinSpiritwalker()])
+                # Warlock
+                owned_cards.extend([Implosion()])
                 # Warrior
                 owned_cards.extend([Warbot(), OgreWarmaul()])
                 # Neutral
                 owned_cards.extend([ClockworkGnome(), Cogmaster(), AnnoyoTron(), ExplosiveSheep(), GilblinStalker(),
                                     Mechwarper(), MicroMachine(), Puddlestomper(), ShipsCannon(), StonesplinterTrogg(),
-                                    FlyingMachine(), SpiderTank(), TinkertownTechnician(), LostTallstrider(),
-                                    MechanicalYeti(), PilotedShredder(), AntiqueHealbot(), ForceTankMAX()])
+                                    FlyingMachine(), OgreBrute(), SpiderTank(), TinkertownTechnician(),
+                                    LostTallstrider(), MechanicalYeti(), PilotedShredder(), AntiqueHealbot(),
+                                    ForceTankMAX()])
 
                 ### BLACKROCK MOUNTAIN ###
                 # Druid
