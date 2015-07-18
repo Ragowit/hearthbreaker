@@ -404,7 +404,7 @@ class HearthState:
                 # Warlock
                 owned_cards.extend([Implosion()])
                 # Warrior
-                owned_cards.extend([Warbot(), OgreWarmaul()])
+                owned_cards.extend([Warbot(), OgreWarmaul(), Shieldmaiden()])
                 # Neutral
                 owned_cards.extend([ClockworkGnome(), Cogmaster(), AnnoyoTron(), ExplosiveSheep(), GilblinStalker(),
                                     Mechwarper(), MicroMachine(), Puddlestomper(), ShipsCannon(), StonesplinterTrogg(),
