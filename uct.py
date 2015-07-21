@@ -331,7 +331,7 @@ class HearthState:
                 owned_cards.extend([PowerOfTheWild(), Wrath(), MarkOfNature(), KeeperOfTheGrove(), Starfall(),
                                     DruidOfTheClaw()])
                 # Hunter
-                owned_cards.extend([Snipe(), ScavengingHyena(), DeadlyShot()])
+                owned_cards.extend([Snipe(), ScavengingHyena(), DeadlyShot(), UnleashTheHounds()])
                 # Mage
                 owned_cards.extend([IceLance(), ManaWyrm(), SorcerersApprentice(), IceBarrier(), EtherealArcanist(),
                                     Blizzard(), ArchmageAntonidas()])
@@ -348,7 +348,8 @@ class HearthState:
                 owned_cards.extend([PowerOverwhelming(), FlameImp(), Demonfire(), SenseDemons(), SummoningPortal(),
                                     Doomguard()])
                 # Warrior
-                owned_cards.extend([InnerRage(), Rampage(), Armorsmith(), CruelTaskmaster(), MortalStrike(), Brawl()])
+                owned_cards.extend([InnerRage(), Rampage(), Slam(), Armorsmith(), CruelTaskmaster(), MortalStrike(),
+                                    Brawl()])
                 # Neutral
                 owned_cards.extend([Wisp(), ArgentSquire(), SouthseaDeckhand(), YoungPriestess(), AmaniBerserker(),
                                     BloodsailRaider(), DireWolfAlpha(), FaerieDragon(), IronbeakOwl(), KnifeJuggler(),
