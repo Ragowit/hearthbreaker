@@ -357,7 +357,7 @@ class HearthState:
                                     ImpMaster(), JunglePanther(), QuestingAdventurer(), ScarletCrusader(),
                                     TaurenWarrior(), TinkmasterOverspark(), CultMaster(), DefenderOfArgus(),
                                     SilvermoonGuardian(), AzureDrake(), FenCreeper(), SilverHandKnight(),
-                                    SpitefulSmith(), StranglethornTiger(), FrostElemental()])
+                                    SpitefulSmith(), StranglethornTiger(), FrostElemental(), PriestessOfElune()])
         
                 ### PROMO ###
                 owned_cards.extend([GelbinMekkatorque()])
@@ -397,13 +397,13 @@ class HearthState:
                 # Paladin
                 owned_cards.extend([SealOfLight(), ScarletPurifier(), CobaltGuardian()])
                 # Priest
-                owned_cards.extend([Shrinkmeister()])
+                owned_cards.extend([Shrinkmeister(), VelensChosen()])
                 # Rogue
                 owned_cards.extend([GoblinAutoBarber(), OneeyedCheat(), TinkersSharpswordOil(), OgreNinja()])
                 # Shaman
                 owned_cards.extend([Crackle(), VitalityTotem(), WhirlingZapomatic(), SiltfinSpiritwalker()])
                 # Warlock
-                owned_cards.extend([Implosion()])
+                owned_cards.extend([Implosion(), FloatingWatcher()])
                 # Warrior
                 owned_cards.extend([Warbot(), OgreWarmaul(), Shieldmaiden()])
                 # Neutral
