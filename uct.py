@@ -391,7 +391,7 @@ class HearthState:
                 # Druid
                 owned_cards.extend([AnodizedRoboCub()])
                 # Hunter
-                owned_cards.extend([Glaivezooka(), KingOfBeasts()])
+                owned_cards.extend([Glaivezooka(), CobraShot(), KingOfBeasts()])
                 # Mage
                 owned_cards.extend([Flamecannon(), Snowchugger()])
                 # Paladin
@@ -410,8 +410,8 @@ class HearthState:
                 owned_cards.extend([ClockworkGnome(), Cogmaster(), AnnoyoTron(), ExplosiveSheep(), GilblinStalker(),
                                     Mechwarper(), MicroMachine(), Puddlestomper(), ShipsCannon(), StonesplinterTrogg(),
                                     FlyingMachine(), OgreBrute(), SpiderTank(), TinkertownTechnician(),
-                                    LostTallstrider(), MechanicalYeti(), PilotedShredder(), AntiqueHealbot(),
-                                    ForceTankMAX()])
+                                    ArcaneNullifierX21(), LostTallstrider(), MechanicalYeti(), PilotedShredder(),
+                                    AntiqueHealbot(), Blingtron3000(), ForceTankMAX()])
 
                 ### BLACKROCK MOUNTAIN ###
                 # Druid
