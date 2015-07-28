@@ -399,7 +399,8 @@ class HearthState:
                 # Priest
                 owned_cards.extend([Shrinkmeister(), VelensChosen()])
                 # Rogue
-                owned_cards.extend([GoblinAutoBarber(), OneeyedCheat(), TinkersSharpswordOil(), OgreNinja()])
+                owned_cards.extend([GoblinAutoBarber(), OneeyedCheat(), IronSensei(), TinkersSharpswordOil(),
+                                    OgreNinja()])
                 # Shaman
                 owned_cards.extend([Crackle(), VitalityTotem(), WhirlingZapomatic(), SiltfinSpiritwalker()])
                 # Warlock
