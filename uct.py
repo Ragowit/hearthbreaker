@@ -422,7 +422,7 @@ class HearthState:
                 # Mage
                 owned_cards.extend([Flamewaker(), DragonsBreath()])
                 # Paladin
-                owned_cards.extend([SolemnVigil()]) # SolemnVigil(), DragonConsort()
+                owned_cards.extend([SolemnVigil(), DragonConsort()])
                 # Priest
                 owned_cards.extend([TwilightWhelp(), Resurrect()])
                 # Rogue
@@ -434,11 +434,9 @@ class HearthState:
                 # Warrior
                 owned_cards.extend([Revenge(), AxeFlinger()])
                 # Neutral
-                #owned_cards.extend([DragonEgg(), BlackwingTechnician(), DragonkinSorcerer(), HungryDragon(),
-                #                    BlackwingCorruptor(), GrimPatron(), DrakonidCrusher(), EmperorThaurissan(),
-                #                    VolcanicDrake(), RendBlackhand(), Chromaggus(), MajordomoExecutus(), Nefarian()])
-                owned_cards.extend([DragonEgg(), BlackwingTechnician(), HungryDragon(), BlackwingCorruptor(),
-                                    GrimPatron(), DrakonidCrusher(), EmperorThaurissan(), VolcanicDrake()])
+                owned_cards.extend([DragonEgg(), BlackwingTechnician(), DragonkinSorcerer(), HungryDragon(),
+                                    BlackwingCorruptor(), GrimPatron(), DrakonidCrusher(), EmperorThaurissan(),
+                                    VolcanicDrake(), RendBlackhand(), Chromaggus(), MajordomoExecutus(), Nefarian()])
 
                 card_list = filter(lambda c: c.character_class == hearthbreaker.constants.CHARACTER_CLASS.ALL or c.character_class == self.game.current_player.hero.character_class,
                                    owned_cards)
