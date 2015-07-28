@@ -491,7 +491,7 @@ class HearthState:
         
                 found_taunt = False
                 targets = []
-                for enemy in copy.copy(self.game.other_player.minions):
+                for enemy in self.game.other_player.minions:
                     if enemy.taunt and enemy.can_be_attacked():
                         found_taunt = True
                     if enemy.can_be_attacked():
@@ -502,7 +502,7 @@ class HearthState:
                 else:
                     targets.append(self.game.other_player.hero)
         
-                for minion in copy.copy(self.game.current_player.minions):
+                for minion in self.game.current_player.minions:
                     if minion.can_attack():
                         for i in range(len(targets)):
                             valid_moves.append([MOVE.MINION_ATTACK, minion, targets[i],
@@ -541,7 +541,7 @@ class HearthState:
         if self.game.players[0].hero.health <= 0 and self.game.players[1].hero.health <= 0:
             return 0.5
         elif self.game.players[playerjm - 1].hero.health <= 0:
-            return (self.game._turns_passed - 50) / 10
+            return (self.game._turns_passed - 50) / 2
         elif self.game.players[2 - playerjm].hero.health <= 0:
             return 50 - self.game._turns_passed
         else:  # Should not be possible to get here unless we terminate the game early.
@@ -550,10 +550,10 @@ class HearthState:
     def __repr__(self):
         s = "Turn: " + str(self.game._turns_passed)
         s += "\n[" + str(self.game.players[0].hero.health) + " hp ~ " + str(len(self.game.players[0].hand)) + " in hand ~ " + str(self.game.players[0].deck.left) + "/" + str(len(self.game.players[0].deck.cards)) + " in deck ~ " + str(self.game.players[0].mana) + "/" + str(self.game.players[0].max_mana) + " mana] "
-        for minion in copy.copy(self.game.players[0].minions):
+        for minion in self.game.players[0].minions:
             s += str(minion.calculate_attack()) + "/" + str(minion.health) + ":"
         s += "\n[" + str(self.game.players[1].hero.health) + " hp ~ " + str(len(self.game.players[1].hand)) + " in hand ~ " + str(self.game.players[1].deck.left) + "/" + str(len(self.game.players[1].deck.cards)) + " in deck ~ " + str(self.game.players[1].mana) + "/" + str(self.game.players[1].max_mana) + " mana] "
-        for minion in copy.copy(self.game.players[1].minions):
+        for minion in self.game.players[1].minions:
             s += str(minion.calculate_attack()) + "/" + str(minion.health) + ":"
         s += "\n" + "Current Player: " + str(self.game.current_player.name)
         return s
@@ -681,7 +681,7 @@ def UCTPlayGame():
     state = HearthState()
     while (state.GetMoves() != []):
         print(str(state))
-        m = UCT(rootstate = state, seconds = 12000, verbose = False)
+        m = UCT(rootstate = state, seconds = 14400, verbose = False)
         print("Best Move: " + str(m) + "\n")
         state.DoMove(m)
 
