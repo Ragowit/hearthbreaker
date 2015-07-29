@@ -356,8 +356,9 @@ class HearthState:
                                     LootHoarder(), MadBomber(), MasterSwordsmith(), Demolisher(), HarvestGolem(),
                                     ImpMaster(), JunglePanther(), QuestingAdventurer(), ScarletCrusader(),
                                     TaurenWarrior(), TinkmasterOverspark(), CultMaster(), DefenderOfArgus(),
-                                    SilvermoonGuardian(), AzureDrake(), FenCreeper(), SilverHandKnight(),
-                                    SpitefulSmith(), StranglethornTiger(), FrostElemental(), PriestessOfElune()])
+                                    DreadCorsair(), SilvermoonGuardian(), AzureDrake(), FenCreeper(),
+                                    SilverHandKnight(), SpitefulSmith(), StranglethornTiger(), FrostElemental(),
+                                    PriestessOfElune()])
         
                 ### PROMO ###
                 owned_cards.extend([GelbinMekkatorque()])
