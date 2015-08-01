@@ -411,9 +411,9 @@ class HearthState:
                 # Neutral
                 owned_cards.extend([ClockworkGnome(), Cogmaster(), AnnoyoTron(), ExplosiveSheep(), GilblinStalker(),
                                     Mechwarper(), MicroMachine(), Puddlestomper(), ShipsCannon(), StonesplinterTrogg(),
-                                    FlyingMachine(), OgreBrute(), SpiderTank(), TinkertownTechnician(),
-                                    ArcaneNullifierX21(), LostTallstrider(), MechanicalYeti(), PilotedShredder(),
-                                    AntiqueHealbot(), Blingtron3000(), ForceTankMAX()])
+                                    FlyingMachine(), GnomereganInfantry(), OgreBrute(), SpiderTank(),
+                                    TinkertownTechnician(), ArcaneNullifierX21(), LostTallstrider(), MechanicalYeti(),
+                                    PilotedShredder(), AntiqueHealbot(), Blingtron3000(), ForceTankMAX()])
 
                 ### BLACKROCK MOUNTAIN ###
                 # Druid
