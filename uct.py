@@ -394,7 +394,7 @@ class HearthState:
                 # Hunter
                 owned_cards.extend([Glaivezooka(), CobraShot(), KingOfBeasts()])
                 # Mage
-                owned_cards.extend([Flamecannon(), Snowchugger()])
+                owned_cards.extend([Flamecannon(), UnstablePortal(), Snowchugger()])
                 # Paladin
                 owned_cards.extend([SealOfLight(), ScarletPurifier(), CobaltGuardian()])
                 # Priest
