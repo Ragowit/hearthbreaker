@@ -405,7 +405,7 @@ class HearthState:
                 # Shaman
                 owned_cards.extend([Crackle(), VitalityTotem(), WhirlingZapomatic(), SiltfinSpiritwalker()])
                 # Warlock
-                owned_cards.extend([Implosion(), FloatingWatcher()])
+                owned_cards.extend([Darkbomb(), Implosion(), FloatingWatcher()])
                 # Warrior
                 owned_cards.extend([Warbot(), OgreWarmaul(), Shieldmaiden()])
                 # Neutral
