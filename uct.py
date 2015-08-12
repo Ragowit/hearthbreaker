@@ -351,12 +351,12 @@ class HearthState:
                 owned_cards.extend([InnerRage(), Rampage(), Slam(), Armorsmith(), CruelTaskmaster(), MortalStrike(),
                                     Brawl()])
                 # Neutral
-                owned_cards.extend([Wisp(), ArgentSquire(), SouthseaDeckhand(), YoungPriestess(), AmaniBerserker(),
-                                    BloodsailRaider(), DireWolfAlpha(), FaerieDragon(), IronbeakOwl(), KnifeJuggler(),
-                                    LootHoarder(), MadBomber(), MasterSwordsmith(), Demolisher(), HarvestGolem(),
-                                    ImpMaster(), JunglePanther(), QuestingAdventurer(), ScarletCrusader(),
-                                    TaurenWarrior(), TinkmasterOverspark(), CultMaster(), DefenderOfArgus(),
-                                    DreadCorsair(), SilvermoonGuardian(), AzureDrake(), FenCreeper(),
+                owned_cards.extend([Wisp(), ArgentSquire(), SouthseaDeckhand(), WorgenInfiltrator(), YoungPriestess(),
+                                    AmaniBerserker(), BloodsailRaider(), DireWolfAlpha(), FaerieDragon(), IronbeakOwl(),
+                                    KnifeJuggler(), LootHoarder(), MadBomber(), MasterSwordsmith(), Demolisher(),
+                                    HarvestGolem(), ImpMaster(), JunglePanther(), QuestingAdventurer(),
+                                    ScarletCrusader(), TaurenWarrior(), TinkmasterOverspark(), CultMaster(),
+                                    DefenderOfArgus(), DreadCorsair(), SilvermoonGuardian(), AzureDrake(), FenCreeper(),
                                     SilverHandKnight(), SpitefulSmith(), StranglethornTiger(), FrostElemental(),
                                     PriestessOfElune()])
         
