@@ -390,7 +390,7 @@ class HearthState:
         
                 ### GOBLINS VS GNOMES ##
                 # Druid
-                owned_cards.extend([AnodizedRoboCub()])
+                owned_cards.extend([AnodizedRoboCub(), DruidOfTheFang()])
                 # Hunter
                 owned_cards.extend([Glaivezooka(), CobraShot(), KingOfBeasts()])
                 # Mage
@@ -398,7 +398,7 @@ class HearthState:
                 # Paladin
                 owned_cards.extend([SealOfLight(), ScarletPurifier(), CobaltGuardian()])
                 # Priest
-                owned_cards.extend([Shrinkmeister(), VelensChosen()])
+                owned_cards.extend([Shrinkmeister(), VelensChosen(), UpgradedRepairBot()])
                 # Rogue
                 owned_cards.extend([GoblinAutoBarber(), OneeyedCheat(), IronSensei(), TinkersSharpswordOil(),
                                     OgreNinja()])
