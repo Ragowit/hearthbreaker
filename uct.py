@@ -405,7 +405,7 @@ class HearthState:
                 # Shaman
                 owned_cards.extend([Crackle(), VitalityTotem(), WhirlingZapomatic(), SiltfinSpiritwalker()])
                 # Warlock
-                owned_cards.extend([Darkbomb(), Implosion(), FloatingWatcher()])
+                owned_cards.extend([Darkbomb(), MistressOfPain(), Implosion(), FloatingWatcher()])
                 # Warrior
                 owned_cards.extend([Warbot(), OgreWarmaul(), Shieldmaiden()])
                 # Neutral
@@ -413,7 +413,8 @@ class HearthState:
                                     Mechwarper(), MicroMachine(), Puddlestomper(), ShipsCannon(), StonesplinterTrogg(),
                                     FlyingMachine(), GnomereganInfantry(), OgreBrute(), SpiderTank(),
                                     TinkertownTechnician(), ArcaneNullifierX21(), LostTallstrider(), MechanicalYeti(),
-                                    PilotedShredder(), AntiqueHealbot(), Blingtron3000(), ForceTankMAX()])
+                                    PilotedShredder(), AntiqueHealbot(), MogorTheOgre(), Blingtron3000(),
+                                    ForceTankMAX()])
 
                 ### BLACKROCK MOUNTAIN ###
                 # Druid
