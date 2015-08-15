@@ -343,7 +343,7 @@ class HearthState:
                 # Rogue
                 owned_cards.extend([ColdBlood(), Conceal(), Betrayal(), Eviscerate()])
                 # Shaman
-                owned_cards.extend([ForkedLightning(), AncestralSpirit(), FeralSpirit()])
+                owned_cards.extend([ForkedLightning(), AncestralSpirit(), FarSight(), FeralSpirit()])
                 # Warlock
                 owned_cards.extend([PowerOverwhelming(), FlameImp(), Demonfire(), SenseDemons(), SummoningPortal(),
                                     Doomguard()])
@@ -356,9 +356,9 @@ class HearthState:
                                     KnifeJuggler(), LootHoarder(), MadBomber(), MasterSwordsmith(), Demolisher(),
                                     HarvestGolem(), ImpMaster(), JunglePanther(), QuestingAdventurer(),
                                     ScarletCrusader(), TaurenWarrior(), TinkmasterOverspark(), CultMaster(),
-                                    DefenderOfArgus(), DreadCorsair(), SilvermoonGuardian(), AzureDrake(), FenCreeper(),
-                                    SilverHandKnight(), SpitefulSmith(), StranglethornTiger(), FrostElemental(),
-                                    PriestessOfElune()])
+                                    DefenderOfArgus(), DreadCorsair(), SilvermoonGuardian(), VioletTeacher(),
+                                    AzureDrake(), FenCreeper(), SilverHandKnight(), SpitefulSmith(),
+                                    StranglethornTiger(), FrostElemental(), PriestessOfElune()])
         
                 ### PROMO ###
                 owned_cards.extend([GelbinMekkatorque()])
