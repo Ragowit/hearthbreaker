@@ -353,12 +353,13 @@ class HearthState:
                 # Neutral
                 owned_cards.extend([Wisp(), ArgentSquire(), SouthseaDeckhand(), WorgenInfiltrator(), YoungPriestess(),
                                     AmaniBerserker(), BloodsailRaider(), DireWolfAlpha(), FaerieDragon(), IronbeakOwl(),
-                                    KnifeJuggler(), LootHoarder(), MadBomber(), MasterSwordsmith(), Demolisher(),
-                                    HarvestGolem(), ImpMaster(), JunglePanther(), QuestingAdventurer(),
-                                    ScarletCrusader(), TaurenWarrior(), TinkmasterOverspark(), CultMaster(),
-                                    DefenderOfArgus(), DreadCorsair(), SilvermoonGuardian(), VioletTeacher(),
-                                    AzureDrake(), FenCreeper(), SilverHandKnight(), SpitefulSmith(),
-                                    StranglethornTiger(), FrostElemental(), PriestessOfElune()])
+                                    KnifeJuggler(), LootHoarder(), LorewalkerCho(), MadBomber(), MasterSwordsmith(),
+                                    Demolisher(), HarvestGolem(), ImpMaster(), JunglePanther(), QuestingAdventurer(),
+                                    ScarletCrusader(), TaurenWarrior(), TinkmasterOverspark(), AncientBrewmaster(),
+                                    CultMaster(), DefenderOfArgus(), DreadCorsair(), MogushanWarden(),
+                                    SilvermoonGuardian(), VioletTeacher(), AzureDrake(), FenCreeper(),
+                                    SilverHandKnight(), SpitefulSmith(), StranglethornTiger(), FrostElemental(),
+                                    PriestessOfElune()])
         
                 ### PROMO ###
                 owned_cards.extend([GelbinMekkatorque()])
